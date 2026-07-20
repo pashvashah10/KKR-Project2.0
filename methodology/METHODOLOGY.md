@@ -125,7 +125,7 @@ Each backtest uses only data available at the time and cites the confirming even
 
 | Phase | League | Real-data anchor | Status |
 |---|---|---|---|
-| **1** | EPL | Companies House audited accounts (all clubs) | ✅ 11 clubs |
+| **1** | EPL | Companies House audited accounts (all clubs) | ✅ 11 clubs · **on 2024/25** (latest complete filed season) |
 | **2 (now)** | Cricket / IPL | MCA-filed FY24 accounts (revenue & net profit, all 10) + Houlihan Lokey brand-value study + 2022 franchise auctions | ✅ 10 franchises, revenue & profit MCA-filed (SRH profit est.); brand/market values modeled |
 | 3 | Broader European soccer | Club filings + Deloitte Money League + UEFA benchmarking | — |
 | 4 | US sports (NFL) | Forbes panel, calibrated against the Green Bay Packers' audited accounts | — |

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="Franchise Alpha — sports private equity research platform (EPL + IPL + cross-league portfolio).">
+<meta name="description" content="Franchise Alpha — sports private equity research platform (EPL 2024/25 + IPL + cross-league portfolio).">
 </head>
 <body>
 <title>Franchise Alpha — Sports Private Equity Research</title>
@@ -341,119 +341,119 @@
 <script>
 // ==================================================== DATA (EPL 2023/24, £m)
 const EPL_CLUBS=[
- {id:"mancity",name:"Manchester City",owner:"City Football Group",rev:715.0,op:null,pre:74.0,psale:22,wages:412.6,bcast:null,comm:null,match:null,amort:null,
-  netDebt:0,points:91,finish:1,squadVal:1110,age:27.5,ig:46.5,cap:53400,util:99,marketEV:4030,
+ {id:"mancity",name:"Manchester City",owner:"City Football Group",rev:694.1,op:null,pre:-9.9,psale:15,wages:408,bcast:null,comm:null,match:null,amort:null,
+  netDebt:0,points:71,finish:3,squadVal:1110,age:27.5,ig:46.5,cap:53400,util:99,marketEV:4030,
   stad:{owned:false,val:150,name:"Etihad Stadium (leased)"},train:120,flags:{charges:true},grow:85,
   est:["psale","netDebt","squadVal","age","util","marketEV","stad","train"],
-  key:"Elite but ageing spine (Walker, De Bruyne, Gündoğan-era). Haaland & Foden underpin resale value; renewal risk in the 29+ cohort.",
-  turn:{diag:"Not a turnaround — an elite operating machine already run at institutional standard. The only material value lever is removing the regulatory discount.",
-    tom:[["Wages/Rev","58%","≤57%"],["Reg. status","115 charges open","Resolved"],["Op. margin","+10%","+12%"]],
-    thesis:"A ‘protect & compound’ case, not a fix. Priced at or above fair value; PE upside is thin unless the charges resolve favourably and unlock a re-rating. Buy only at a discount to the regulatory overhang."},
+  key:"Elite but ageing spine (Walker, De Bruyne era). The four-in-a-row dynasty slipped to 3rd in 2024/25 and posted a rare small loss — still the most efficient big operator; the overhang is the unresolved 115 charges.",
+  turn:{diag:"The four-in-a-row champion slipped to 3rd and into a rare −£10m loss as the squad aged. Operationally still elite; the only material value lever remains removing the regulatory discount.",
+    tom:[["Wages/Rev","59%","≤57%"],["Reg. status","115 charges open","Resolved"],["Net result","−£10m","profit"]],
+    thesis:"A ‘protect & compound’ case, not a fix — now with a cyclical dip to buy into. Priced around fair value; PE upside is thin unless the 115 charges resolve favourably and unlock a re-rating."},
   levers:[{t:"Resolve regulatory overhang (115 charges)",wk:"Open charges impose a valuation discount",capex:0,upE:0,ramp:2,note:"Binary — clears discount, not an operating uplift"},
     {t:"Extend CFG commercial network",wk:"Elite base, incremental sponsorship yield still available",capex:30,upR:40,ramp:4}]},
- {id:"manutd",name:"Manchester United",owner:"Glazers / INEOS 27.7%",rev:662.0,op:null,pre:-131.0,psale:37,wages:365.0,bcast:222,comm:303,match:137,amort:187,
-  netDebt:510,points:60,finish:8,squadVal:640,age:25.5,ig:62.3,cap:74310,util:99,marketEV:5170,
+ {id:"manutd",name:"Manchester United",owner:"Glazers / INEOS 27.7%",rev:666.5,op:null,pre:-33.0,psale:40,wages:365,bcast:223,comm:305,match:138,amort:187,
+  netDebt:731,points:42,finish:15,squadVal:640,age:25.5,ig:62.3,cap:74310,util:99,marketEV:5170,
   stad:{owned:true,val:800,name:"Old Trafford"},train:100,flags:{ownership:true},grow:70,
   est:["netDebt","squadVal","age","util","stad","train"],
-  key:"High-cost, underperforming squad; large contracts on declining assets. Real value in a young core (Garnacho, Mainoo) vs sunk fees elsewhere.",
-  turn:{diag:"A world-class brand monetised like a mid-table club, carrying £510m net debt and a wage bill that delivered 8th place. The gap between brand reach and commercial yield is the entire opportunity.",
-    tom:[["Wages/Rev","55%","50%"],["Rev/follower","£10.6m","£18m"],["Matchday","£137m","£230m+"]],
-    thesis:"The archetypal PE turnaround: buy the brand, professionalise the commercial engine and cost base, redevelop the stadium — and re-rate on the operational fix, not on winning trophies. The market already pays a legacy premium (model: over-valued), so entry price discipline is everything."},
+  key:"A world-class brand attached to a 15th-place team — the worst Premier League finish in the club's history. Huge commercial base, another loss, ~£730m net debt. The monetisation gap is the whole opportunity.",
+  turn:{diag:"A record-low 15th on the pitch, a £33m loss, and ~£730m net debt — yet still one of the world's biggest commercial franchises. The gap between brand reach and results is the entire thesis.",
+    tom:[["Wages/Rev","55%","50%"],["League finish","15th (record low)","top 6"],["Rev/follower","£10.6m","£18m"]],
+    thesis:"The archetypal PE turnaround, now at a cyclical low: buy the brand, professionalise the commercial engine and cost base, redevelop the stadium — and re-rate on the operational fix, not trophies. The market still pays a legacy premium (model: over-valued), so entry discipline is everything."},
   levers:[{t:"Close the audience-monetisation gap",wk:"£10.6 rev/follower vs peers £20–30 on a 62m base",capex:45,upR:110,ramp:4,note:"DTC, sponsorship re-tier, content IP"},
     {t:"Old Trafford redevelopment",wk:"Matchday £137m capped by an ageing stadium",capex:1500,upR:110,ramp:6,note:"New/expanded ~90k bowl"},
-    {t:"Wage & squad rationalisation",wk:"£365m wages, 0.16 pts/£m — worst efficiency in panel",capex:0,upE:70,ramp:3}]},
- {id:"arsenal",name:"Arsenal",owner:"Kroenke Sports & Ent.",rev:616.6,op:null,pre:-17.7,psale:20,wages:327.8,bcast:null,comm:null,match:null,amort:null,
-  netDebt:180,points:89,finish:2,squadVal:1110,age:24.5,ig:26.5,cap:60704,util:99,marketEV:2050,
+    {t:"Wage & squad rationalisation",wk:"£365m wages, ~0.12 pts/£m on a 15th-place finish — worst efficiency in panel",capex:0,upE:70,ramp:3}]},
+ {id:"arsenal",name:"Arsenal",owner:"Kroenke Sports & Ent.",rev:691.6,op:null,pre:-1.4,psale:25,wages:346.8,bcast:null,comm:null,match:null,amort:null,
+  netDebt:180,points:74,finish:2,squadVal:1110,age:24.5,ig:26.5,cap:60704,util:99,marketEV:2050,
   stad:{owned:true,val:700,name:"Emirates Stadium"},train:90,flags:{},grow:74,
   est:["psale","netDebt","squadVal","age","util","stad","train"],
-  key:"Young and appreciating (Saka, Ødegaard, Saliba, Rice) — the best age/value curve among the big clubs. Low contract-risk; asset base rising.",
-  turn:{diag:"A well-run club whose £1.1bn squad and on-pitch resurgence have outrun its commercial income and its market valuation. The fix is commercial catch-up, not restructuring.",
-    tom:[["Wages/Rev","53%","50%"],["Commercial","lagging CL rivals","+£70m"],["Capacity","60.7k","~80k"]],
+  key:"Young and appreciating (Saka, Ødegaard, Saliba, Rice) — the best age/value curve among the big clubs. A second straight 2nd-place finish; near-breakeven. Low contract-risk; asset base rising.",
+  turn:{diag:"A near-breakeven 2nd-place finish (again) on a £1.1bn squad — a well-run club whose value has outrun its market valuation. The fix is commercial catch-up, not restructuring.",
+    tom:[["Wages/Rev","50%","≤50%"],["League finish","2nd (again)","1st"],["Commercial","lagging CL rivals","+£70m"]],
     thesis:"A ‘growth compounding’ hold, not a turnaround. The model reads it as under-valued: buy the appreciating asset, monetise the on-pitch cycle, expand the Emirates. Lower risk, steadier return."},
   levers:[{t:"Commercial catch-up to on-pitch resurgence",wk:"Commercial lags a squad now worth £1.1bn",capex:35,upR:70,ramp:4},
     {t:"Emirates expansion to ~80k",wk:"Matchday demand exceeds 60.7k capacity",capex:600,upR:60,ramp:5}]},
- {id:"liverpool",name:"Liverpool",owner:"Fenway Sports Group",rev:614.0,op:null,pre:-57.0,psale:20,wages:386.0,bcast:204,comm:308,match:102,amort:null,
-  netDebt:280,points:82,finish:3,squadVal:800,age:26,ig:42,cap:61000,util:99,marketEV:4240,
+ {id:"liverpool",name:"Liverpool",owner:"Fenway Sports Group",rev:702.7,op:null,pre:8.3,psale:25,wages:428,bcast:234,comm:353,match:117,amort:null,
+  netDebt:280,points:84,finish:1,squadVal:800,age:26,ig:42,cap:61000,util:99,marketEV:4240,
   stad:{owned:true,val:600,name:"Anfield"},train:90,flags:{},grow:78,
   est:["psale","netDebt","squadVal","age","ig","util","stad","train"],
-  key:"Peak-age spine with elite resale, but a renewal cliff on senior stars (Salah, Van Dijk). Younger cohort (Gakpo, Mac Allister) carries the forward value.",
-  turn:{diag:"Record £614m revenue turned into a record £57m loss because a £386m wage bill outran it. A high-quality asset with a cost-line problem, not a demand problem.",
-    tom:[["Wages/Rev","63%","55%"],["Matchday","£102m","£140m"],["Op. result","loss","breakeven+"]],
-    thesis:"A quality asset needing wage discipline and full monetisation of the expanded Anfield. Modest, lower-risk turnaround: hold the commercial machine, fix the cost line, and the P&L flips."},
-  levers:[{t:"Monetise the record commercial base",wk:"£386m wages drove a £57m loss despite record revenue",capex:40,upR:60,ramp:4},
+  key:"Premier League champions and profitable — a rare double. Highest revenue in England (£703m); the task is renewing an ageing spine (Salah, Van Dijk) without breaking the wage discipline that keeps it in the black.",
+  turn:{diag:"Won the 2024/25 title and still posted an £8m profit on record £703m revenue — the model of a well-run elite club. Not a turnaround; a quality compounder.",
+    tom:[["Wages/Rev","61%","≤58%"],["League finish","1st (champions)","sustain"],["Net result","+£8m","grow"]],
+    thesis:"A quality compounder to hold: title-winning, profitable, highest revenue in the league. Value creation is incremental — manage the squad-age cliff and keep wages disciplined — not a fix."},
+  levers:[{t:"Monetise the record commercial base",wk:"£428m wages on record £703m revenue — hold discipline while renewing",capex:40,upR:60,ramp:4},
     {t:"Fill expanded Anfield premium tiers",wk:"Matchday £102m still trails United/Arsenal ceilings",capex:80,upR:35,ramp:3}]},
- {id:"chelsea",name:"Chelsea",owner:"BlueCo (Boehly / Clearlake)",rev:468.5,op:null,pre:128.0,psale:152,oneOff:199,wages:338.0,bcast:null,comm:null,match:null,amort:null,
-  netDebt:300,points:63,finish:6,squadVal:1010,age:24,ig:40,cap:40000,util:97,marketEV:3000,
+ {id:"chelsea",name:"Chelsea",owner:"BlueCo (Boehly / Clearlake)",rev:490.9,op:null,pre:-262.4,psale:60,wages:585,bcast:null,comm:null,match:null,amort:null,
+  netDebt:300,points:69,finish:4,squadVal:1010,age:24,ig:40,cap:40000,util:97,marketEV:3000,
   stad:{owned:true,val:500,name:"Stamford Bridge"},train:90,flags:{},grow:80,
   est:["netDebt","squadVal","age","ig","util","marketEV","stad","train"],
-  key:"£1bn of young, long-contract players — asset-rich but amortisation-heavy. Squad bloat and a loan army are the structural problem, not the talent.",
-  turn:{diag:"A £128m ‘profit’ that is almost entirely a £199m related-party disposal; underlying operations lose money. £1bn squad, no European football, and a wage/amortisation spiral funded by asset sales.",
-    tom:[["Wages/Rev","72%","58%"],["Squad size","bloated + loans","lean"],["Profit source","one-off sales","operations"]],
-    thesis:"A deep operational turnaround masquerading as a healthy business. The job: crash the squad size, break the amortisation spiral, build a real recruit-develop-sell model, and restore Champions League income. The model flags it over-valued precisely because the headline profit is an illusion — the sharpest ‘don’t be fooled’ case in the panel."},
-  levers:[{t:"Halt the wage & amortisation spiral",wk:"£338m wages + vast amortisation; profit only via asset sales",capex:0,upE:80,ramp:3},
+  key:"£585m of staff costs on £491m revenue — wages at 119% of turnover. The one-off disposals that flattered the prior year are gone; 2024/25 is a £262m record loss. Asset-rich, deeply loss-making.",
+  turn:{diag:"The £262m record loss the prior year's accounting trick hid: with no related-party disposal to lean on, wages at 119% of revenue and a bloated squad produce the biggest loss in Premier League history. The model flagged this a year early.",
+    tom:[["Wages/Rev","119%","65%"],["Squad size","bloated + loans","lean"],["Net result","−£262m","breakeven"]],
+    thesis:"The deep operational turnaround the model saw coming. Last year's ‘profit’ was an illusion; this year the truth arrives as a record loss. The job: crash the squad, break the wage/amortisation spiral, restore Champions League income. The sharpest distressed case in the panel — now confirmed."},
+  levers:[{t:"Halt the wage & amortisation spiral",wk:"£585m wages (119% of revenue) + a wage/amortisation spiral",capex:0,upE:80,ramp:3},
     {t:"Turn a £1bn squad into a real trading model",wk:"Bloated squad, no European football, reliant on disposals",capex:50,upR:60,ramp:4}]},
- {id:"newcastle",name:"Newcastle United",owner:"PIF (Saudi) consortium",rev:320.0,op:null,pre:11.1,psale:67,wages:218.7,bcast:null,comm:null,match:null,amort:97,
-  netDebt:50,points:60,finish:7,squadVal:600,age:26,ig:2.5,cap:52258,util:99,marketEV:800,
+ {id:"newcastle",name:"Newcastle United",owner:"PIF (Saudi) consortium",rev:335.3,op:null,pre:34.7,psale:80,wages:230,bcast:null,comm:null,match:null,amort:97,
+  netDebt:50,points:66,finish:5,squadVal:600,age:26,ig:2.5,cap:52258,util:99,marketEV:800,
   stad:{owned:true,val:350,name:"St James' Park"},train:60,flags:{},grow:85,
   est:["netDebt","squadVal","age","ig","util","marketEV","stad","train"],
-  key:"Isak/Gordon/Bruno core in prime age; thin depth. PSR-forced near-sales expose how concentrated the asset base is.",
-  turn:{diag:"Sovereign-backed ambition, but a ~£71m operating loss masked by player sales, and a stadium too small for a Champions League club. Commercial income lags peers by a wide margin.",
-    tom:[["Commercial","sub-scale","peer level"],["Capacity","52.3k","65k+"],["Op. result","−£71m","breakeven"]],
-    thesis:"A growth turnaround with a capex-heavy unlock: scale commercial to the owner’s ambition and expand or rebuild St James’ Park. Screens as the most under-valued asset — the market has not yet priced the PIF trajectory."},
-  levers:[{t:"Scale commercial to PIF-ambition",wk:"~£71m operating loss; profit only via player sales",capex:60,upR:90,ramp:4,note:"Sovereign network + naming rights"},
+  key:"Isak/Gordon/Bruno core in prime age; thin depth. Champions League football secured in 2024/25 — the asset base is concentrated but rising.",
+  turn:{diag:"Champions League football (5th) and a £35m profit — though that leans on a ~£133m asset sale. Sovereign-backed and rising; commercial income still lags a stadium too small for the ambition.",
+    tom:[["Commercial","sub-scale","peer level"],["Capacity","52.3k","65k+"],["Net result","+£35m (asset-aided)","recurring"]],
+    thesis:"A growth turnaround with a capex-heavy unlock: scale commercial to the owner’s ambition and expand or rebuild St James’ Park. The market is still catching up to the PIF trajectory."},
+  levers:[{t:"Scale commercial to PIF-ambition",wk:"FY25 profit leans on asset sales; grow recurring commercial",capex:60,upR:90,ramp:4,note:"Sovereign network + naming rights"},
     {t:"Expand / rebuild St James' Park",wk:"52k caps matchday for a CL club",capex:1200,upR:80,ramp:6}]},
- {id:"astonvilla",name:"Aston Villa",owner:"V Sports (Sawiris / Edens)",rev:275.7,op:null,pre:-85.9,psale:20,wages:252.0,bcast:184.4,comm:63.3,match:28.0,amort:null,
-  netDebt:200,points:68,finish:4,squadVal:520,age:26,ig:3.0,cap:42657,util:98,marketEV:900,
+ {id:"astonvilla",name:"Aston Villa",owner:"V Sports (Sawiris / Edens)",rev:378.1,op:null,pre:17.0,psale:113,wages:275,bcast:253,comm:87,match:39,amort:null,
+  netDebt:276,points:66,finish:6,squadVal:520,age:26,ig:3.0,cap:42657,util:98,marketEV:900,
   stad:{owned:true,val:300,name:"Villa Park"},train:60,flags:{},grow:70,
   est:["psale","netDebt","squadVal","age","ig","util","marketEV","stad","train"],
-  key:"Watkins/McGinn core plus several 29+ high earners that inflate wages relative to resale value. Asset base thinner than the wage bill implies.",
-  turn:{diag:"Fourth on the pitch and into the Champions League — but wages are 91% of revenue and the club lost £86m. Success bought on credit; PSR will force the issue.",
-    tom:[["Wages/Rev","91%","65%"],["CL income","one-off","recurring"],["Pre-tax","−£86m","breakeven"]],
-    thesis:"The ‘wins but bleeds’ turnaround. Villa must convert on-pitch success into a sustainable operating model — right-size wages, lock in recurring European revenue — or the model implodes under PSR. High-beta: brilliant if CL recurs, distressed if it doesn’t."},
-  levers:[{t:"Reset wages from 91% of revenue",wk:"Wages 91% of revenue with an £86m loss — unsustainable",capex:0,upE:60,ramp:3},
+  key:"Watkins/McGinn core; Champions League exposure lifted revenue to £378m. Swung to a £17m profit — but leaning on ~£113m of player-sale gains; the underlying cost base is still heavy.",
+  turn:{diag:"Revenue surged to £378m on Champions League football and the club swung to a £17m profit — but that profit leans on ~£113m of asset sales, not operations. Still living close to the edge on wages.",
+    tom:[["Wages/Rev","~73%","65%"],["Profit source","asset sales","operations"],["Net result","+£17m (aided)","recurring"]],
+    thesis:"From ‘wins but bleeds’ to ‘profit on asset sales’ — the fix is making the black ink recurring and operational: right-size wages and lock in Champions League revenue, or the reliance on disposals bites under PSR."},
+  levers:[{t:"Reset wages from 91% of revenue",wk:"FY25 profit leans on ~£113m of player sales; heavy underlying cost base",capex:0,upE:60,ramp:3},
     {t:"Make Champions League revenue recurring",wk:"The wage base only works if CL qualification repeats",capex:200,upR:80,ramp:4}]},
- {id:"tottenham",name:"Tottenham Hotspur",owner:"ENIC / Lewis trust",rev:528.0,op:null,pre:-26.0,psale:82,wages:222.0,bcast:167,comm:255,match:106,amort:null,
-  netDebt:800,points:66,finish:5,squadVal:680,age:26,ig:17.4,cap:62850,util:99,marketEV:2530,
+ {id:"tottenham",name:"Tottenham Hotspur",owner:"ENIC / Lewis trust",rev:565.3,op:null,pre:-94.7,psale:60,wages:235,bcast:179,comm:273,match:114,amort:null,
+  netDebt:800,points:38,finish:17,squadVal:680,age:26,ig:17.4,cap:62850,util:99,marketEV:2530,
   stad:{owned:true,val:1200,name:"Tottenham Hotspur Stadium"},train:100,flags:{},grow:88,
   est:["comm","netDebt","squadVal","age","util","stad","train"],
-  key:"Young rebuild under way (Bissouma, Kulusevski) with Son ageing; Maddison/Romero in prime. Balanced trajectory, moderate contract-risk.",
-  turn:{diag:"The best-monetised venue in the league (NFL, concerts, boxing) attached to a squad that missed European football, denting revenue. £800m stadium debt is the balance-sheet weight.",
-    tom:[["Wages/Rev","42%","≤45%"],["European football","none 23/24","CL regular"],["Naming rights","uncontracted","secured"]],
-    thesis:"Operational excellence needing a sporting fix. The business — lowest wage ratio in the panel, a year-round venue — is already built; add consistent Champions League football and secure naming rights, and the highly-geared balance sheet de-risks."},
-  levers:[{t:"Convert the venue into sustained CL football",wk:"No European football in 23/24 cut revenue",capex:250,upR:90,ramp:4},
+  key:"Won the Europa League but finished 17th in the league — and posted a £95m club-record loss. The best-monetised venue in England attached to a collapsing on-field season.",
+  turn:{diag:"A £95m club-record loss and a 17th-place league finish — softened only by a Europa League trophy that restores Champions League income. The venue is elite; the football and the P&L are not.",
+    tom:[["Wages/Rev","~42%","≤45%"],["League finish","17th","top 6"],["European income","Europa→CL","sustain CL"]],
+    thesis:"Operational excellence needing a sporting fix, sharpened by a dreadful league season. The business (lowest wage ratio in the panel, a year-round venue) is built; the trophy buys time via CL money, but on-field stability is now the whole job."},
+  levers:[{t:"Convert the venue into sustained CL football",wk:"17th-place league season; sustain the CL football the Europa title unlocked",capex:250,upR:90,ramp:4},
     {t:"Stadium naming rights + event calendar",wk:"Premium venue under-contracted on naming",capex:20,upR:35,ramp:3}]},
- {id:"westham",name:"West Ham United",owner:"Sullivan / Křetínský",rev:270.0,op:null,pre:57.0,psale:96,wages:161.0,bcast:null,comm:null,match:null,amort:null,
-  netDebt:100,points:52,finish:9,squadVal:430,age:27,ig:4.5,cap:62500,util:97,marketEV:900,
+ {id:"westham",name:"West Ham United",owner:"Sullivan / Křetínský",rev:227.6,op:null,pre:-103.6,psale:20,wages:175,bcast:null,comm:null,match:null,amort:null,
+  netDebt:100,points:43,finish:14,squadVal:430,age:27,ig:4.5,cap:62500,util:97,marketEV:900,
   stad:{owned:false,val:0,name:"London Stadium (leased)"},train:50,flags:{},grow:55,
   est:["netDebt","squadVal","age","ig","util","marketEV","stad","train"],
-  key:"Post-Rice reset with an ageing profile; Kudus/Bowen hold the resale value. Needs a younger, higher-ceiling asset base.",
-  turn:{diag:"A £57m profit that was almost entirely the £96m Declan Rice sale — a one-off, not a model. A 62.5k stadium held on a cheap lease is heavily under-monetised on commercial and hospitality.",
-    tom:[["Profit source","one-off sale","operations"],["Stadium yield","low","+£45m"],["Squad age","27","younger"]],
-    thesis:"A mid-market turnaround: de-risk from marquee sales by building a repeatable trading model, and exploit the low-rent 62.5k London Stadium for commercial and hospitality growth. Modest capital, clear operating levers."},
-  levers:[{t:"Reduce reliance on marquee sales",wk:"£57m profit came almost entirely from the £96m Rice sale",capex:50,upR:50,ramp:4},
+  key:"The morning after: with no marquee sale to book, West Ham swung to a £104m loss. A cheap-lease 62.5k stadium still heavily under-monetised, and an ageing squad.",
+  turn:{diag:"The £104m loss that exposes the club's dependence on marquee sales — with no Rice-style disposal, the underlying business is deeply loss-making. The 62.5k London Stadium remains under-monetised.",
+    tom:[["Net result","−£104m","breakeven"],["Profit model","one-off sales","recurring"],["Stadium yield","low","+£45m"]],
+    thesis:"A mid-market turnaround made urgent by a £104m loss: de-risk from marquee sales by building a repeatable trading model, and exploit the low-rent 62.5k London Stadium for commercial and hospitality growth."},
+  levers:[{t:"Reduce reliance on marquee sales",wk:"FY25 swung to a £104m loss with no marquee sale to book",capex:50,upR:50,ramp:4},
     {t:"Exploit the 62.5k London Stadium",wk:"Low-rent stadium under-monetised on hospitality & commercial",capex:40,upR:45,ramp:4}]},
- {id:"brighton",name:"Brighton & Hove Albion",owner:"Tony Bloom",rev:222.4,op:73.3,pre:null,psale:110,wages:146.0,bcast:164,comm:null,match:null,amort:60,
-  netDebt:50,points:48,finish:11,squadVal:500,age:24,ig:2.1,cap:31800,util:95,marketEV:null,
+ {id:"brighton",name:"Brighton & Hove Albion",owner:"Tony Bloom",rev:242.7,op:null,pre:-50.9,psale:40,wages:165,bcast:179,comm:null,match:null,amort:60,
+  netDebt:50,points:61,finish:8,squadVal:500,age:24,ig:2.1,cap:31800,util:95,marketEV:null,
   stad:{owned:true,val:250,name:"Amex Stadium"},train:70,flags:{},grow:92,
   est:["psale","comm","amort","netDebt","squadVal","age","util","cap","stad","train"],
-  key:"The template: young, high-resale pipeline (post-Caicedo/Mac Allister — Baleba, João Pedro-era). Elite value-per-wage. The structural alpha of the panel.",
-  turn:{diag:"The most efficient club in the league — ~75% trading ROIC, profitable on a modest base — held back only by scale: a tiny 2.1m audience and a 31.8k stadium.",
-    tom:[["Trading ROIC","~75%","sustain"],["Commercial","sub-scale","+£30m"],["Capacity","31.8k","40k"]],
-    thesis:"A ‘compounding small-cap’, not a distressed turnaround. The recruit-develop-sell engine is best-in-class; the value creation is scaling the top line — grow the audience and commercial base off a low number, and expand the Amex. The model owns Brighton as its structural-alpha template."},
+  key:"Still the recruit-develop-sell template, but a lighter trading year (fewer marquee sales) produced a rare £51m loss. Young, high-resale squad; the engine is intact, the constraint is scale.",
+  turn:{diag:"A rare loss (−£51m) in a year with fewer big player sales — proof the model still rides the trading cycle, but the young, valuable squad keeps the engine loaded. Scale, not distress, is the constraint.",
+    tom:[["Trading","lighter year","sustain cycle"],["Commercial","sub-scale","+£30m"],["Capacity","31.8k","40k"]],
+    thesis:"A ‘compounding small-cap’ having a down year, not a distressed one. The engine is best-in-class; the value creation is scaling the top line — grow the audience and commercial base off a low number, and expand the Amex."},
   levers:[{t:"Scale the recruit-develop-sell engine",wk:"~75% trading ROIC but a sub-scale revenue base",capex:60,upR:40,ramp:4},
     {t:"Grow the tiny commercial / social base",wk:"2.1m followers — smallest audience in panel",capex:25,upR:30,ramp:5},
     {t:"Amex expansion",wk:"31.8k capacity caps matchday",capex:120,upR:25,ramp:5}]},
- {id:"everton",name:"Everton",owner:"Friedkin Group (from '24)",rev:187.0,op:null,pre:-53.0,psale:18,wages:157.0,bcast:129,comm:38.5,match:19.1,amort:65,
-  netDebt:450,points:40,finish:15,squadVal:330,age:26.5,ig:3.2,cap:39414,util:97,marketEV:600,
-  stad:{owned:true,val:800,name:"Bramley-Moore (new)"},train:60,flags:{psr:8},grow:60,
+ {id:"everton",name:"Everton",owner:"Friedkin Group (from '24)",rev:196.7,op:null,pre:-8.6,psale:15,wages:145.6,bcast:136,comm:40,match:20,amort:65,
+  netDebt:389,points:48,finish:13,squadVal:330,age:26.5,ig:3.2,cap:39414,util:97,marketEV:600,
+  stad:{owned:true,val:800,name:"Bramley-Moore (new)"},train:60,flags:{},grow:60,
   est:["psale","netDebt","squadVal","age","util","marketEV","stad","train"],
-  key:"Thin, ageing, low-value squad after years of PSR-forced sales — little resale upside. Rebuilding the asset base is itself a multi-year project.",
-  turn:{diag:"Wages at 84% of revenue, a PSR points deduction, ~£1.0bn of gross debt, and a brand-new stadium whose capex is already sunk. A genuinely distressed asset.",
-    tom:[["Wages/Rev","84%","60%"],["PSR","in breach","compliant"],["Matchday","£19m","£55m+"]],
-    thesis:"The flagship distressed turnaround — highest risk, highest reward. The new Bramley-Moore stadium is the unlock: monetise premium and hospitality, reset the wage bill below 60%, restore PSR compliance and refinance the debt. Do that and a £187m-revenue club with a 53k modern stadium re-rates hard. This is the deal the whole model is built to find."},
+  key:"Under Friedkin ownership the losses have narrowed sharply (−£9m) and PSR compliance is restored; still a thin, low-value squad. The new 53k stadium is the value unlock.",
+  turn:{diag:"A much-improved −£9m result under new Friedkin ownership, with PSR compliance restored — but wages still ~74% of revenue and the squad thin. The new 53k Bramley-Moore stadium is the re-rate lever.",
+    tom:[["Wages/Rev","~74%","60%"],["PSR","compliant","headroom"],["Matchday","new stadium","£55m+"]],
+    thesis:"The distressed turnaround now underway: Friedkin has narrowed the losses and restored PSR compliance; the new stadium is the unlock — monetise premium and hospitality, reset wages below 60%. A £197m-revenue club with a modern 53k stadium re-rates hard if the fix holds."},
   levers:[{t:"Monetise the new Bramley-Moore stadium",wk:"39k Goodison → 53k modern stadium; low matchday & hospitality yield",capex:50,upR:70,ramp:4,note:"Build capex already sunk (in asset value); this is premium/hospitality activation only"},
-    {t:"Wage-bill reset to <65% of revenue",wk:"Wages 84% of revenue — distressed",capex:0,upE:45,ramp:3},
-    {t:"Exit PSR constraint",wk:"−8 pts; squad-build handcuffed",capex:0,upE:0,ramp:2}]},
+    {t:"Wage-bill reset to <65% of revenue",wk:"Wages ~74% of revenue — still high",capex:0,upE:45,ramp:3},
+    {t:"Preserve PSR headroom to rebuild the squad",wk:"Compliance restored under Friedkin; keep it to invest",capex:0,upE:0,ramp:2}]},
 ];
 
 // ==================================================== DATA (IPL FY2024, ₹ crore) — CSK revenue/profit audited; others estimated from HL brand values + central-pool economics
@@ -561,9 +561,9 @@ const IPL_CLUBS=[
 ];
 
 const LEAGUES={
-  epl:{clubs:EPL_CLUBS,name:"English Premier League",sub:"2023/24 audited · 11 franchises",sym:"£",unit:"m",scaleB:1000,teams:20,baseMult:4.5,ebMult:12,brandMax:900,blend:{r:.50,s:.35,e:.15},xBase:4.5,xBull:5.5,xBear:3.5,assetLight:false,revLabel:"Broadcast",
+  epl:{clubs:EPL_CLUBS,name:"English Premier League",sub:"2024/25 season · audited · 11 clubs",sym:"£",unit:"m",scaleB:1000,teams:20,baseMult:4.5,ebMult:12,brandMax:900,blend:{r:.50,s:.35,e:.15},xBase:4.5,xBull:5.5,xBear:3.5,assetLight:false,revLabel:"Broadcast",
     lede:"Every investment-relevant EPL club, underwritten on the discipline a sports-PE desk applies: durable cash generation over trophies, with mispricing hardened by real net-debt lines and an asset-based sum-of-parts. On-field results are shown for context — never scored."},
-  ipl:{clubs:IPL_CLUBS,name:"Indian Premier League",sub:"FY2024 (the 2023/24 season) · 10 franchises · MCA-filed",sym:"₹",unit:"cr",scaleB:1,teams:10,baseMult:12,ebMult:16,brandMax:2000,blend:{r:.65,s:.20,e:.15},xBase:11,xBull:14,xBear:8,assetLight:true,revLabel:"Central media pool",
+  ipl:{clubs:IPL_CLUBS,name:"Indian Premier League",sub:"FY2024 · 10 franchises · MCA-filed (FY2025 emerging)",sym:"₹",unit:"cr",scaleB:1,teams:10,baseMult:12,ebMult:16,brandMax:2000,blend:{r:.65,s:.20,e:.15},xBase:11,xBull:14,xBear:8,assetLight:true,revLabel:"Central media pool",
     lede:"India's cricket franchises run on different economics: a vast central media pool (₹467cr per club) shared near-equally, a player salary cap, and owners operating multi-league global networks. The differentiators are own-revenue generation, brand scale and portfolio optionality — the Arctos cross-league thesis in its native habitat. Revenue and net profit are now MCA-filed for all ten (only SRH's profit is estimated); brand values, market EVs and forward scenarios remain modeled."},
 };
 let LG="epl", ACT=LEAGUES.epl, CLUBS=EPL_CLUBS;
@@ -577,7 +577,7 @@ let P=structuredClone(DEFAULTS);
 const clamp=(x,a=0,b=100)=>Math.max(a,Math.min(b,x));
 function lin(v,lo,hi){if(v==null||isNaN(v))return null;return clamp(((v-lo)/(hi-lo))*100);}
 function ord(n){const s=["th","st","nd","rd"],v=n%100;return n+(s[(v-20)%10]||s[v]||s[0]);}
-function pl(c){return c.op!=null?{v:c.op,lab:"operating"}:(c.pre!=null?{v:c.pre,lab:"pre-tax"}:{v:null,lab:"—"});}
+function pl(c){return c.op!=null?{v:c.op,lab:"operating"}:(c.pre!=null?{v:c.pre,lab:"net"}:{v:null,lab:"—"});}
 function pillar(ms){let sw=0,tot=0,aw=0;ms.forEach(m=>{tot+=m.w;if(m.score!=null){sw+=m.score*m.w;aw+=m.w;}});return{score:aw>0?sw/aw:null,comp:tot>0?aw/tot:0};}
 function ebitda(c){const p=pl(c).v;if(p==null)return null;const am=c.amort!=null?c.amort:c.rev*0.22;return p-(c.oneOff||0)+am;}
 
@@ -780,7 +780,7 @@ function renderDeal(id){
           ${barRow("Staff costs",staff,staff/c.rev*100,"var(--navy)",gbp(staff)+" · "+(staff/c.rev*100).toFixed(0)+"%")}
           ${barRow("Player amortisation"+(c.amort==null?" (est)":""),amort,amort/c.rev*100,"var(--gold)",gbp(amort)+" · "+(amort/c.rev*100).toFixed(0)+"%")}
           ${other>=0?barRow("Other costs & net interest",other,other/c.rev*100,"var(--ink-3)",gbp(other)+" · "+(other/c.rev*100).toFixed(0)+"%"):barRow("Other net income (disposals etc.)",Math.abs(other),Math.abs(other)/c.rev*100,"var(--good)","+"+gbp(-other)+" income")}
-          <div class="brow"><span class="bl" style="font-weight:700">${S.pLab==='operating'?'Operating':'Pre-tax'} result</span><span class="btrack"><span class="bfill" style="width:${clamp(Math.abs((pl(c).v||0)/c.rev*100),0,100)}%;background:${(pl(c).v||0)>=0?'var(--good)':'var(--crit)'}"></span></span><span class="bv" style="color:${(pl(c).v||0)>=0?'var(--good)':'var(--crit)'}">${gbp(pl(c).v)}</span></div>
+          <div class="brow"><span class="bl" style="font-weight:700">${S.pLab==='operating'?'Operating':'Net'} result</span><span class="btrack"><span class="bfill" style="width:${clamp(Math.abs((pl(c).v||0)/c.rev*100),0,100)}%;background:${(pl(c).v||0)>=0?'var(--good)':'var(--crit)'}"></span></span><span class="bv" style="color:${(pl(c).v||0)>=0?'var(--good)':'var(--crit)'}">${gbp(pl(c).v)}</span></div>
         </div>
         <div class="wf-legend"><span><i class="sw" style="background:var(--navy)"></i>staff</span><span><i class="sw" style="background:var(--gold)"></i>amortisation</span><span><i class="sw" style="background:var(--ink-3)"></i>other &amp; interest</span></div>
       </div>
@@ -1047,7 +1047,7 @@ $("#methodBody").innerHTML=`
   <h3>6 · Two leagues, one framework</h3>
   <p>The same engine screens both the <strong>English Premier League</strong> (asset-heavy, transparent audited accounts) and the <strong>Indian Premier League</strong> (asset-light, a vast shared central media pool, a salary cap, and owners running multi-league global networks). Switch between them with the EPL/IPL toggle. The framework adapts: for cricket, revenue quality measures reliance on the equal-share central pool vs. owned revenue, the sum-of-parts drops the (leased) stadium, and portfolio breadth across leagues (the Knight Riders and Mumbai Indians networks — the Arctos cross-league thesis) enters the growth pillar. EPL surfaces distressed-turnaround alpha; IPL is priced for growth. CSK is audited; other IPL financials are estimated pending deeper filings.</p>
   <h3>7 · Data currency</h3>
-  <p>Both leagues use the latest season with <strong>complete audited / filed accounts across every club</strong>: the <strong>2023/24 season</strong>. England labels it "2023/24"; India labels the same period "FY2024" (the fiscal year ending March 2024) — they are the <em>same real-world period</em>, only the convention differs. Audited accounts lag the season by roughly a year, so newer figures exist for a few individual clubs but not yet uniformly across all of them, and mixing part-filed seasons would break same-season comparison. The backtest chart runs on a separate market-event timeline (transaction and valuation dates), which is why it extends beyond the accounts period. A full refresh to the 2024/25 season is a scheduled next step once all clubs have filed.</p>
+  <p>Each league uses its latest season with <strong>complete filed accounts across every club</strong>. Accounts lag the season by roughly a year, and filing speed differs by jurisdiction: English clubs file at Companies House within ~9 months, so the <strong>EPL panel is on 2024/25</strong> (published in 2026). India's MCA filings lag more and FY2025 is only partially disclosed across the ten franchises, so the <strong>IPL panel is on FY2024</strong> — its latest <em>complete</em> filed year — with FY2025 figures emerging (CSK ₹673cr/₹148cr, MI ₹665cr/₹84cr, RCB profit down to ₹21cr, GT/LSG to losses) and a full IPL refresh due once all ten file. The <strong>2025/26 season (and IPL 2026) has no financial accounts yet</strong> — those seasons only ended in May 2026 and won't be filed until ~2027. The backtest runs on a separate market-event timeline (transaction and valuation dates), which is why it extends beyond the accounts period.</p>
   <p style="margin-top:16px;color:var(--muted)">Full methodology and source registry in the repository. Illustrative research; not investment advice.</p>`;
 
 // ---- CONTROLS
@@ -1070,7 +1070,7 @@ $("#clubSel").innerHTML=CLUBS.map(c=>`<option value="${c.id}">${c.name}</option>
 $("#clubSel").addEventListener("change",e=>renderDeal(e.target.value));
 const root=document.documentElement;
 $("#themeBtn").addEventListener("click",()=>{const cur=root.getAttribute("data-theme")||(matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light");root.setAttribute("data-theme",cur==="dark"?"light":"dark");screenRender();if($("#dealBody").innerHTML)renderDeal($("#clubSel").value);if(document.querySelector('[data-panel="edge"]').classList.contains("active"))edgeRender();if(document.querySelector('[data-panel="portfolio"]').classList.contains("active"))renderPortfolio();});
-$("#foot").innerHTML=`<strong>Franchise Alpha</strong> · EPL 2023/24 (11 clubs) + IPL FY2024 (10 franchises). Sources: Companies House / club results / The Swiss Ramble (EPL financials &amp; debt); Premier League &amp; UEFA (regulatory); Transfermarkt (squad value/age); Forbes 2024 (EPL market); MCA-filed FY24 accounts (IPL revenue &amp; net profit, all ten), Houlihan Lokey IPL Valuation Study 2024 &amp; 2022 franchise auctions (IPL brand/market values). Full registry in <code>data/SOURCES.md</code>. IPL brand values, market EVs and forward scenarios are modeled and labelled; SRH profit estimated. Not investment advice.`;
+$("#foot").innerHTML=`<strong>Franchise Alpha</strong> · EPL 2024/25 (11 clubs) + IPL FY2024 (10 franchises). Sources: Companies House / club results / SportsPro / matchdayfinance / The Swiss Ramble (EPL 2024/25 revenue, net result &amp; wages — 6 wage bills carry-forward-estimated pending each club's filing); Premier League &amp; UEFA (regulatory); Transfermarkt (squad value/age); Forbes (EPL market); MCA-filed FY24 accounts (IPL revenue &amp; net profit, all ten), Houlihan Lokey IPL Valuation Study &amp; 2022 franchise auctions (IPL brand/market values). Full registry in <code>data/SOURCES.md</code>. IPL brand values, market EVs and forward scenarios are modeled and labelled; SRH profit estimated. Not investment advice.`;
 applyLeagueParams();setChrome();buildSliders();syncW();syncTh();screenRender();renderDeal(CLUBS[0].id);
 </script>
 

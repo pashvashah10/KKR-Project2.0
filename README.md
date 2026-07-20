@@ -58,7 +58,8 @@ The pilot is the English Premier League because it is the **most financially tra
 | `dashboard/index.html` | The interactive deal engine (self-contained HTML/CSS/JS) |
 | `methodology/METHODOLOGY.md` | Scoring framework, PE ratio suite, valuation, scenarios, backtest — the full spec |
 | `data/schema.json` | JSON schema; every numeric field must carry a source |
-| `data/clubs-epl-2023-24.json` | Audited financial primitives, 11 clubs, each figure sourced |
+| `data/clubs-epl-2024-25.json` | **Current EPL panel** — 2024/25 audited revenue & net result, all 11 clubs (Chelsea's £262m record loss, Liverpool champions, Man Utd 15th) |
+| `data/clubs-epl-2023-24.json` | Prior-season (2023/24) audited primitives, kept for reference |
 | `data/altdata-epl-2023-24.json` | Alt-data + market-anchor layer (squad value, social, stadium, market EV) |
 | `data/valuation-inputs-epl-2023-24.json` | Hardened valuation inputs — net debt (gross sourced), stadium ownership & asset values |
 | `data/ipl-clubs-fy2024.json` | IPL pilot — 10 franchises (CSK audited, rest estimated), brand values, market EVs, multi-league networks |

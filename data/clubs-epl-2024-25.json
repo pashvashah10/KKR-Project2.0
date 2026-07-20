@@ -1,0 +1,21 @@
+{
+  "league": "English Premier League",
+  "season": "2024-25",
+  "currency": "GBP_million",
+  "profit_basis": "net (post-tax) result",
+  "built": "2026-07-20",
+  "note": "2024/25 season (published 2026). Revenue and net result are sourced for all 11 clubs (SportsPro / matchdayfinance compilations of audited accounts). Audited total wage bills are sourced for Man City (£408m), Arsenal (£346.8m), Chelsea (£585m), Liverpool (~£428m) and Everton (~£145.6m, 74% of turnover); the other six are carry-forward estimates pending each club's filing (flagged wage_estimated:true). Revenue splits are prior-year proportions scaled to new revenue (estimated). This is the latest COMPLETE audited season — 2025/26 accounts do not exist yet (that season ended May 2026; accounts file ~2027).",
+  "clubs": [
+    {"club_id":"liverpool","name":"Liverpool","finish":1,"revenue":702.7,"net_result":8.3,"wage_bill":428,"wage_estimated":true,"note":"Premier League champions AND profitable; wages +~£42m","source_id":"epl_2425"},
+    {"club_id":"arsenal","name":"Arsenal","finish":2,"revenue":691.6,"net_result":-1.4,"wage_bill":346.8,"source_id":"epl_2425"},
+    {"club_id":"mancity","name":"Manchester City","finish":3,"revenue":694.1,"net_result":-9.9,"wage_bill":408,"note":"Dynasty slipped to 3rd; rare small loss","source_id":"epl_2425"},
+    {"club_id":"chelsea","name":"Chelsea","finish":4,"revenue":490.9,"net_result":-262.4,"wage_bill":585,"note":"Premier League record loss; wages 119% of revenue; no related-party disposal to flatter it this year","source_id":"epl_2425"},
+    {"club_id":"newcastle","name":"Newcastle United","finish":5,"revenue":335.3,"net_result":34.7,"wage_bill":230,"wage_estimated":true,"note":"CL football; profit aided by ~£133m asset sale","source_id":"epl_2425"},
+    {"club_id":"astonvilla","name":"Aston Villa","finish":6,"revenue":378.1,"net_result":17.0,"wage_bill":275,"wage_estimated":true,"note":"Swung to profit but leans on ~£113m player sales","source_id":"epl_2425"},
+    {"club_id":"brighton","name":"Brighton & Hove Albion","finish":8,"revenue":242.7,"net_result":-50.9,"wage_bill":165,"wage_estimated":true,"note":"Rare loss in a lighter player-trading year","source_id":"epl_2425"},
+    {"club_id":"everton","name":"Everton","finish":13,"revenue":196.7,"net_result":-8.6,"wage_bill":145.6,"note":"Losses narrowed under Friedkin; PSR compliance restored; wages ~74% of turnover","source_id":"epl_2425"},
+    {"club_id":"westham","name":"West Ham United","finish":14,"revenue":227.6,"net_result":-103.6,"wage_bill":175,"wage_estimated":true,"note":"Big loss with no marquee sale (post-Rice)","source_id":"epl_2425"},
+    {"club_id":"manutd","name":"Manchester United","finish":15,"revenue":666.5,"net_result":-33.0,"wage_bill":365,"wage_estimated":true,"note":"Worst Premier League finish in club history; ~£730m net debt","source_id":"epl_2425"},
+    {"club_id":"tottenham","name":"Tottenham Hotspur","finish":17,"revenue":565.3,"net_result":-94.7,"wage_bill":235,"wage_estimated":true,"note":"Won the Europa League but 17th in the league; club-record loss","source_id":"epl_2425"}
+  ]
+}
