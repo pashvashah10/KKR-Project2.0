@@ -36,13 +36,27 @@ The pilot is the English Premier League because it is the **most financially tra
 | `dashboard/index.html` | The interactive deal engine (self-contained HTML/CSS/JS) |
 | `methodology/METHODOLOGY.md` | Scoring framework, PE ratio suite, valuation, scenarios, backtest — the full spec |
 | `data/schema.json` | JSON schema; every numeric field must carry a source |
-| `data/clubs-epl-2023-24.json` | Audited financial primitives, 6 clubs, each figure sourced |
+| `data/clubs-epl-2023-24.json` | Audited financial primitives, 11 clubs, each figure sourced |
 | `data/altdata-epl-2023-24.json` | Alt-data + market-anchor layer (squad value, social, stadium, market EV) |
 | `data/SOURCES.md` | Master citation registry |
 
 ## Pilot dataset (2023/24)
 
-Six clubs spanning the thesis: **Man City** (wins + profit + regulatory overhang), **Man United** (huge brand, big losses, high debt), **Arsenal** (young £1.1bn squad, tight P&L), **Tottenham** (profit via a year-round venue), **Brighton** (a ~75%-ROIC player-trading machine), **Everton** (84% wage ratio, PSR points deduction — the distressed turnaround).
+Eleven clubs — every investment-relevant EPL franchise — spanning the thesis:
+
+- **Man City** — wins + profit + regulatory overhang (115 charges)
+- **Man United** — huge brand, big losses, ~£1bn debt (flagged **Over +106%**: trades on legacy, not fundamentals)
+- **Arsenal** — young £1.1bn squad, tight P&L (flagged **Under −25%**)
+- **Liverpool** — record revenue, record loss (wages £386m)
+- **Chelsea** — £128m "profit" that is almost entirely a £199m related-party disposal; core margin ex-trading **−48%** (the model catches the trick)
+- **Newcastle** — sovereign-backed, ~£71m operating loss saved by player sales; most undervalued on the screen
+- **Aston Villa** — 4th on the pitch, 91% wages/revenue, £86m loss — the textbook **"wins but bleeds"**
+- **Tottenham** — profit via a year-round venue; top-ranked asset
+- **West Ham** — profit driven almost entirely by the £96m Rice sale
+- **Brighton** — a ~75%-ROIC recruit-develop-sell machine; the thesis pick
+- **Everton** — 84% wage ratio, PSR points deduction — the distressed turnaround
+
+*Roadmap: complete all 20 EPL clubs, then extend the framework to broader soccer, cricket/IPL, and US sports.*
 
 ## Data integrity
 

@@ -4,6 +4,7 @@
 
 - **Pilot league:** English Premier League (chosen for full audited disclosure — every English club files at Companies House)
 - **Pilot season:** 2023/24 (last fully-published audited accounts across all clubs)
+- **Pilot panel:** 11 clubs — every investment-relevant EPL franchise (Man City, Man Utd, Arsenal, Liverpool, Chelsea, Newcastle, Aston Villa, Tottenham, West Ham, Brighton, Everton). Roadmap: all 20.
 - **Design principle:** *profitability over trophies.* On-field results are a context variable, never a scoring input.
 - **Interactive build:** `dashboard/index.html` (three tabs: Screen · Deal Room · The Edge)
 

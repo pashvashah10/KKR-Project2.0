@@ -169,6 +169,79 @@
         "league_finish": { "value": 15, "unit": "count", "reported_as": "15th — 2023/24 (after 8-pt deduction)", "source_id": "everton_2324_sr" },
         "european_competition": "None"
       }
+    },
+    {
+      "club_id": "liverpool", "club_name": "Liverpool", "league": "English Premier League", "fiscal_year": "2023-24",
+      "ownership": { "owner": "Fenway Sports Group", "structure": "private_ltd", "source_id": "liverpool_2324_sr" },
+      "financials": {
+        "revenue_total":      { "value": 614.0, "unit": "GBP_million", "reported_as": "revenue", "source_id": "liverpool_2324_sr" },
+        "revenue_broadcast":  { "value": 204.0, "unit": "GBP_million", "reported_as": "broadcasting revenue", "source_id": "liverpool_2324_sr" },
+        "revenue_commercial": { "value": 308.0, "unit": "GBP_million", "reported_as": "commercial revenue", "source_id": "liverpool_2324_sr" },
+        "revenue_matchday":   { "value": 102.0, "unit": "GBP_million", "reported_as": "match day revenue", "source_id": "liverpool_2324_sr" },
+        "pretax_profit":      { "value": -57.0, "unit": "GBP_million", "reported_as": "loss before tax (record)", "source_id": "liverpool_2324_sr" },
+        "player_sale_profit": { "value": null, "unit": "GBP_million", "source_id": "liverpool_2324_sr", "needs_sourcing": true },
+        "wage_bill":          { "value": 386.0, "unit": "GBP_million", "reported_as": "wages", "source_id": "liverpool_2324_sr" },
+        "net_debt":           { "value": null, "unit": "GBP_million", "source_id": "liverpool_2324_sr", "needs_sourcing": true }
+      },
+      "risk_flags": {}, "growth_optionality": {},
+      "context_sporting": { "league_finish": { "value": 3, "unit": "count", "reported_as": "3rd — 2023/24", "source_id": "pl_table_2324" }, "european_competition": "Europa League" }
+    },
+    {
+      "club_id": "chelsea", "club_name": "Chelsea", "league": "English Premier League", "fiscal_year": "2023-24",
+      "ownership": { "owner": "BlueCo (Boehly / Clearlake Capital)", "structure": "private_ltd", "source_id": "chelsea_2324_sr" },
+      "financials": {
+        "revenue_total":      { "value": 468.5, "unit": "GBP_million", "reported_as": "revenue", "source_id": "chelsea_2324_sr" },
+        "pretax_profit":      { "value": 128.0, "unit": "GBP_million", "reported_as": "profit before tax (incl. £198.7m related-party women's-team disposal)", "source_id": "chelsea_2324_sr", "note": "Underlying operations loss-making; profit driven by one-off subsidiary sale + player sales" },
+        "player_sale_profit": { "value": 152.0, "unit": "GBP_million", "reported_as": "net profit on player sales", "source_id": "chelsea_2324_sr" },
+        "one_off_disposal":   { "value": 198.7, "unit": "GBP_million", "reported_as": "profit on disposal of women's team to related party", "source_id": "chelsea_2324_sr" },
+        "wage_bill":          { "value": 338.0, "unit": "GBP_million", "reported_as": "wages", "source_id": "chelsea_2324_sr" },
+        "net_debt":           { "value": null, "unit": "GBP_million", "source_id": "chelsea_2324_sr", "needs_sourcing": true }
+      },
+      "risk_flags": {}, "growth_optionality": {},
+      "context_sporting": { "league_finish": { "value": 6, "unit": "count", "reported_as": "6th — 2023/24", "source_id": "pl_table_2324" }, "european_competition": "None" }
+    },
+    {
+      "club_id": "newcastle", "club_name": "Newcastle United", "league": "English Premier League", "fiscal_year": "2023-24",
+      "ownership": { "owner": "PIF-led consortium (Saudi Arabia)", "structure": "private_ltd", "source_id": "newcastle_2324_sr" },
+      "financials": {
+        "revenue_total":      { "value": 320.0, "unit": "GBP_million", "reported_as": "revenue", "source_id": "newcastle_2324_sr" },
+        "operating_profit":   { "value": -71.0, "unit": "GBP_million", "reported_as": "operating loss (Swiss Ramble estimate)", "source_id": "newcastle_2324_sr", "estimated": true },
+        "pretax_profit":      { "value": 11.1, "unit": "GBP_million", "reported_as": "profit before tax", "source_id": "newcastle_2324_sr" },
+        "player_sale_profit": { "value": 67.0, "unit": "GBP_million", "reported_as": "profit on player sales (approx)", "source_id": "newcastle_2324_sr", "estimated": true },
+        "player_amortisation":{ "value": 97.0, "unit": "GBP_million", "reported_as": "player amortisation", "source_id": "newcastle_2324_sr" },
+        "wage_bill":          { "value": 218.7, "unit": "GBP_million", "reported_as": "wages", "source_id": "newcastle_2324_sr" },
+        "net_debt":           { "value": null, "unit": "GBP_million", "source_id": "newcastle_2324_sr", "needs_sourcing": true }
+      },
+      "risk_flags": {}, "growth_optionality": {},
+      "context_sporting": { "league_finish": { "value": 7, "unit": "count", "reported_as": "7th — 2023/24", "source_id": "pl_table_2324" }, "european_competition": "Champions League (group-stage exit)" }
+    },
+    {
+      "club_id": "astonvilla", "club_name": "Aston Villa", "league": "English Premier League", "fiscal_year": "2023-24",
+      "ownership": { "owner": "V Sports (Nassef Sawiris / Wes Edens)", "structure": "private_ltd", "source_id": "astonvilla_2324" },
+      "financials": {
+        "revenue_total":      { "value": 275.7, "unit": "GBP_million", "reported_as": "revenue (record)", "source_id": "astonvilla_2324" },
+        "revenue_broadcast":  { "value": 184.4, "unit": "GBP_million", "reported_as": "broadcasting revenue", "source_id": "astonvilla_2324" },
+        "revenue_commercial": { "value": 63.3, "unit": "GBP_million", "reported_as": "commercial revenue", "source_id": "astonvilla_2324" },
+        "revenue_matchday":   { "value": 28.0, "unit": "GBP_million", "reported_as": "match day revenue", "source_id": "astonvilla_2324" },
+        "pretax_profit":      { "value": -85.9, "unit": "GBP_million", "reported_as": "loss before tax", "source_id": "astonvilla_2324" },
+        "wage_bill":          { "value": 252.0, "unit": "GBP_million", "reported_as": "wages (91% of revenue)", "source_id": "astonvilla_2324" },
+        "net_debt":           { "value": null, "unit": "GBP_million", "source_id": "astonvilla_2324", "needs_sourcing": true }
+      },
+      "risk_flags": {}, "growth_optionality": {},
+      "context_sporting": { "league_finish": { "value": 4, "unit": "count", "reported_as": "4th — 2023/24 (Champions League qualification)", "source_id": "pl_table_2324" }, "european_competition": "Europa Conference League" }
+    },
+    {
+      "club_id": "westham", "club_name": "West Ham United", "league": "English Premier League", "fiscal_year": "2023-24",
+      "ownership": { "owner": "David Sullivan / Daniel Křetínský", "structure": "private_ltd", "source_id": "westham_2324_sr" },
+      "financials": {
+        "revenue_total":      { "value": 270.0, "unit": "GBP_million", "reported_as": "revenue (record)", "source_id": "westham_2324_sr" },
+        "pretax_profit":      { "value": 57.0, "unit": "GBP_million", "reported_as": "profit before tax", "source_id": "westham_2324_sr", "note": "Driven by £96m Declan Rice sale" },
+        "player_sale_profit": { "value": 96.0, "unit": "GBP_million", "reported_as": "profit on player sales", "source_id": "westham_2324_sr" },
+        "wage_bill":          { "value": 161.0, "unit": "GBP_million", "reported_as": "wages", "source_id": "westham_2324_sr" },
+        "net_debt":           { "value": null, "unit": "GBP_million", "source_id": "westham_2324_sr", "needs_sourcing": true }
+      },
+      "risk_flags": {}, "growth_optionality": {},
+      "context_sporting": { "league_finish": { "value": 9, "unit": "count", "reported_as": "9th — 2023/24", "source_id": "westham_2324_sr" }, "european_competition": "Europa League (quarter-final)" }
     }
   ]
 }

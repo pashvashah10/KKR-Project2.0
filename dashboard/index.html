@@ -349,6 +349,41 @@ const CLUBS=[
     {t:"New Bramley-Moore stadium unlock",wk:"Goodison 39k → low matchday & hospitality",capex:800,upR:70,ramp:5,note:"Capex largely sunk; monetise premium seats"},
     {t:"Wage-bill reset to <65% of revenue",wk:"Wages 84% of revenue — distressed",capex:0,upE:45,ramp:3},
     {t:"Exit PSR constraint",wk:"−8 pts; squad-build handcuffed",capex:0,upE:0,ramp:2,note:"Compliance restores spending optionality"}]},
+ {id:"liverpool",name:"Liverpool",owner:"Fenway Sports Group",
+  rev:614.0,op:null,pre:-57.0,psale:20,wages:386.0,bcast:204,comm:308,match:102,amort:null,netDebt:200,points:82,finish:3,
+  squadVal:800,age:26,ig:42,cap:61000,util:99,marketEV:4240,
+  flags:{},grow:78,est:["psale","netDebt","squadVal","age","ig","util","marketEV"],
+  levers:[
+    {t:"Monetise record commercial base",wk:"£386m wages drove a £57m loss despite record £614m revenue",capex:40,upR:60,ramp:4},
+    {t:"Fill the expanded Anfield premium tiers",wk:"Matchday £102m still trails Man Utd/Arsenal ceilings",capex:80,upR:35,ramp:3}]},
+ {id:"chelsea",name:"Chelsea",owner:"BlueCo (Boehly / Clearlake)",
+  rev:468.5,op:null,pre:128.0,psale:152,oneOff:199,wages:338.0,bcast:null,comm:null,match:null,amort:null,netDebt:100,points:63,finish:6,
+  squadVal:1010,age:24,ig:40,cap:40000,util:97,marketEV:3000,
+  flags:{},grow:80,est:["netDebt","squadVal","age","ig","util","marketEV"],
+  levers:[
+    {t:"Halt the wage & amortisation spiral",wk:"£338m wages + vast squad amortisation; profit only via asset sales",capex:0,upE:80,ramp:3},
+    {t:"Turn a £1bn squad into a real trading model",wk:"Bloated squad, no European football, reliant on one-off disposals",capex:50,upR:60,ramp:4}]},
+ {id:"newcastle",name:"Newcastle United",owner:"PIF (Saudi) consortium",
+  rev:320.0,op:null,pre:11.1,psale:67,wages:218.7,bcast:null,comm:null,match:null,amort:97,netDebt:100,points:60,finish:7,
+  squadVal:600,age:26,ig:2.5,cap:52258,util:99,marketEV:800,
+  flags:{},grow:85,est:["netDebt","squadVal","age","ig","util","marketEV"],
+  levers:[
+    {t:"Grow commercial to PIF-ambition scale",wk:"~£71m operating loss; pre-tax profit only via player sales",capex:60,upR:90,ramp:4,note:"Sovereign network + naming rights"},
+    {t:"Expand / rebuild St James' Park",wk:"52k capacity caps matchday for a Champions League club",capex:1200,upR:80,ramp:6}]},
+ {id:"astonvilla",name:"Aston Villa",owner:"V Sports (Sawiris / Edens)",
+  rev:275.7,op:null,pre:-85.9,psale:20,wages:252.0,bcast:184.4,comm:63.3,match:28.0,amort:null,netDebt:150,points:68,finish:4,
+  squadVal:520,age:26,ig:3.0,cap:42657,util:98,marketEV:900,
+  flags:{},grow:70,est:["psale","netDebt","squadVal","age","ig","util","marketEV"],
+  levers:[
+    {t:"Reset wages from 91% of revenue",wk:"Wages 91% of revenue with an £86m loss — unsustainable",capex:0,upE:60,ramp:3},
+    {t:"Make Champions League revenue recurring",wk:"The wage base only works if CL qualification repeats",capex:200,upR:80,ramp:4}]},
+ {id:"westham",name:"West Ham United",owner:"Sullivan / Křetínský",
+  rev:270.0,op:null,pre:57.0,psale:96,wages:161.0,bcast:null,comm:null,match:null,amort:null,netDebt:100,points:52,finish:9,
+  squadVal:430,age:27,ig:4.5,cap:62500,util:97,marketEV:900,
+  flags:{},grow:55,est:["netDebt","squadVal","age","ig","util","marketEV"],
+  levers:[
+    {t:"Reduce reliance on marquee sales",wk:"£57m profit came almost entirely from the £96m Rice sale",capex:50,upR:50,ramp:4},
+    {t:"Exploit the 62.5k London Stadium",wk:"Low-rent stadium under-monetised on hospitality & commercial",capex:40,upR:45,ramp:4}]},
 ];
 
 // Forbes 2024 (USD→GBP ~0.79) for market anchors; United corroborated by Ratcliffe Feb-24 deal; Everton by Friedkin '24 acquisition.
@@ -371,7 +406,7 @@ function scoreClub(c){
   const p=pl(c), mC=P.mCap/100;
   const p1=pillar([
     {score:p.v!=null?lin(p.v/c.rev,-mC,mC):null,w:.55},
-    {score:(p.v!=null&&c.psale!=null)?lin((p.v-c.psale)/c.rev,-0.30,0.15):null,w:.45}]);
+    {score:(p.v!=null&&c.psale!=null)?lin((p.v-c.psale-(c.oneOff||0))/c.rev,-0.30,0.15):null,w:.45}]);
   const p2=pillar([
     {score:c.comm!=null?lin(c.comm/c.rev,.15,.50):null,w:.45},
     {score:c.match!=null?lin(c.match/c.rev,.05,.25):null,w:.30},
@@ -438,7 +473,8 @@ function weaknesses(S){
   if(R.wr>75)out.push(["HIGH",`Wages consume ${R.wr.toFixed(0)}% of revenue — above the UEFA 70% squad-cost ceiling; little room to invest or absorb a shock.`]);
   else if(R.wr>65)out.push(["MED",`Wage/revenue at ${R.wr.toFixed(0)}% leaves thin operating headroom.`]);
   if(S.margin!=null&&S.margin<-5)out.push(["HIGH",`${S.pLab} margin of ${S.margin.toFixed(0)}% — the business loses money before player trading.`]);
-  if(c.psale!=null&&S.margin!=null){const core=((pl(c).v-c.psale)/c.rev)*100; if(core<-8)out.push(["MED",`Profitability depends on player sales — core margin ex-trading is ${core.toFixed(0)}%.`]);}
+  if(c.oneOff)out.push(["HIGH",`Reported £${fmt(pl(c).v)}m profit is inflated by a £${fmt(c.oneOff)}m one-off related-party disposal — underlying operations are loss-making.`]);
+  if(c.psale!=null&&S.margin!=null){const core=((pl(c).v-c.psale-(c.oneOff||0))/c.rev)*100; if(core<-8)out.push(["MED",`Profitability depends on asset sales — core margin ex-trading is ${core.toFixed(0)}%.`]);}
   if(c.flags.psr)out.push(["HIGH",`Active PSR breach (−${c.flags.psr} pts) — spending is regulator-constrained.`]);
   if(c.flags.charges)out.push(["HIGH","Unresolved league charges — a live governance and valuation overhang."]);
   if(c.flags.ownership)out.push(["MED","Split / transitional ownership — decision-making and strategy risk."]);
@@ -513,7 +549,7 @@ function drawScatter(rows){
   s+=`<text x="${x(98)}" y="${y(4)}" text-anchor="end" font-size="11" font-family="var(--font-mono)" fill="${g('--muted')}">WINS BUT BLEEDS ◢</text>`;
   rows.forEach(r=>{const px=x(r.sport),py=y(r.ias),th=r.sport<50&&r.ias>50;
     s+=`<circle cx="${px}" cy="${py}" r="8" fill="${th?g('--accent'):g('--surface')}" stroke="${g('--accent')}" stroke-width="2" class="pt" data-n="${r.c.name}" data-i="${Math.round(r.ias)}" data-f="${r.c.finish}" style="cursor:pointer"/>`;});
-  const sn={mancity:"Man City",manutd:"Man United",arsenal:"Arsenal",tottenham:"Tottenham",brighton:"Brighton",everton:"Everton"};
+  const sn={mancity:"Man City",manutd:"Man United",arsenal:"Arsenal",tottenham:"Tottenham",brighton:"Brighton",everton:"Everton",liverpool:"Liverpool",chelsea:"Chelsea",newcastle:"Newcastle",astonvilla:"Aston Villa",westham:"West Ham"};
   const pL=[],pR=[];
   rows.forEach(r=>{const px=x(r.sport),py=y(r.ias);const left=px>m.l+iw*.68;const arr=left?pL:pR;
     let ly=left?py-10:py+3,gd=0;while(arr.some(v=>Math.abs(v-ly)<14)&&gd<10){ly+=left?-14:14;gd++;}arr.push(ly);
@@ -537,7 +573,7 @@ function renderDeal(id){
     vh=`<span class="lbl">Model verdict vs market</span><span class="big" style="color:${col}">${v.kind==="under"?"UNDERVALUED":v.kind==="over"?"OVERVALUED":"FAIR"} ${v.d>0?"+":""}${Math.round(v.d*100)}%</span><span class="lbl">intrinsic ${gbpB(v.intrinsic)} vs market ${gbpB(v.market)}</span>`;}
   else vh=`<span class="lbl">No market comp</span><span class="big">${gbpB(S.intrinsic)}</span><span class="lbl">model intrinsic EV (no completed transaction)</span>`;
   $("#verdict").innerHTML=vh;
-  const core=c.psale!=null?((pl(c).v-c.psale)/c.rev*100):null;
+  const core=c.psale!=null?((pl(c).v-c.psale-(c.oneOff||0))/c.rev*100):null;
   const wks=weaknesses(S);
   const dc=Math.round(S.dataComp*100);
 
