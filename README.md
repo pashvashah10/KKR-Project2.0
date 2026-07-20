@@ -18,10 +18,21 @@ For any franchise it produces:
 ## View it
 
 - **Interactive dashboard:** open [`dashboard/index.html`](dashboard/index.html) in a browser (self-contained, no build step).
-- Three tabs:
-  - **◆ Screen** — league-wide investment-attractiveness ranking with live weight sliders and the profit-vs-performance "thesis" chart.
-  - **▣ Deal Room** — full investment-committee memo per club: snapshot, root-cause weaknesses, the PE ratio suite, alt-data signals, acquisition math, costed value-creation levers, and the three-scenario exit.
-  - **✦ The Edge** — the alpha signals and the cited backtest.
+- Four tabs:
+  - **Screen** — league-wide investment-attractiveness ranking with live weight sliders and the profit-vs-performance "thesis" chart.
+  - **Deal Room** — a full investment-committee memo per club (see below).
+  - **The Edge** — the alpha signals and the cited backtest.
+  - **Method** — how the engine thinks.
+
+### What each Deal Room contains
+
+1. **Valuation & mispricing** — an EV bridge blending a revenue multiple, an **asset-based sum-of-parts** (real net debt; owned vs. leased stadium), and a modeled EV/EBITDA cross-check → verdict vs. market.
+2. **Financial breakdown** — revenue mix and a cost waterfall (staff → player amortisation → other overheads & interest → result).
+3. **PE ratio suite** — 12 ratios, each tagged src / der / mod.
+4. **Squad & stadium X-ray** — squad value, age/value trajectory, key assets & contract risk; stadium capacity, ownership, utilisation and matchday yield.
+5. **Issues** — auto-detected red flags explaining the mispricing.
+6. **Investment thesis — the turnaround** *(the most important output)* — diagnosis → a target operating model with specific 3–5 year targets → costed value-creation levers → a five-year, three-scenario exit with MOIC.
+7. **Acquisition math** — equity, control premium, cost-to-fix, total capital, all tunable.
 
 ## Why the EPL first
 
@@ -38,6 +49,7 @@ The pilot is the English Premier League because it is the **most financially tra
 | `data/schema.json` | JSON schema; every numeric field must carry a source |
 | `data/clubs-epl-2023-24.json` | Audited financial primitives, 11 clubs, each figure sourced |
 | `data/altdata-epl-2023-24.json` | Alt-data + market-anchor layer (squad value, social, stadium, market EV) |
+| `data/valuation-inputs-epl-2023-24.json` | Hardened valuation inputs — net debt (gross sourced), stadium ownership & asset values |
 | `data/SOURCES.md` | Master citation registry |
 
 ## Pilot dataset (2023/24)
