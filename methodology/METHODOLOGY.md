@@ -103,7 +103,12 @@ All scenario inputs (CAGRs, exit multiples, control premium) are live-adjustable
 
 ## 7. The backtest (the centrepiece)
 
-*Did the signal move before the market?* Proven on a **completed, cited** re-rating: the **Miami Dolphins**. The model's commercial-diversification signal climbs from the 2019 F1 deal and 2022 inaugural Grand Prix — years before the market crystallised it in the **March 2026 sale of a bundle stake (stadium + F1 + Miami Open) at a record $12.5bn valuation**. The signal led the mark. (Soccer-native live analogue: Brighton's trading-ROIC + squad-value signals, ahead of realised value.)
+*Did the signal move before the market?* The backtest is **league-aware**:
+
+- **EPL / cross-market:** the **Miami Dolphins**. The model's commercial-diversification signal climbs from the 2019 F1 deal and 2022 inaugural Grand Prix — years before the market crystallised it in the **March 2026 sale of a bundle stake (stadium + F1 + Miami Open) at a record $12.5bn valuation**. A US case anchors the EPL view because it is the cleanest *completed* re-rating with fully public marks — the method travels across sports.
+- **IPL:** the model's media & commercial signal climbs through the **2022 media-rights auction (₹48,390cr, ≈3× the prior cycle)** and the record new-franchise fees — *before* IPL brand value re-rated **+78%, from $1.8bn (2022) to $3.2bn (2023)** per Houlihan Lokey. The signal led the mark.
+
+Each backtest uses only data available at the time and cites the confirming event.
 
 ---
 

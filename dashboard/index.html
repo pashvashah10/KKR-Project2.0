@@ -563,7 +563,7 @@ const IPL_CLUBS=[
 const LEAGUES={
   epl:{clubs:EPL_CLUBS,name:"English Premier League",sub:"2023/24 audited · 11 franchises",sym:"£",unit:"m",scaleB:1000,teams:20,baseMult:4.5,ebMult:12,brandMax:900,blend:{r:.50,s:.35,e:.15},xBase:4.5,xBull:5.5,xBear:3.5,assetLight:false,revLabel:"Broadcast",
     lede:"Every investment-relevant EPL club, underwritten on the discipline a sports-PE desk applies: durable cash generation over trophies, with mispricing hardened by real net-debt lines and an asset-based sum-of-parts. On-field results are shown for context — never scored."},
-  ipl:{clubs:IPL_CLUBS,name:"Indian Premier League",sub:"FY2024 · 10 franchises · MCA-filed financials",sym:"₹",unit:"cr",scaleB:1,teams:10,baseMult:12,ebMult:16,brandMax:2000,blend:{r:.65,s:.20,e:.15},xBase:11,xBull:14,xBear:8,assetLight:true,revLabel:"Central media pool",
+  ipl:{clubs:IPL_CLUBS,name:"Indian Premier League",sub:"FY2024 (the 2023/24 season) · 10 franchises · MCA-filed",sym:"₹",unit:"cr",scaleB:1,teams:10,baseMult:12,ebMult:16,brandMax:2000,blend:{r:.65,s:.20,e:.15},xBase:11,xBull:14,xBear:8,assetLight:true,revLabel:"Central media pool",
     lede:"India's cricket franchises run on different economics: a vast central media pool (₹467cr per club) shared near-equally, a player salary cap, and owners operating multi-league global networks. The differentiators are own-revenue generation, brand scale and portfolio optionality — the Arctos cross-league thesis in its native habitat. Revenue and net profit are now MCA-filed for all ten (only SRH's profit is estimated); brand values, market EVs and forward scenarios remain modeled."},
 };
 let LG="epl", ACT=LEAGUES.epl, CLUBS=EPL_CLUBS;
@@ -897,27 +897,42 @@ function drawScenarios(S,D){const c=S.c,W=720,H=300,m={t:16,r:18,b:34,l:54},iw=W
   s+=line(D.bear,g('--crit'),2)+line(D.bull,g('--good'),2)+line(D.base,g('--navy'),2.6)+`</svg>`;$("#scnChart").innerHTML=s;}
 
 // ---- EDGE
-const BT={points:[{y:"2019",sig:38,ev:null,note:"F1 preliminary deal at Hard Rock Stadium (Oct 2019)"},{y:"2020",sig:44,ev:2.6,note:"Forbes ≈ $2.6bn"},{y:"2021",sig:55,ev:3.05,note:"Race confirmed for 2022 calendar"},{y:"2022",sig:70,ev:4.0,note:"Inaugural Miami GP — rivals a full NFL season's revenue"},{y:"2023",sig:80,ev:5.7,note:"Ross explores bundling stadium + F1 + Miami Open"},{y:"2024",sig:86,ev:7.5,note:"Forbes $7.5bn (+21% YoY)"},{y:"2026",sig:96,ev:12.5,note:"Lin Bin buys 1% of the bundle at a record $12.5bn (Mar 2026)"}]};
+const BT_EPL={sigLabel:"Model diversification signal (0–100)",mkLabel:"Reported valuation ($bn)",maxEV:13,evTicks:[0,4,8,12],markIdx:6,markLabel:"$12.5bn mark",
+  points:[{y:"2019",sig:38,ev:null,note:"F1 preliminary deal at Hard Rock Stadium (Oct 2019)"},{y:"2020",sig:44,ev:2.6,note:"Forbes about $2.6bn"},{y:"2021",sig:55,ev:3.05,note:"Race confirmed for 2022 calendar"},{y:"2022",sig:70,ev:4.0,note:"Inaugural Miami GP — rivals a full NFL season's revenue"},{y:"2023",sig:80,ev:5.7,note:"Ross explores bundling stadium + F1 + Miami Open"},{y:"2024",sig:86,ev:7.5,note:"Forbes $7.5bn (+21% YoY)"},{y:"2026",sig:96,ev:12.5,note:"Lin Bin buys 1% of the bundle at a record $12.5bn (Mar 2026)"}],
+  note:`<strong>Miami Dolphins — a completed, cross-market proof.</strong> The commercial-diversification signal climbs from the 2019 F1 deal and the 2022 inaugural Grand Prix — <em>years before</em> the market crystallised it in the March 2026 sale of a bundle stake (stadium + F1 + Miami Open) at a record <strong>$12.5bn</strong>. A US case is used for the EPL view because it is the cleanest <em>completed</em> re-rating with fully public marks; the method is the point, and it travels across sports. (Switch to IPL for a cricket-native backtest.)`};
+const BT_IPL={sigLabel:"Model media & commercial signal (0–100)",mkLabel:"IPL brand value ($bn, Houlihan Lokey)",maxEV:4.5,evTicks:[0,1.5,3,4.5],markIdx:2,markLabel:"+78% re-rate",
+  points:[{y:"2021",sig:52,ev:null,note:"Digital-viewership surge; anticipation of the media-rights re-auction"},{y:"2022",sig:75,ev:1.8,note:"Record ₹48,390cr media auction (about 3x the prior deal) + two new franchises at record fees — the signal peaks"},{y:"2023",sig:83,ev:3.2,note:"Brand value jumps 78% to $3.2bn as the media deal goes live; Tata $300m title sponsor"},{y:"2024",sig:88,ev:3.4,note:"Houlihan Lokey brand value $3.4bn"},{y:"2025",sig:94,ev:3.9,note:"Houlihan Lokey brand value $3.9bn; business value $18.5bn"}],
+  note:`<strong>Indian Premier League.</strong> The model's media &amp; commercial signal climbs through the 2022 media-rights auction (₹48,390cr — about 3x the prior cycle) and the record new-franchise fees — <em>before</em> IPL brand value re-rated <strong>+78%</strong>, from $1.8bn (2022) to $3.2bn (2023), per Houlihan Lokey. The signal led the mark: <em>we saw it before the market did.</em>`};
 function edgeRender(){const R=all();
   const rank=(l,f,u)=>{const rows=[...R].sort((a,b)=>f(b)-f(a)).slice(0,3);return `<div class="flat"><div class="rail-h" style="margin-bottom:8px">${l}</div>${rows.map((r,i)=>`<div class="kv"><span class="kk">${i+1}. ${r.c.name}</span><span class="vv">${u(r)}</span></div>`).join("")}</div>`;};
-  $("#edgeSignals").innerHTML=rank("Highest trading ROIC",r=>r.R.tradeROIC??-1,r=>fmt(r.R.tradeROIC)+"%")+
-    rank("Biggest monetisation gap",r=>(r.c.ig>20?-r.R.revFollower:-999),r=>`£${fmt(r.R.revFollower,1)}m/m · ${r.c.ig}m`)+
-    rank("Youngest (appreciating) squads",r=>-r.c.age,r=>r.c.age+" yrs");
-  const W=720,H=350,m={t:20,r:52,b:38,l:46},iw=W-m.l-m.r,ih=H-m.t-m.b,g=cvar;
-  const xs=BT.points,x=i=>m.l+(i/(xs.length-1))*iw, yS=v=>m.t+ih-(v/100)*ih,maxEV=13,yE=v=>m.t+ih-(v/maxEV)*ih;
+  if(ACT.assetLight){
+    $("#edgeSignals").innerHTML=
+      rank("Highest net margin",r=>r.margin??-999,r=>(r.margin>0?"+":"")+fmt(r.margin,0)+"%")+
+      rank("Widest multi-league network",r=>r.c.mlNetwork??0,r=>r.c.mlNetwork+" league"+(r.c.mlNetwork>1?"s":""))+
+      rank("Biggest own-revenue base",r=>((r.c.comm||0)+(r.c.match||0)),r=>gbp((r.c.comm||0)+(r.c.match||0)));
+  } else {
+    $("#edgeSignals").innerHTML=
+      rank("Highest trading ROIC",r=>r.R.tradeROIC??-1,r=>r.R.tradeROIC==null?"—":fmt(r.R.tradeROIC)+"%")+
+      rank("Biggest monetisation gap",r=>(r.c.ig>20?-r.R.revFollower:-999),r=>`${ACT.sym}${fmt(r.R.revFollower,1)}${ACT.unit}/m · ${r.c.ig}m`)+
+      rank("Youngest (appreciating) squads",r=>-r.c.age,r=>r.c.age+" yrs");
+  }
+  const BT=ACT.assetLight?BT_IPL:BT_EPL;
+  const W=720,H=350,m={t:20,r:58,b:38,l:46},iw=W-m.l-m.r,ih=H-m.t-m.b,g=cvar;
+  const xs=BT.points,x=i=>m.l+(i/(xs.length-1))*iw, yS=v=>m.t+ih-(v/100)*ih,maxEV=BT.maxEV,yE=v=>m.t+ih-(v/maxEV)*ih;
   let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Backtest: signal vs valuation over time">`;
   for(let gl=0;gl<=100;gl+=25)s+=`<line x1="${m.l}" y1="${yS(gl)}" x2="${m.l+iw}" y2="${yS(gl)}" stroke="${g('--line')}" stroke-dasharray="2 4"/><text x="${m.l-8}" y="${yS(gl)+3}" text-anchor="end" font-size="10" font-family="var(--mono)" fill="${g('--muted')}">${gl}</text>`;
   xs.forEach((p,i)=>s+=`<text x="${x(i)}" y="${m.t+ih+16}" text-anchor="middle" font-size="10" font-family="var(--mono)" fill="${g('--muted')}">${p.y}</text>`);
-  [0,4,8,12].forEach(v=>s+=`<text x="${m.l+iw+8}" y="${yE(v)+3}" font-size="10" font-family="var(--mono)" fill="${g('--gold')}">$${v}bn</text>`);
+  BT.evTicks.forEach(v=>s+=`<text x="${m.l+iw+8}" y="${yE(v)+3}" font-size="10" font-family="var(--mono)" fill="${g('--gold')}">$${v}bn</text>`);
   s+=`<path d="${xs.map((p,i)=>`${i?'L':'M'}${x(i)},${yS(p.sig)}`).join(" ")}" fill="none" stroke="${g('--navy')}" stroke-width="2.6"/>`;
   xs.forEach((p,i)=>s+=`<circle cx="${x(i)}" cy="${yS(p.sig)}" r="4" fill="${g('--navy')}" class="bt" data-n="${p.y}" data-s="${p.sig}" data-e="${p.ev??''}" data-note="${p.note}" style="cursor:pointer"/>`);
   const evp=xs.filter(p=>p.ev!=null);
   s+=`<path d="${evp.map(p=>{const i=xs.indexOf(p);return `${p===evp[0]?'M':'L'}${x(i)},${yE(p.ev)}`;}).join(" ")}" fill="none" stroke="${g('--gold')}" stroke-width="2" stroke-dasharray="4 3"/>`;
   evp.forEach(p=>{const i=xs.indexOf(p);s+=`<circle cx="${x(i)}" cy="${yE(p.ev)}" r="4" fill="${g('--gold')}"/>`;});
-  s+=`<text x="${x(xs.length-1)}" y="${yE(12.5)-10}" text-anchor="end" font-size="10.5" font-weight="700" fill="${g('--gold')}">$12.5bn mark</text></svg>`;
+  const mp=xs[BT.markIdx],mi=BT.markIdx;
+  s+=`<text x="${x(mi)}" y="${yE(mp.ev)-10}" text-anchor="${mi>xs.length-2?'end':'middle'}" font-size="10.5" font-weight="700" fill="${g('--gold')}">${BT.markLabel}</text></svg>`;
   $("#backtest").innerHTML=s;
-  $("#btLegend").innerHTML=`<span><i class="swatch" style="background:var(--navy)"></i>Model diversification signal (0–100)</span><span><i class="swatch" style="background:var(--gold)"></i>Reported valuation ($bn)</span>`;
-  $("#btNote").innerHTML=`<strong>Miami Dolphins.</strong> The commercial-diversification signal climbs from the 2019 F1 deal and the 2022 inaugural Grand Prix — <em>years before</em> the market crystallised it in the March 2026 sale of a bundle stake (stadium + F1 + Miami Open) at a record <strong>$12.5bn</strong>. The signal led the mark: <em>we saw it before the market did.</em>`;
+  $("#btLegend").innerHTML=`<span><i class="swatch" style="background:var(--navy)"></i>${BT.sigLabel}</span><span><i class="swatch" style="background:var(--gold)"></i>${BT.mkLabel}</span>`;
+  $("#btNote").innerHTML=BT.note;
   hover("#backtest","#tipB",p=>`<div class="tt">${p.dataset.n} — signal ${p.dataset.s}${p.dataset.e?` · $${p.dataset.e}bn`:""}</div><div class="tr">${p.dataset.note}</div>`);
 }
 
@@ -1031,6 +1046,8 @@ $("#methodBody").innerHTML=`
   <p>Alternative signals — audience-monetisation gaps, squad-age value curves, player-trading ROIC — flagged before they reach a headline valuation, and backtested against a completed, cited re-rating.</p>
   <h3>6 · Two leagues, one framework</h3>
   <p>The same engine screens both the <strong>English Premier League</strong> (asset-heavy, transparent audited accounts) and the <strong>Indian Premier League</strong> (asset-light, a vast shared central media pool, a salary cap, and owners running multi-league global networks). Switch between them with the EPL/IPL toggle. The framework adapts: for cricket, revenue quality measures reliance on the equal-share central pool vs. owned revenue, the sum-of-parts drops the (leased) stadium, and portfolio breadth across leagues (the Knight Riders and Mumbai Indians networks — the Arctos cross-league thesis) enters the growth pillar. EPL surfaces distressed-turnaround alpha; IPL is priced for growth. CSK is audited; other IPL financials are estimated pending deeper filings.</p>
+  <h3>7 · Data currency</h3>
+  <p>Both leagues use the latest season with <strong>complete audited / filed accounts across every club</strong>: the <strong>2023/24 season</strong>. England labels it "2023/24"; India labels the same period "FY2024" (the fiscal year ending March 2024) — they are the <em>same real-world period</em>, only the convention differs. Audited accounts lag the season by roughly a year, so newer figures exist for a few individual clubs but not yet uniformly across all of them, and mixing part-filed seasons would break same-season comparison. The backtest chart runs on a separate market-event timeline (transaction and valuation dates), which is why it extends beyond the accounts period. A full refresh to the 2024/25 season is a scheduled next step once all clubs have filed.</p>
   <p style="margin-top:16px;color:var(--muted)">Full methodology and source registry in the repository. Illustrative research; not investment advice.</p>`;
 
 // ---- CONTROLS

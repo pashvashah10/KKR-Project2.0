@@ -44,6 +44,7 @@ Primary financials are club-published results and/or The Swiss Ramble's line-by-
 | `dolphins_f1_2019` | The Drive / Motorsport | F1 Miami preliminary deal at Hard Rock Stadium (Oct 2019) | https://www.thedrive.com/accelerator/30461/2021-miami-f1-grand-prix-a-step-closer-with-signed-prelim-deal-at-nfl-dolphins-stadium |
 | `dolphins_linbin_2026` | ESPN / Sportico | Lin Bin buys 1% of Dolphins bundle at record $12.5bn valuation (Mar 2026) | https://www.espn.com/nfl/story/_/id/48361086/lin-bin-buys-1-dolphins-record-125-billion-valuation |
 | `dolphins_forbes` | Forbes / Yahoo | Miami Dolphins valuation history ($7.5bn 2024, +21% YoY) | https://sports.yahoo.com/article/miami-dolphins-valued-7-5-222345956.html |
+| `hl_ipl_history` | Houlihan Lokey (2024 & 2025 studies) | IPL brand-value trajectory — $1.8bn (2022) → $3.2bn (2023) → $3.4bn (2024) → $3.9bn (2025); business value $18.5bn (2025). Used for the IPL backtest (the +78% 2022→2023 re-rate after the 2022 media auction). | https://hl.com/about-us/newsroom/houlihan-lokey-launches-ipl-valuation-study-2025/ |
 
 ## Notes on figure selection
 - **Profit line used per club is labelled** in the data (`reported_as`): most clubs report a pre-tax figure; Brighton's headline is an operating profit before interest & tax. The model treats them per their label and never silently equates them.
