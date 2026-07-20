@@ -1,6 +1,6 @@
 # Franchise Alpha — a sports-PE deal engine
 
-A screening and underwriting tool for **sports franchises as an asset class**, built the way a sports-PE desk (think Arctos / KKR Capstone) actually evaluates a deal — not a fan scorecard.
+A screening and underwriting tool for **sports franchises as an asset class**, built the way a sports-PE desk (think Arctos / KKR Capstone) actually evaluates a deal — not a fan scorecard. Now covers **two leagues** behind a toggle: the **English Premier League** and the **Indian Premier League**.
 
 For any franchise it produces:
 
@@ -50,7 +50,12 @@ The pilot is the English Premier League because it is the **most financially tra
 | `data/clubs-epl-2023-24.json` | Audited financial primitives, 11 clubs, each figure sourced |
 | `data/altdata-epl-2023-24.json` | Alt-data + market-anchor layer (squad value, social, stadium, market EV) |
 | `data/valuation-inputs-epl-2023-24.json` | Hardened valuation inputs — net debt (gross sourced), stadium ownership & asset values |
+| `data/ipl-clubs-fy2024.json` | IPL pilot — 10 franchises (CSK audited, rest estimated), brand values, market EVs, multi-league networks |
 | `data/SOURCES.md` | Master citation registry |
+
+## Two leagues
+
+Toggle **EPL / IPL** in the masthead. The IPL runs on different economics — a huge central media pool shared near-equally, a salary cap, leased (asset-light) stadiums, and owners running multi-league global networks (Knight Riders, Mumbai Indians — the Arctos cross-league thesis). The framework adapts automatically (central-pool reliance as the revenue-quality metric, portfolio breadth as a growth signal, franchise-fee amortisation for the 2022 entrants). **EPL surfaces distressed-turnaround alpha; the IPL is priced for growth.** CSK is audited; other IPL financials are estimated pending deeper filings — see `methodology/METHODOLOGY.md`.
 
 ## Pilot dataset (2023/24)
 

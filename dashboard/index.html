@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="Franchise Alpha — sports private equity research platform.">
+<meta name="description" content="Franchise Alpha — sports private equity research platform (EPL + IPL).">
 </head>
 <body>
 <title>Franchise Alpha — Sports Private Equity Research</title>
@@ -66,6 +66,10 @@
   .navlink.active{color:var(--navy);background:var(--navy-wash)}
   .tgl{font-family:var(--mono);font-size:12px;color:var(--ink-3);background:var(--paper-2);border:1px solid var(--line);border-radius:6px;padding:6px 10px;cursor:pointer;margin-left:6px}
   .tgl:hover{border-color:var(--line-2)}
+  .lgt{display:flex;border:1px solid var(--line);border-radius:6px;overflow:hidden;margin-left:8px}
+  .lgt button{font-family:var(--mono);font-size:11px;letter-spacing:.05em;padding:6px 12px;border:none;background:var(--paper);color:var(--ink-3);cursor:pointer;font-weight:700}
+  .lgt button.active{background:var(--navy);color:var(--navy-ink)}
+  .lgt button:hover:not(.active){background:var(--paper-2);color:var(--ink)}
 
   .wrap{max-width:1220px;margin:0 auto;padding:clamp(18px,3vw,34px) clamp(16px,3vw,28px) 60px}
   section[data-panel]{display:none} section[data-panel].active{display:block}
@@ -211,6 +215,7 @@
 <header class="masthead">
   <div class="mast-in">
     <div class="brand"><span class="wm">Franchise Alpha</span><span class="tg">Sports Private Equity · Research</span></div>
+    <div class="lgt" id="lgt"><button data-lg="epl" class="active">EPL</button><button data-lg="ipl">IPL</button></div>
     <nav id="nav">
       <button class="navlink active" data-tab="screen">Screen</button>
       <button class="navlink" data-tab="deal">Deal Room</button>
@@ -224,9 +229,9 @@
 <main class="wrap">
   <!-- ============ SCREEN ============ -->
   <section data-panel="screen" class="active">
-    <span class="eyebrow">English Premier League · 2023/24 audited · 11 franchises</span>
+    <span class="eyebrow" id="scEye"></span>
     <h1 class="page-h">The franchise screen</h1>
-    <p class="lede">Every investment-relevant EPL club, underwritten on the same discipline a sports-PE desk applies: durable cash generation over trophies, with mispricing hardened by real net-debt lines and an asset-based sum-of-parts. On-field results are shown for context — never scored.</p>
+    <p class="lede" id="scLede"></p>
 
     <div class="split sec">
       <div class="rail">
@@ -305,8 +310,8 @@
 <footer id="foot"></footer>
 
 <script>
-// ==================================================== DATA (2023/24, £m)
-const CLUBS=[
+// ==================================================== DATA (EPL 2023/24, £m)
+const EPL_CLUBS=[
  {id:"mancity",name:"Manchester City",owner:"City Football Group",rev:715.0,op:null,pre:74.0,psale:22,wages:412.6,bcast:null,comm:null,match:null,amort:null,
   netDebt:0,points:91,finish:1,squadVal:1110,age:27.5,ig:46.5,cap:53400,util:99,marketEV:4030,
   stad:{owned:false,val:150,name:"Etihad Stadium (leased)"},train:120,flags:{charges:true},grow:85,
@@ -421,6 +426,119 @@ const CLUBS=[
     {t:"Wage-bill reset to <65% of revenue",wk:"Wages 84% of revenue — distressed",capex:0,upE:45,ramp:3},
     {t:"Exit PSR constraint",wk:"−8 pts; squad-build handcuffed",capex:0,upE:0,ramp:2}]},
 ];
+
+// ==================================================== DATA (IPL FY2024, ₹ crore) — CSK revenue/profit audited; others estimated from HL brand values + central-pool economics
+const IPL_CLUBS=[
+ {id:"mi",name:"Mumbai Indians",owner:"Reliance (Ambani)",rev:720,op:null,pre:180,psale:null,wages:100,bcast:450,comm:215,match:55,amort:0,
+  netDebt:0,points:10,finish:10,squadVal:1699,age:28,ig:14,cap:33108,util:95,marketEV:9500,
+  stad:{owned:false,val:0,name:"Wankhede (leased)"},train:70,flags:{},grow:90,mlNetwork:4,
+  est:["rev","pre","comm","match","squadVal","age","ig","marketEV","train","mlNetwork"],
+  key:"Five-time champions and the biggest commercial machine, but a last-place 2024 exposed an ageing core. The MI global network (Emirates·New York·Cape Town) is the standout portfolio asset.",
+  turn:{diag:"The most valuable overall franchise underperformed on the pitch (10th, 2024) while its brand and multi-league network kept compounding. A rebuild story, not a distressed one.",
+    tom:[["Own revenue","₹270cr","₹380cr"],["MI network","4 leagues","monetised as one"],["Squad age","ageing","refreshed"]],
+    thesis:"Buy the compounding brand + the ready-made global MI franchise network and monetise it as a single content/commercial platform — the clearest expression of the cross-league (Arctos) thesis in the panel."},
+  levers:[{t:"Monetise the global MI network as one platform",wk:"Four league brands run separately",capex:80,upR:120,ramp:4},
+    {t:"Refresh an ageing, expensive core",wk:"10th in 2024 on a premium roster",capex:0,upE:40,ramp:3}]},
+ {id:"csk",name:"Chennai Super Kings",owner:"CSK Cricket Ltd (India Cements)",rev:676,op:null,pre:229,psale:null,wages:100,bcast:450,comm:150,match:76,amort:0,
+  netDebt:0,points:14,finish:5,squadVal:1924,age:29,ig:13,cap:38200,util:98,marketEV:9000,
+  stad:{owned:false,val:0,name:"Chepauk (leased)"},train:60,flags:{},grow:85,mlNetwork:3,
+  est:["comm","match","squadVal","age","ig","marketEV","train","mlNetwork"],
+  key:"The IPL blue-chip: most valuable brand, a 34% net margin, cult fanbase and the league's strongest gate. Super Kings network extends to MLC and SA20. Ageing squad is the one risk.",
+  turn:{diag:"The most profitable, most bankable franchise in the league — revenue up 131% and profit up 340% in FY24 on central rights + ticketing. Not a turnaround; a quality compounder.",
+    tom:[["Net margin","34%","sustain 30%+"],["Own revenue","₹226cr","₹320cr"],["Squad age","29 (oldest)","managed refresh"]],
+    thesis:"A ‘buy-and-hold blue chip’: durable brand, elite margins, loyal gate. Value creation is incremental — extend the Super Kings network and manage the squad-age cliff — rather than a fix."},
+  levers:[{t:"Extend the Super Kings multi-league network",wk:"MLC/SA20 brands sub-scale vs the IPL mothership",capex:60,upR:70,ramp:4},
+    {t:"Grow premium hospitality at Chepauk",wk:"Strong gate, under-built on premium",capex:40,upR:35,ramp:3}]},
+ {id:"rcb",name:"Royal Challengers Bengaluru",owner:"Diageo / United Spirits",rev:680,op:null,pre:130,psale:null,wages:100,bcast:450,comm:170,match:60,amort:0,
+  netDebt:0,points:14,finish:4,squadVal:1891,age:28,ig:18,cap:40000,util:97,marketEV:8500,
+  stad:{owned:false,val:0,name:"Chinnaswamy (leased)"},train:60,flags:{},grow:82,mlNetwork:2,
+  est:["rev","pre","comm","match","squadVal","age","ig","marketEV","train","mlNetwork"],
+  key:"Largest fanbase and social reach in the league, yet never won the men's IPL — a monetisation-rich brand under-converted on silverware. The WPL title adds a second franchise line.",
+  turn:{diag:"The biggest audience in Indian cricket attached to a men's team that has never won — huge brand equity, sub-optimal on-field conversion and monetisation left on the table.",
+    tom:[["Social reach","#1","monetised #1"],["Own revenue","₹230cr","₹330cr"],["Titles","0 men's","competitive core"]],
+    thesis:"A monetisation turnaround: the audience is already the league's largest, so the value is converting reach into revenue (DTC, membership, the WPL franchise) while stabilising a winning squad. Diageo may also be a motivated seller — watch for a control opportunity."},
+  levers:[{t:"Convert the #1 fanbase into direct revenue",wk:"Largest reach, mid-pack own-revenue",capex:40,upR:90,ramp:4},
+    {t:"Build the RCB WPL franchise as a second line",wk:"Women's title under-monetised",capex:30,upR:40,ramp:4}]},
+ {id:"kkr",name:"Kolkata Knight Riders",owner:"Red Chillies (SRK) / Mehta",rev:620,op:null,pre:190,psale:null,wages:100,bcast:450,comm:125,match:45,amort:0,
+  netDebt:0,points:20,finish:1,squadVal:1799,age:27,ig:7,cap:68000,util:96,marketEV:8000,
+  stad:{owned:false,val:0,name:"Eden Gardens (leased)"},train:60,flags:{},grow:92,mlNetwork:4,
+  est:["rev","pre","comm","match","squadVal","age","ig","marketEV","train","mlNetwork"],
+  key:"2024 champions and the template multi-league network — Knight Riders in the MLC (LA), ILT20 (Abu Dhabi) and CPL (Trinbago). Celebrity-brand marketing edge; the league's largest stadium.",
+  turn:{diag:"The reigning champion and the best-built global franchise network in cricket — the Knight Riders brand already operates across four leagues. Strong, growing, portfolio-led.",
+    tom:[["KR network","4 leagues","integrated media co."],["Own revenue","₹170cr","₹260cr"],["Title","2024 champ","dynasty core"]],
+    thesis:"The purest cross-league play in the sport: a single global ‘Knight Riders’ brand across IPL/MLC/ILT20/CPL. Value creation is integrating the network into one media-and-commercial company — precisely the franchise-of-franchises platform a firm like Arctos underwrites."},
+  levers:[{t:"Integrate the global Knight Riders network",wk:"Four league brands, one under-exploited IP",capex:70,upR:110,ramp:4},
+    {t:"Monetise Eden Gardens' 68k scale",wk:"Largest venue, mid-pack gate revenue",capex:35,upR:35,ramp:3}]},
+ {id:"srh",name:"Sunrisers Hyderabad",owner:"Sun Group (Maran)",rev:560,op:null,pre:150,psale:null,wages:100,bcast:450,comm:75,match:35,amort:0,
+  netDebt:0,points:17,finish:2,squadVal:1100,age:27,ig:5,cap:39000,util:94,marketEV:6200,
+  stad:{owned:false,val:0,name:"Uppal (leased)"},train:50,flags:{},grow:70,mlNetwork:2,
+  est:["rev","pre","comm","match","squadVal","age","ig","marketEV","train","mlNetwork"],
+  key:"2024 runner-up with an aggressive young core and a media-house (Sun) owner. Thin own-commercial base; SA20's Sunrisers Eastern Cape adds portfolio optionality.",
+  turn:{diag:"A well-run, profitable mid-tier franchise that punches above its commercial weight but sits mid-pack on own-revenue and fanbase scale.",
+    tom:[["Own revenue","₹110cr","₹190cr"],["Fanbase","mid","grow with core"],["Network","2 leagues","3+"]],
+    thesis:"A ‘scale the base’ growth play: leverage the media-house owner and an exciting young side to grow own-commercial revenue and extend the Sunrisers network."},
+  levers:[{t:"Leverage the Sun Group media platform",wk:"Owner's distribution under-used commercially",capex:40,upR:60,ramp:4},
+    {t:"Grow the own-commercial base",wk:"Among the thinnest own-revenue in the league",capex:25,upR:35,ramp:4}]},
+ {id:"dc",name:"Delhi Capitals",owner:"GMR + JSW",rev:560,op:null,pre:120,psale:null,wages:100,bcast:450,comm:75,match:35,amort:0,
+  netDebt:0,points:14,finish:6,squadVal:1091,age:27,ig:6,cap:41800,util:90,marketEV:6300,
+  stad:{owned:false,val:0,name:"Kotla (leased)"},train:55,flags:{},grow:78,mlNetwork:4,
+  est:["rev","pre","comm","match","squadVal","age","ig","marketEV","train","mlNetwork"],
+  key:"Never won the IPL, but the GMR ownership runs one of the widest global networks (Pretoria·Dubai·Seattle). Capital-market-savvy owners; on-field consistency is the gap.",
+  turn:{diag:"An infrastructure-group-owned franchise with a broad multi-league network but no title and mid-pack monetisation — an operational and sporting consistency story.",
+    tom:[["Titles","0","competitive core"],["GMR network","4 leagues","integrated"],["Own revenue","₹110cr","₹180cr"]],
+    thesis:"Play the GMR global network: integrate the Capitals brands across leagues and professionalise squad-building for consistency, converting a capital-rich owner's footprint into a coherent platform."},
+  levers:[{t:"Integrate the GMR Capitals network",wk:"Widest network, least joined-up",capex:60,upR:80,ramp:4},
+    {t:"Stabilise squad-building for consistency",wk:"No IPL title in 17 seasons",capex:0,upE:30,ramp:3}]},
+ {id:"rr",name:"Rajasthan Royals",owner:"Emerging Media (Badale)",rev:540,op:null,pre:160,psale:null,wages:100,bcast:450,comm:60,match:30,amort:0,
+  netDebt:0,points:16,finish:3,squadVal:1108,age:26,ig:5,cap:30000,util:90,marketEV:6200,
+  stad:{owned:false,val:0,name:"Jaipur (leased)"},train:65,flags:{},grow:80,mlNetwork:3,
+  est:["rev","pre","comm","match","squadVal","age","ig","marketEV","train","mlNetwork"],
+  key:"The inaugural 2008 champion — analytics-driven, lean, young and highly profitable, with a Royals network (Barbados·Paarl). The ‘Brighton of the IPL’: efficiency as the edge.",
+  turn:{diag:"A disciplined, data-led franchise that runs lean and profitable on a modest own-revenue base — the efficiency template rather than a distressed asset.",
+    tom:[["Squad age","26 (youngest)","sustain"],["Own revenue","₹90cr","₹170cr"],["Royals network","3 leagues","scaled"]],
+    thesis:"A ‘compounding efficiency’ hold: the analytics-and-development model is best-in-class; the value is scaling own-revenue and the Royals multi-league network off a low base — the highest-quality small-cap in the league."},
+  levers:[{t:"Scale the Royals multi-league academy model",wk:"Elite development, sub-scale revenue",capex:55,upR:60,ramp:4},
+    {t:"Grow own-commercial off a low base",wk:"Smallest own-revenue among title contenders",capex:25,upR:35,ramp:4}]},
+ {id:"gt",name:"Gujarat Titans",owner:"Torrent Group (from CVC)",rev:560,op:null,pre:-150,psale:null,wages:100,bcast:450,comm:70,match:40,amort:562,
+  netDebt:0,points:12,finish:8,squadVal:1033,age:27,ig:4,cap:132000,util:70,marketEV:6300,
+  stad:{owned:false,val:0,name:"Narendra Modi Stadium (leased)"},train:50,flags:{},grow:70,mlNetwork:1,
+  est:["rev","pre","comm","match","amort","squadVal","age","ig","marketEV","train","mlNetwork"],
+  key:"Champion on debut (2022), but the ₹5,625cr entry fee weighs on the P&L via amortisation. Plays in the world's largest cricket stadium; new Torrent ownership brings deeper pockets.",
+  turn:{diag:"A recent, successful new entrant whose scarcity-premium entry fee (₹5,625cr) drives heavy amortisation — strong EBITDA masked by a reported loss until the fee period matures.",
+    tom:[["Reported P&L","loss (fee amort)","profit"],["Own revenue","₹110cr","₹190cr"],["Stadium fill","70%","90%"]],
+    thesis:"A ‘grow into the price’ story: EBITDA is already positive; the job is scaling own-revenue and stadium yield so the franchise grows into a fee it will lap as media rights re-rate. Torrent's balance sheet de-risks it."},
+  levers:[{t:"Fill the 132k stadium",wk:"World's largest venue at ~70% utilisation",capex:40,upR:60,ramp:4},
+    {t:"Build own-commercial to lap the entry fee",wk:"Fee amortisation drives the reported loss",capex:30,upR:50,ramp:4}]},
+ {id:"pbks",name:"Punjab Kings",owner:"Zinta / Wadia / Burman",rev:500,op:null,pre:130,psale:null,wages:100,bcast:450,comm:25,match:25,amort:0,
+  netDebt:0,points:10,finish:9,squadVal:841,age:27,ig:5,cap:26000,util:85,marketEV:5500,
+  stad:{owned:false,val:0,name:"Mohali (leased)"},train:45,flags:{},grow:60,mlNetwork:1,
+  est:["rev","pre","comm","match","squadVal","age","ig","marketEV","train","mlNetwork"],
+  key:"Never won the IPL and carries the smallest own-commercial base — profitable only on the central pool. The classic under-monetised, underperforming franchise: the turnaround pick.",
+  turn:{diag:"Sixteen seasons, no title, and the thinnest own-revenue in the league — profitable purely because the central media pool covers a capped cost base. Everything owned is under-built.",
+    tom:[["Own revenue","₹50cr","₹150cr"],["Titles","0","competitive core"],["Central reliance","90%","<80%"]],
+    thesis:"The clearest IPL turnaround: a franchise living almost entirely off the central pool. Professionalise squad-building, rebuild the brand and commercial base, and add a multi-league line — the most upside per rupee if executed, from the lowest base."},
+  levers:[{t:"Rebuild brand & own-commercial from a low base",wk:"Smallest own-revenue; reliant on central pool",capex:35,upR:70,ramp:5},
+    {t:"Professionalise squad-building",wk:"No title in 16 seasons",capex:0,upE:25,ramp:3}]},
+ {id:"lsg",name:"Lucknow Super Giants",owner:"RPSG (Goenka)",rev:560,op:null,pre:-280,psale:null,wages:100,bcast:450,comm:70,match:40,amort:709,
+  netDebt:0,points:12,finish:7,squadVal:758,age:27,ig:3,cap:50000,util:85,marketEV:7000,
+  stad:{owned:false,val:0,name:"Ekana (leased)"},train:50,flags:{},grow:75,mlNetwork:2,
+  est:["rev","pre","comm","match","amort","squadVal","age","ig","marketEV","train","mlNetwork"],
+  key:"Paid the record ₹7,090cr entry fee — a scarcity-premium bet now weighing heavily on the reported P&L. RPSG runs a multi-sport portfolio (Durban's Super Giants in SA20); strong new market.",
+  turn:{diag:"The record-fee new entrant: ₹7,090cr of entry cost drives ~₹700cr of annual amortisation, so a healthy operating business reports a loss. A leveraged bet on Indian-cricket media inflation.",
+    tom:[["Reported P&L","heavy loss (fee)","profit"],["Own revenue","₹110cr","₹210cr"],["Network","2 leagues","3+"]],
+    thesis:"An ‘underwrite the media re-rate’ play: the operating business is fine; the entry fee is the bet. Value creation is maximising own-revenue and the RPSG multi-sport network while the next media-rights cycle grows into the price. High-beta, owner-balance-sheet dependent."},
+  levers:[{t:"Maximise own-revenue in a strong new market",wk:"Fee amortisation drives the reported loss",capex:40,upR:80,ramp:4},
+    {t:"Leverage the RPSG multi-sport portfolio",wk:"Cross-league/sport synergies unrealised",capex:30,upR:45,ramp:4}]},
+];
+
+const LEAGUES={
+  epl:{clubs:EPL_CLUBS,name:"English Premier League",sub:"2023/24 audited · 11 franchises",sym:"£",unit:"m",scaleB:1000,teams:20,baseMult:4.5,ebMult:12,brandMax:900,blend:{r:.50,s:.35,e:.15},xBase:4.5,xBull:5.5,xBear:3.5,assetLight:false,revLabel:"Broadcast",
+    lede:"Every investment-relevant EPL club, underwritten on the discipline a sports-PE desk applies: durable cash generation over trophies, with mispricing hardened by real net-debt lines and an asset-based sum-of-parts. On-field results are shown for context — never scored."},
+  ipl:{clubs:IPL_CLUBS,name:"Indian Premier League",sub:"FY2024 · 10 franchises · estimated where undisclosed",sym:"₹",unit:"cr",scaleB:1,teams:10,baseMult:12,ebMult:16,brandMax:2000,blend:{r:.65,s:.20,e:.15},xBase:11,xBull:14,xBear:8,assetLight:true,revLabel:"Central media pool",
+    lede:"India's cricket franchises run on different economics: a vast central media pool shared near-equally, a player salary cap, and owners operating multi-league global networks. The differentiators are own-revenue generation, brand scale and portfolio optionality — the Arctos cross-league thesis in its native habitat. CSK is audited; other financials are estimated pending deeper filings."},
+};
+let LG="epl", ACT=LEAGUES.epl, CLUBS=EPL_CLUBS;
+
 const DEFAULTS={w:{p1:35,p2:22,p3:18,p4:15,p5:10},wFloor:90,wCap:45,mCap:25,
   baseMult:4.5,ebMult:12,brandMax:900,scarcityMax:0.65,controlPrem:25,gBase:6,gBull:12,gBear:-3,xBase:4.5,xBull:5.5,xBear:3.5};
 const PILLARS=[{k:"p1",label:"Profitability & cash"},{k:"p2",label:"Revenue quality"},{k:"p3",label:"Cost discipline"},{k:"p4",label:"Solvency risk"},{k:"p5",label:"Growth & alt-signal"}];
@@ -446,10 +564,11 @@ function scoreClub(c){
   if(c.netDebt&&ebitda(c)&&ebitda(c)>0&&c.netDebt/ebitda(c)>4)reg-=15;
   const p4=pillar([{score:clamp(reg),w:1}]);
   const svpw=c.squadVal!=null?c.squadVal/c.wages:null;
-  const p5=pillar([{score:c.grow,w:.4},{score:c.age!=null?lin(c.age,29.5,23.5):null,w:.3},{score:svpw!=null?lin(svpw,1.2,3.6):null,w:.3}]);
+  const p5=pillar([{score:c.grow,w:.4},{score:c.age!=null?lin(c.age,29.5,23.5):null,w:.3},
+    ACT.assetLight?{score:c.mlNetwork!=null?lin(c.mlNetwork,1,4):null,w:.3}:{score:svpw!=null?lin(svpw,1.2,3.6):null,w:.3}]);
   const PS={p1,p2,p3,p4,p5};let ws=0,is=0,cw=0,ct=0;
   PILLARS.forEach(pd=>{const w=P.w[pd.k],s=PS[pd.k];ct+=w;cw+=w*s.comp;if(s.comp>0&&s.score!=null){ws+=w;is+=w*s.score;}});
-  const ias=ws>0?is/ws:0,dataComp=ct>0?cw/ct:0,sport=clamp(((20-c.finish)/19)*100);
+  const ias=ws>0?is/ws:0,dataComp=ct>0?cw/ct:0,sport=clamp(((ACT.teams-c.finish)/(ACT.teams-1))*100);
   const margin=p.v!=null?(p.v/c.rev)*100:null;
   // valuation — blended, hardened with real net debt + sum-of-parts
   const eb=ebitda(c),qual=0.75+(ias/100)*0.5;
@@ -459,7 +578,7 @@ function scoreClub(c){
   const sopGross=(c.squadVal!=null)?(c.squadVal+stadV+c.train+brandIP):null;
   const sop=sopGross!=null?sopGross-c.netDebt:null;
   const ebMethod=(eb&&eb>0)?eb*P.ebMult:null;
-  let wR=.50,wS=.35,wE=.15,tot=0,acc=0;
+  let wR=ACT.blend.r,wS=ACT.blend.s,wE=ACT.blend.e,tot=0,acc=0;
   if(revMethod!=null){acc+=wR*revMethod;tot+=wR;}
   if(sop!=null){acc+=wS*sop;tot+=wS;}
   if(ebMethod!=null){acc+=wE*ebMethod;tot+=wE;}
@@ -509,8 +628,8 @@ function weaknesses(S){const c=S.c,R=S.R,out=[];
 // ==================================================== RENDER
 const $=s=>document.querySelector(s);
 const fmt=(v,d=0)=>v==null?"—":v.toLocaleString("en-GB",{minimumFractionDigits:d,maximumFractionDigits:d});
-const gbp=(v,d=0)=>v==null?"—":"£"+fmt(v,d)+"m";
-const gbpB=v=>v==null?"—":"£"+fmt(v/1000,2)+"bn";
+const gbp=(v,d=0)=>v==null?"—":ACT.sym+fmt(v,d)+ACT.unit;
+const gbpB=v=>v==null?"—":ACT.scaleB>1?ACT.sym+fmt(v/ACT.scaleB,2)+"bn":ACT.sym+fmt(v,0)+ACT.unit;
 const cvar=k=>getComputedStyle(document.documentElement).getPropertyValue(k);
 function pc(v){if(v==null)return"p-na";if(v>=70)return"p-good";if(v>=50)return"p-ok";if(v>=35)return"p-warn";return"p-crit";}
 const pill=v=>`<span class="pill ${pc(v)}">${v==null?"n/a":Math.round(v)}</span>`;
@@ -523,12 +642,13 @@ function screenRender(){
     wr:r=>r.R.wr,margin:r=>r.margin??-999,evrev:r=>r.R.evRev,roic:r=>r.R.tradeROIC??-1,misp:r=>r.misp?r.misp.d:99,finish:r=>-r.c.finish};
   rows.sort((a,b)=>{const av=kf[sortKey](a),bv=kf[sortKey](b);return(av>bv?1:av<bv?-1:0)*sortDir;});
   const R=all(),top=[...R].sort((a,b)=>b.ias-a.ias)[0];
-  const under=[...R].filter(r=>r.misp&&r.misp.kind==="under").sort((a,b)=>a.misp.d-b.misp.d)[0];
+  const under=[...R].filter(r=>r.misp).sort((a,b)=>a.misp.d-b.misp.d)[0];
+  const underKey=under&&under.misp.d<0?"Most undervalued":"Least overvalued";
   const earner=[...R].filter(r=>r.sport<50).sort((a,b)=>b.ias-a.ias)[0];
   $("#stats").innerHTML=[
-    {k:"Franchises",v:R.length,c:"EPL · 2023/24 audited"},
+    {k:"Franchises",v:R.length,c:ACT.sub},
     {k:"Top-ranked asset",v:Math.round(top.ias),c:top.c.name},
-    {k:"Most undervalued",v:under?(Math.round(under.misp.d*100)+"%"):"—",c:under?under.c.name+" vs model":"—"},
+    {k:underKey,v:under?((under.misp.d>0?"+":"")+Math.round(under.misp.d*100)+"%"):"—",c:under?under.c.name+" vs model":"—"},
     {k:"Best earns-without-winning",v:earner?Math.round(earner.ias):"—",c:earner?earner.c.name+" · "+ord(earner.c.finish):"—"},
   ].map(t=>`<div class="stat"><div class="k">${t.k}</div><div class="v">${t.v}</div><div class="c">${t.c}</div></div>`).join("");
   $("#tbody").innerHTML=rows.map((r,i)=>{const m=r.misp;let mh='<span class="ctx">model only</span>';
@@ -557,10 +677,11 @@ function drawScatter(rows){
   s+=`<text x="${x(98)}" y="${y(4)}" text-anchor="end" font-size="10.5" font-family="var(--mono)" fill="${g('--muted')}">WINS BUT BLEEDS</text>`;
   rows.forEach(r=>{const px=x(r.sport),py=y(r.ias),th=r.sport<50&&r.ias>50;
     s+=`<circle cx="${px}" cy="${py}" r="7.5" fill="${th?g('--navy'):g('--paper')}" stroke="${g('--navy')}" stroke-width="2" class="pt" data-n="${r.c.name}" data-i="${Math.round(r.ias)}" data-f="${r.c.finish}" style="cursor:pointer"/>`;});
-  const sn={mancity:"Man City",manutd:"Man United",arsenal:"Arsenal",tottenham:"Tottenham",brighton:"Brighton",everton:"Everton",liverpool:"Liverpool",chelsea:"Chelsea",newcastle:"Newcastle",astonvilla:"Aston Villa",westham:"West Ham"};
+  const sn={mancity:"Man City",manutd:"Man United",arsenal:"Arsenal",tottenham:"Tottenham",brighton:"Brighton",everton:"Everton",liverpool:"Liverpool",chelsea:"Chelsea",newcastle:"Newcastle",astonvilla:"Aston Villa",westham:"West Ham",
+    mi:"MI",csk:"CSK",rcb:"RCB",kkr:"KKR",srh:"SRH",dc:"Delhi Capitals",rr:"Rajasthan",gt:"Gujarat",pbks:"Punjab Kings",lsg:"Lucknow"};
   const pLarr=[],pRarr=[];
   rows.forEach(r=>{const px=x(r.sport),py=y(r.ias),left=px>m.l+iw*.68,arr=left?pLarr:pRarr;let ly=left?py-10:py+3,gd=0;while(arr.some(v=>Math.abs(v-ly)<13)&&gd<10){ly+=left?-13:13;gd++;}arr.push(ly);
-    s+=`<text x="${left?px-11:px+11}" y="${ly}" text-anchor="${left?'end':'start'}" font-size="10.5" font-weight="600" fill="${g('--ink')}">${sn[r.c.id]}</text>`;});
+    s+=`<text x="${left?px-11:px+11}" y="${ly}" text-anchor="${left?'end':'start'}" font-size="10.5" font-weight="600" fill="${g('--ink')}">${sn[r.c.id]||r.c.name}</text>`;});
   s+=`</svg>`;$("#scatter").innerHTML=s;
   $("#legendNote").textContent=`${rows.filter(r=>r.sport<50&&r.ias>50).length} in the thesis quadrant · ${rows.length} clubs`;
   hover("#scatter","#tipS",p=>`<div class="tt">${p.dataset.n}</div><div class="tr">Score <b>${p.dataset.i}</b>/100 · Finish <b>${ord(+p.dataset.f)}</b></div>`);
@@ -582,7 +703,7 @@ function renderDeal(id){
   // cost waterfall components (residual ties to pre-tax)
   const staff=c.wages,amort=c.amort!=null?c.amort:c.rev*0.22,other=c.rev-staff-amort-(pl(c).v||0);
   // revenue mix
-  const mix=[["Broadcast",c.bcast,"var(--navy)"],["Commercial",c.comm,"var(--good)"],["Matchday",c.match,"var(--gold)"]];
+  const mix=[[ACT.revLabel,c.bcast,"var(--navy)"],["Commercial / sponsorship",c.comm,"var(--good)"],["Matchday / gate",c.match,"var(--gold)"]];
   const known=mix.filter(m=>m[1]!=null).reduce((a,m)=>a+m[1],0);const resid=c.rev-known;
   const wks=weaknesses(S);
 
@@ -656,10 +777,10 @@ function renderDeal(id){
 
   <div class="sec"><div class="sec-head"><h2>Squad &amp; stadium X-ray</h2><span class="n">04</span></div>
     <div class="grid2">
-      <div class="flat"><div class="rail-h" style="margin-bottom:8px">Squad — the asset base</div>
-        <div class="kv"><span class="kk">Squad market value${estMark(c,'squadVal')}</span><span class="vv">${gbp(c.squadVal)}</span></div>
-        <div class="kv"><span class="kk">Average age${estMark(c,'age')}</span><span class="vv">${c.age}</span></div>
-        <div class="kv"><span class="kk">Value / wage bill</span><span class="vv">${R.svpw?fmt(R.svpw,2)+"×":"—"}</span></div>
+      <div class="flat"><div class="rail-h" style="margin-bottom:8px">${ACT.assetLight?"Franchise — the asset base":"Squad — the asset base"}</div>
+        <div class="kv"><span class="kk">${ACT.assetLight?"Franchise brand value":"Squad market value"}${estMark(c,'squadVal')}</span><span class="vv">${gbp(c.squadVal)}</span></div>
+        <div class="kv"><span class="kk">Avg squad age${estMark(c,'age')}</span><span class="vv">${c.age}</span></div>
+        <div class="kv"><span class="kk">${ACT.assetLight?"Brand / salary spend":"Value / wage bill"}</span><span class="vv">${R.svpw?fmt(R.svpw,2)+"×":"—"}</span></div>
         <div class="kv"><span class="kk">Trading ROIC</span><span class="vv">${R.tradeROIC!=null?fmt(R.tradeROIC,0)+"%":"—"}</span></div>
         <div class="signal" style="border:none;padding-top:10px"><div class="m"><div class="sn">Value trajectory</div><div class="sd">younger = appreciating asset</div></div>
           <div class="gauge"><i style="width:${clamp(lin(c.age,30,23))}%;background:${c.age<25?'var(--good)':c.age>28?'var(--crit)':'var(--warn)'}"></i></div>
@@ -671,7 +792,8 @@ function renderDeal(id){
         <div class="kv"><span class="kk">Capacity${estMark(c,'cap')}</span><span class="vv">${fmt(c.cap)}</span></div>
         <div class="kv"><span class="kk">Ownership</span><span class="vv" style="color:${c.stad.owned?'var(--good)':'var(--warn)'}">${c.stad.owned?"Owned asset":"Leased"}</span></div>
         <div class="kv"><span class="kk">Utilisation${estMark(c,'util')}</span><span class="vv">${c.util}%</span></div>
-        <div class="kv"><span class="kk">Matchday / seat / yr</span><span class="vv">${c.match!=null?"£"+fmt(c.match*1e6/c.cap):"—"}</span></div>
+        <div class="kv"><span class="kk">Matchday / seat / yr</span><span class="vv">${c.match!=null?ACT.sym+fmt(c.match*(ACT.unit==='cr'?1e7:1e6)/c.cap):"—"}</span></div>
+        ${ACT.assetLight?`<div class="kv"><span class="kk">Multi-league portfolio${estMark(c,'mlNetwork')}</span><span class="vv" style="color:var(--navy)">${c.mlNetwork} league${c.mlNetwork>1?"s":""}</span></div>`:""}
         <div class="signal" style="border:none;padding-top:10px"><div class="m"><div class="sn">Expansion headroom</div><div class="sd">${c.cap<45000?"undersized for the club's tier":"mature capacity"}</div></div>
           <div class="gauge"><i style="width:${clamp(100-c.cap/900)}%;background:${c.cap<40000?'var(--good)':'var(--muted)'}"></i></div>
           <div class="sv" style="color:${c.cap<40000?'var(--good)':'var(--muted)'}">${c.cap<40000?"EXPAND":c.stad.owned?"MATURE":"LEASED"}</div></div>
@@ -740,7 +862,7 @@ function renderDeal(id){
 function drawScenarios(S,D){const c=S.c,W=720,H=300,m={t:16,r:18,b:34,l:54},iw=W-m.l-m.r,ih=H-m.t-m.b;
   const maxV=Math.max(D.bull.y5,c.rev)*1.08,x=t=>m.l+(t/5)*iw,y=v=>m.t+ih-(v/maxV)*ih,g=cvar;
   let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Five-year revenue scenarios">`;
-  const step=maxV>800?400:200;for(let gl=0;gl<=maxV;gl+=step)s+=`<line x1="${m.l}" y1="${y(gl)}" x2="${m.l+iw}" y2="${y(gl)}" stroke="${g('--line')}" stroke-dasharray="2 4"/><text x="${m.l-8}" y="${y(gl)+3}" text-anchor="end" font-size="10" font-family="var(--mono)" fill="${g('--muted')}">£${gl}m</text>`;
+  const step=maxV>800?400:200;for(let gl=0;gl<=maxV;gl+=step)s+=`<line x1="${m.l}" y1="${y(gl)}" x2="${m.l+iw}" y2="${y(gl)}" stroke="${g('--line')}" stroke-dasharray="2 4"/><text x="${m.l-8}" y="${y(gl)+3}" text-anchor="end" font-size="10" font-family="var(--mono)" fill="${g('--muted')}">${ACT.sym}${gl}${ACT.unit}</text>`;
   for(let t=0;t<=5;t++)s+=`<text x="${x(t)}" y="${m.t+ih+16}" text-anchor="middle" font-size="10" font-family="var(--mono)" fill="${g('--muted')}">Y${t}</text>`;
   const line=(o,col,w)=>`<path d="${o.path.map((v,t)=>`${t?'L':'M'}${x(t)},${y(v)}`).join(" ")}" fill="none" stroke="${col}" stroke-width="${w}"/>`+o.path.map((v,t)=>`<circle cx="${x(t)}" cy="${y(v)}" r="2.6" fill="${col}"/>`).join("");
   s+=line(D.bear,g('--crit'),2)+line(D.bull,g('--good'),2)+line(D.base,g('--navy'),2.6)+`</svg>`;$("#scnChart").innerHTML=s;}
@@ -784,6 +906,8 @@ $("#methodBody").innerHTML=`
   <p>The most important output. For each club: a diagnosis, a <strong>target operating model</strong> with specific 3–5 year targets, a costed lever plan, and a three-scenario five-year exit with MOIC. The whole engine exists to find the club where an operational fix creates the most value.</p>
   <h3>5 · The edge &amp; the backtest</h3>
   <p>Alternative signals — audience-monetisation gaps, squad-age value curves, player-trading ROIC — flagged before they reach a headline valuation, and backtested against a completed, cited re-rating.</p>
+  <h3>6 · Two leagues, one framework</h3>
+  <p>The same engine screens both the <strong>English Premier League</strong> (asset-heavy, transparent audited accounts) and the <strong>Indian Premier League</strong> (asset-light, a vast shared central media pool, a salary cap, and owners running multi-league global networks). Switch between them with the EPL/IPL toggle. The framework adapts: for cricket, revenue quality measures reliance on the equal-share central pool vs. owned revenue, the sum-of-parts drops the (leased) stadium, and portfolio breadth across leagues (the Knight Riders and Mumbai Indians networks — the Arctos cross-league thesis) enters the growth pillar. EPL surfaces distressed-turnaround alpha; IPL is priced for growth. CSK is audited; other IPL financials are estimated pending deeper filings.</p>
   <p style="margin-top:16px;color:var(--muted)">Full methodology and source registry in the repository. Illustrative research; not investment advice.</p>`;
 
 // ---- CONTROLS
@@ -792,15 +916,22 @@ function buildSliders(){$("#sliders").innerHTML=PILLARS.map(p=>`<div class="slid
 function syncW(){const tot=PILLARS.reduce((s,p)=>s+P.w[p.k],0)||1;PILLARS.forEach(p=>{$("#v_"+p.k).textContent=P.w[p.k];$("#e_"+p.k).textContent="→ "+Math.round(P.w[p.k]/tot*100)+"%";$("#s_"+p.k).value=P.w[p.k];});$("#wsum").textContent="Σ "+tot;}
 [["#wFloor","wFloor"],["#wCap","wCap"],["#mCap","mCap"],["#scar","scarcityMax"]].forEach(([sel,k])=>$(sel).addEventListener("input",e=>{const x=parseFloat(e.target.value);if(!isNaN(x)){P[k]=x;screenRender();if($("#dealBody").innerHTML)renderDeal($("#clubSel").value);}}));
 function syncTh(){$("#wFloor").value=P.wFloor;$("#wCap").value=P.wCap;$("#mCap").value=P.mCap;$("#scar").value=P.scarcityMax;}
-$("#resetBtn").addEventListener("click",()=>{P=structuredClone(DEFAULTS);buildSliders();syncW();syncTh();screenRender();});
+function applyLeagueParams(){P.baseMult=ACT.baseMult;P.ebMult=ACT.ebMult;P.brandMax=ACT.brandMax;P.xBase=ACT.xBase;P.xBull=ACT.xBull;P.xBear=ACT.xBear;}
+function setChrome(){$("#scEye").textContent=ACT.name+" · "+ACT.sub;$("#scLede").textContent=ACT.lede;}
+$("#resetBtn").addEventListener("click",()=>{P=structuredClone(DEFAULTS);applyLeagueParams();buildSliders();syncW();syncTh();screenRender();if($("#dealBody").innerHTML)renderDeal($("#clubSel").value);});
+function switchLeague(k){if(k===LG)return;LG=k;ACT=LEAGUES[k];CLUBS=ACT.clubs;applyLeagueParams();syncTh();
+  document.querySelectorAll("#lgt button").forEach(b=>b.classList.toggle("active",b.dataset.lg===k));
+  $("#clubSel").innerHTML=CLUBS.map(c=>`<option value="${c.id}">${c.name}</option>`).join("");
+  setChrome();screenRender();renderDeal(CLUBS[0].id);if(document.querySelector('[data-panel="edge"]').classList.contains("active"))edgeRender();}
+document.querySelectorAll("#lgt button").forEach(b=>b.addEventListener("click",()=>switchLeague(b.dataset.lg)));
 function switchTab(t){document.querySelectorAll(".navlink").forEach(b=>b.classList.toggle("active",b.dataset.tab===t));document.querySelectorAll("section[data-panel]").forEach(s=>s.classList.toggle("active",s.dataset.panel===t));if(t==="edge")edgeRender();window.scrollTo({top:0,behavior:"smooth"});}
 document.querySelectorAll(".navlink").forEach(b=>b.addEventListener("click",()=>switchTab(b.dataset.tab)));
 $("#clubSel").innerHTML=CLUBS.map(c=>`<option value="${c.id}">${c.name}</option>`).join("");
 $("#clubSel").addEventListener("change",e=>renderDeal(e.target.value));
 const root=document.documentElement;
 $("#themeBtn").addEventListener("click",()=>{const cur=root.getAttribute("data-theme")||(matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light");root.setAttribute("data-theme",cur==="dark"?"light":"dark");screenRender();if($("#dealBody").innerHTML)renderDeal($("#clubSel").value);if(document.querySelector('[data-panel="edge"]').classList.contains("active"))edgeRender();});
-$("#foot").innerHTML=`<strong>Franchise Alpha</strong> · EPL 2023/24 pilot · 11 franchises. Sources: Companies House / club results / The Swiss Ramble (financials &amp; debt); Premier League &amp; UEFA (regulatory); Transfermarkt (squad value/age); Forbes 2024 &amp; completed transactions (market anchors). Full registry in <code>data/SOURCES.md</code>. Alt-data, asset values and forward scenarios are modeled and labelled. Not investment advice.`;
-buildSliders();syncW();syncTh();screenRender();renderDeal(CLUBS[0].id);
+$("#foot").innerHTML=`<strong>Franchise Alpha</strong> · EPL 2023/24 (11 clubs) + IPL FY2024 (10 franchises). Sources: Companies House / club results / The Swiss Ramble (EPL financials &amp; debt); Premier League &amp; UEFA (regulatory); Transfermarkt (squad value/age); Forbes 2024 (EPL market); CSK audited filings, Houlihan Lokey IPL Valuation Study 2024 &amp; 2022 franchise auctions (IPL). Full registry in <code>data/SOURCES.md</code>. IPL financials beyond CSK, all asset values and forward scenarios are modeled and labelled. Not investment advice.`;
+applyLeagueParams();setChrome();buildSliders();syncW();syncTh();screenRender();renderDeal(CLUBS[0].id);
 </script>
 
 </body>

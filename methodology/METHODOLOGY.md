@@ -118,11 +118,23 @@ All scenario inputs (CAGRs, exit multiples, control premium) are live-adjustable
 
 ## 9. Roadmap
 
-| Phase | League | Real-data anchor |
-|---|---|---|
-| **1 (now)** | EPL | Companies House audited accounts (all clubs) |
-| 2 | Broader European soccer | Club filings + Deloitte Money League + UEFA benchmarking |
-| 3 | Cricket / IPL | Owner-entity filings (India MCA21) + Houlihan Lokey brand-value reports |
-| 4 | US sports (NFL) | Forbes panel, calibrated against the Green Bay Packers' audited accounts |
+| Phase | League | Real-data anchor | Status |
+|---|---|---|---|
+| **1** | EPL | Companies House audited accounts (all clubs) | ✅ 11 clubs |
+| **2 (now)** | Cricket / IPL | CSK audited filings + Houlihan Lokey brand-value study + 2022 franchise auctions | 🟡 10 franchises, CSK audited, rest estimated |
+| 3 | Broader European soccer | Club filings + Deloitte Money League + UEFA benchmarking | — |
+| 4 | US sports (NFL) | Forbes panel, calibrated against the Green Bay Packers' audited accounts | — |
 
-Version 0.2 — deal engine pilot.
+## How the framework adapts to cricket (IPL)
+
+The IPL runs on different economics, and the same five pillars re-interpret cleanly:
+
+- **Central-pool reliance = revenue quality.** A vast media-rights pool (₹48,390cr, 2023-27) is shared near-equally, so P2 rewards franchises that earn *own* revenue (sponsorship, gate) beyond the equal central share — exactly the broadcast-dependence logic from the EPL.
+- **Salary cap = uniform cost discipline.** With a ~₹100cr cap, wages/revenue is a low ~15-20% league-wide; P3 is high for all, and the differentiator moves to own-revenue and portfolio.
+- **Asset-light valuation.** Franchises lease stadiums, so the sum-of-parts drops the stadium and leans on the franchise brand + the central-pool annuity (captured via a higher revenue multiple).
+- **Multi-league portfolio = growth signal.** Owners running cross-league networks (Knight Riders across IPL/MLC/ILT20/CPL; Mumbai Indians across four leagues) score higher on growth — the **Arctos cross-league thesis** in its native market.
+- **Franchise-fee drag.** The 2022 entrants (Lucknow ₹7,090cr, Gujarat ₹5,625cr) amortise huge entry fees; the model shows positive EBITDA but a reported loss — the "overpaid new entrant" signal.
+
+The result is a coherent cross-market read: **EPL surfaces distressed-turnaround alpha; the IPL is priced for growth.**
+
+Version 0.3 — two-league deal engine (EPL + IPL).
