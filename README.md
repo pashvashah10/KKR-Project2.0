@@ -67,7 +67,7 @@ The pilot is the English Premier League because it is the **most financially tra
 
 ## Two leagues
 
-Toggle **EPL / IPL** in the masthead. The IPL runs on different economics — a huge central media pool shared near-equally, a salary cap, leased (asset-light) stadiums, and owners running multi-league global networks (Knight Riders, Mumbai Indians — the Arctos cross-league thesis). The framework adapts automatically (central-pool reliance as the revenue-quality metric, portfolio breadth as a growth signal, franchise-fee amortisation for the 2022 entrants). **EPL surfaces distressed-turnaround alpha; the IPL is priced for growth.** CSK is audited; other IPL financials are estimated pending deeper filings — see `methodology/METHODOLOGY.md`.
+Toggle **EPL / IPL** in the masthead. The IPL runs on different economics — a huge central media pool shared near-equally, a salary cap, leased (asset-light) stadiums, and owners running multi-league global networks (Knight Riders, Mumbai Indians — the Arctos cross-league thesis). The framework adapts automatically (central-pool reliance as the revenue-quality metric, portfolio breadth as a growth signal, franchise-fee amortisation for the 2022 entrants). **EPL surfaces distressed-turnaround alpha; the IPL is priced for growth.** IPL revenue and net profit are now MCA-filed for all ten franchises (only SRH's profit is estimated); brand values and market EVs remain modeled — see `methodology/METHODOLOGY.md`. Notably, **Punjab Kings is the most profitable IPL franchise (₹252cr, ~38% margin) despite never winning** — the model flags it undervalued, a clean profit-over-trophies pick.
 
 ## Pilot dataset (2023/24)
 
