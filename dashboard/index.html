@@ -241,6 +241,8 @@
               <div class="num-row"><label>Wages/rev → 0 pts at %</label><input type="number" id="wFloor"></div>
               <div class="num-row"><label>Wages/rev → 100 pts at %</label><input type="number" id="wCap"></div>
               <div class="num-row"><label>Margin → 100 pts at %</label><input type="number" id="mCap"></div>
+              <div class="num-row"><label>Franchise scarcity premium (0–1)</label><input type="number" id="scar" step="0.05"></div>
+              <p class="rb" style="font-size:11px;color:var(--muted);margin-top:6px">0 = pure fundamental valuation · higher = respect the market's global-brand scarcity premium.</p>
             </div>
           </details>
         </div>
@@ -420,7 +422,7 @@ const CLUBS=[
     {t:"Exit PSR constraint",wk:"−8 pts; squad-build handcuffed",capex:0,upE:0,ramp:2}]},
 ];
 const DEFAULTS={w:{p1:35,p2:22,p3:18,p4:15,p5:10},wFloor:90,wCap:45,mCap:25,
-  baseMult:4.5,ebMult:12,brandMax:900,controlPrem:25,gBase:6,gBull:12,gBear:-3,xBase:4.5,xBull:5.5,xBear:3.5};
+  baseMult:4.5,ebMult:12,brandMax:900,scarcityMax:0.65,controlPrem:25,gBase:6,gBull:12,gBear:-3,xBase:4.5,xBull:5.5,xBear:3.5};
 const PILLARS=[{k:"p1",label:"Profitability & cash"},{k:"p2",label:"Revenue quality"},{k:"p3",label:"Cost discipline"},{k:"p4",label:"Solvency risk"},{k:"p5",label:"Growth & alt-signal"}];
 let P=structuredClone(DEFAULTS);
 
@@ -461,7 +463,11 @@ function scoreClub(c){
   if(revMethod!=null){acc+=wR*revMethod;tot+=wR;}
   if(sop!=null){acc+=wS*sop;tot+=wS;}
   if(ebMethod!=null){acc+=wE*ebMethod;tot+=wE;}
-  const intrinsic=tot>0?acc/tot:revMethod;
+  const blend=tot>0?acc/tot:revMethod;
+  // franchise scarcity premium — the market pays up for globally scarce brands (proxied by global audience)
+  const scarcityScore=clamp(lin(c.ig,2,65));
+  const scarcityMult=1+(scarcityScore/100)*P.scarcityMax;
+  const intrinsic=blend*scarcityMult;
   let misp=null;
   if(c.marketEV!=null){const d=(c.marketEV-intrinsic)/intrinsic;misp={d,kind:d>0.10?"over":d<-0.10?"under":"fair",intrinsic,market:c.marketEV};}
   const R={wr:(c.wages/c.rev)*100,margin,evRev:(c.marketEV!=null?c.marketEV/c.rev:intrinsic/c.rev),
@@ -469,7 +475,7 @@ function scoreClub(c){
     ebMargin:eb!=null?(eb/c.rev)*100:null,amortInt:c.amort!=null?(c.amort/c.rev)*100:null,
     tradeROIC:(c.psale!=null)?(c.psale/c.wages)*100:null,ptsWage:(c.points/c.wages),revFollower:(c.rev/c.ig),svpw,
     commShare:c.comm!=null?(c.comm/c.rev)*100:null,
-    valBridge:{revMethod,sop,sopGross,ebMethod,brandIP,stadV,squad:c.squadVal,train:c.train,netDebt:c.netDebt,intrinsic}};
+    valBridge:{revMethod,sop,sopGross,ebMethod,brandIP,stadV,squad:c.squadVal,train:c.train,netDebt:c.netDebt,blend,scarcityMult,scarcityScore,intrinsic}};
   return {c,ias,PS,dataComp,sport,margin,pLab:p.lab,intrinsic,eb,misp,R,svpw};
 }
 const all=()=>CLUBS.map(scoreClub); const byId=id=>all().find(x=>x.c.id===id);
@@ -592,10 +598,11 @@ function renderDeal(id){
           ${barRow("Revenue multiple",vb.revMethod,vb.revMethod/(vb.intrinsic*1.6)*100,"var(--navy)",gbpB(vb.revMethod))}
           ${barRow("Sum-of-parts",vb.sop,vb.sop/(vb.intrinsic*1.6)*100,"var(--good)",gbpB(vb.sop))}
           ${vb.ebMethod?barRow("EV/EBITDA (modeled)",vb.ebMethod,vb.ebMethod/(vb.intrinsic*1.6)*100,"var(--gold)",gbpB(vb.ebMethod)):""}
-          ${barRow("→ Blended intrinsic",vb.intrinsic,vb.intrinsic/(vb.intrinsic*1.6)*100,"var(--ink)","<b>"+gbpB(vb.intrinsic)+"</b>")}
+          ${barRow("Blended (fundamental)",vb.blend,vb.blend/(vb.intrinsic*1.6)*100,"var(--ink-3)",gbpB(vb.blend))}
+          ${barRow("→ Intrinsic  × "+vb.scarcityMult.toFixed(2)+" scarcity",vb.intrinsic,vb.intrinsic/(vb.intrinsic*1.6)*100,"var(--ink)","<b>"+gbpB(vb.intrinsic)+"</b>")}
           ${c.marketEV!=null?barRow("Market price",c.marketEV,c.marketEV/(vb.intrinsic*1.6)*100,v&&v.kind==='over'?"var(--crit)":v&&v.kind==='under'?"var(--good)":"var(--ink-3)",gbpB(c.marketEV)):""}
         </div>
-        <div class="wf-legend"><span>Blend: 50% revenue · 35% sum-of-parts · 15% EBITDA</span></div>
+        <div class="wf-legend"><span>Blend: 50% revenue · 35% sum-of-parts · 15% EBITDA</span><span>× franchise scarcity premium (global-brand value)</span></div>
       </div>
       <div class="flat"><div class="rail-h" style="margin-bottom:10px">Sum-of-parts build${estMark(c,'stad')}</div>
         <div class="kv"><span class="kk">Playing squad${estMark(c,'squadVal')}</span><span class="vv">${gbp(vb.squad)}</span></div>
@@ -708,6 +715,7 @@ function renderDeal(id){
         <details open><summary>Deal assumptions — tune the model</summary>
           <div style="margin-top:12px">
             <div class="num-row"><label>Base EV/Rev multiple</label><input type="number" id="a_baseMult" step="0.1"></div>
+            <div class="num-row"><label>Scarcity premium (0–1)</label><input type="number" id="a_scar" step="0.05"></div>
             <div class="num-row"><label>Control premium %</label><input type="number" id="a_prem" step="1"></div>
             <div class="num-row"><label>Base / Bull / Bear rev CAGR %</label><span><input type="number" id="a_gBase" step="0.5" style="width:46px"> <input type="number" id="a_gBull" step="0.5" style="width:46px"> <input type="number" id="a_gBear" step="0.5" style="width:46px"></span></div>
             <div class="num-row"><label>Base / Bull / Bear exit mult</label><span><input type="number" id="a_xBase" step="0.1" style="width:46px"> <input type="number" id="a_xBull" step="0.1" style="width:46px"> <input type="number" id="a_xBear" step="0.1" style="width:46px"></span></div>
@@ -726,7 +734,7 @@ function renderDeal(id){
     <div class="kv"><span class="kk">Yr-5 revenue</span><span class="vv">${gbp(o.y5)}</span></div><div class="kv"><span class="kk">Exit EV</span><span class="vv">${gbpB(o.exitEV)}</span></div>
     <div class="kv"><span class="kk">Exit equity</span><span class="vv">${gbpB(o.exitEq)}</span></div><div class="kv tot"><span class="kk">MOIC on capital</span><span class="vv">${fmt(o.moic,2)}×</span></div></div>`;
   $("#scnCards").innerHTML=sc("Base case",D.base,"var(--navy)")+sc("Bull — exceeds plan",D.bull,"var(--good)")+sc("Bear — plan fails",D.bear,"var(--crit)");
-  [["#a_baseMult","baseMult"],["#a_prem","controlPrem"],["#a_gBase","gBase"],["#a_gBull","gBull"],["#a_gBear","gBear"],["#a_xBase","xBase"],["#a_xBull","xBull"],["#a_xBear","xBear"]]
+  [["#a_baseMult","baseMult"],["#a_scar","scarcityMax"],["#a_prem","controlPrem"],["#a_gBase","gBase"],["#a_gBull","gBull"],["#a_gBear","gBear"],["#a_xBase","xBase"],["#a_xBull","xBull"],["#a_xBear","xBear"]]
     .forEach(([sel,k])=>{const el=$(sel);el.value=P[k];el.oninput=e=>{const x=parseFloat(e.target.value);if(!isNaN(x)){P[k]=x;renderDeal(c.id);}};});
 }
 function drawScenarios(S,D){const c=S.c,W=720,H=300,m={t:16,r:18,b:34,l:54},iw=W-m.l-m.r,ih=H-m.t-m.b;
@@ -768,7 +776,8 @@ $("#methodBody").innerHTML=`
   <h3>1 · The screening score</h3>
   <p>A 0–100 composite across five weighted pillars — Profitability &amp; cash (35%), Revenue quality (22%), Cost discipline (18%), Solvency risk (15%) and Growth &amp; alt-signal (10%). Each pillar renormalises over the metrics it can actually source, and on-field results are shown for context but never scored.</p>
   <h3>2 · Hardened valuation</h3>
-  <p>Intrinsic enterprise value blends a revenue multiple (50%), an <strong>asset-based sum-of-parts</strong> (35%) and a modeled EV/EBITDA cross-check (15%). The sum-of-parts uses real net-debt lines and distinguishes <strong>owned stadiums from leased ones</strong> — a distinction most models miss and a real driver of asset value. Intrinsic is compared to the market price (Forbes 2024 / completed transactions) to flag mispricing.</p>
+  <p>Intrinsic enterprise value blends a revenue multiple (50%), an <strong>asset-based sum-of-parts</strong> (35%) and a modeled EV/EBITDA cross-check (15%). The sum-of-parts uses real net-debt lines and distinguishes <strong>owned stadiums from leased ones</strong> — a distinction most models miss and a real driver of asset value.</p>
+  <p>That fundamental blend is then lifted by a <strong>franchise scarcity premium</strong>: the market pays up for globally scarce brands, and a pure cashflow/asset model would otherwise flag every elite club as "overvalued". The premium scales with global audience (there are only a handful of top-6-reach clubs) and is fully tunable — set it to 0 for a pure fundamental view, or higher to respect the scarcity the market prices in. Intrinsic is then compared to the market price (Forbes 2024 / completed transactions) to flag mispricing.</p>
   <h3>3 · The deep dive</h3>
   <p>Every club gets a full breakdown: an EV bridge, a revenue mix, a cost waterfall (staff → amortisation → overheads → result), the PE ratio suite, a squad X-ray (value, age trajectory, key assets and contract risk) and stadium economics.</p>
   <h3>4 · The turnaround thesis</h3>
@@ -781,8 +790,8 @@ $("#methodBody").innerHTML=`
 function buildSliders(){$("#sliders").innerHTML=PILLARS.map(p=>`<div class="slider-row"><div class="slider-top"><span class="slider-label">${p.label}</span><span><span class="slider-val" id="v_${p.k}"></span> <span class="slider-eff" id="e_${p.k}"></span></span></div><input type="range" id="s_${p.k}" min="0" max="55" value="${P.w[p.k]}"></div>`).join("");
   PILLARS.forEach(p=>$("#s_"+p.k).addEventListener("input",e=>{P.w[p.k]=+e.target.value;syncW();screenRender();}));}
 function syncW(){const tot=PILLARS.reduce((s,p)=>s+P.w[p.k],0)||1;PILLARS.forEach(p=>{$("#v_"+p.k).textContent=P.w[p.k];$("#e_"+p.k).textContent="→ "+Math.round(P.w[p.k]/tot*100)+"%";$("#s_"+p.k).value=P.w[p.k];});$("#wsum").textContent="Σ "+tot;}
-[["#wFloor","wFloor"],["#wCap","wCap"],["#mCap","mCap"]].forEach(([sel,k])=>$(sel).addEventListener("input",e=>{const x=parseFloat(e.target.value);if(!isNaN(x)){P[k]=x;screenRender();}}));
-function syncTh(){$("#wFloor").value=P.wFloor;$("#wCap").value=P.wCap;$("#mCap").value=P.mCap;}
+[["#wFloor","wFloor"],["#wCap","wCap"],["#mCap","mCap"],["#scar","scarcityMax"]].forEach(([sel,k])=>$(sel).addEventListener("input",e=>{const x=parseFloat(e.target.value);if(!isNaN(x)){P[k]=x;screenRender();if($("#dealBody").innerHTML)renderDeal($("#clubSel").value);}}));
+function syncTh(){$("#wFloor").value=P.wFloor;$("#wCap").value=P.wCap;$("#mCap").value=P.mCap;$("#scar").value=P.scarcityMax;}
 $("#resetBtn").addEventListener("click",()=>{P=structuredClone(DEFAULTS);buildSliders();syncW();syncTh();screenRender();});
 function switchTab(t){document.querySelectorAll(".navlink").forEach(b=>b.classList.toggle("active",b.dataset.tab===t));document.querySelectorAll("section[data-panel]").forEach(s=>s.classList.toggle("active",s.dataset.panel===t));if(t==="edge")edgeRender();window.scrollTo({top:0,behavior:"smooth"});}
 document.querySelectorAll(".navlink").forEach(b=>b.addEventListener("click",()=>switchTab(b.dataset.tab)));
