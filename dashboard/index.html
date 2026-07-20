@@ -1,0 +1,741 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Franchise Alpha — a sports-PE deal engine screening football franchises for mispricing, acquisition cost, costed value-creation and three-scenario exits.">
+</head>
+<body>
+<title>Franchise Alpha — Sports PE Deal Engine</title>
+<style>
+  :root{
+    --bg:#F4F6F8; --surface:#FFFFFF; --surface-2:#EDF0F4; --surface-3:#E2E7EE;
+    --border:#D6DCE4; --border-strong:#BFC8D3;
+    --ink:#131922; --ink-2:#3B4552; --muted:#69737F;
+    --accent:#1F52C4; --accent-2:#153f9c; --accent-ink:#FFFFFF; --accent-wash:rgba(31,82,196,.08);
+    --good:#0E7A4F; --good-bg:rgba(14,122,79,.12);
+    --warn:#9A6412; --warn-bg:rgba(154,100,18,.13);
+    --crit:#BE3A29; --crit-bg:rgba(190,58,41,.11);
+    --gold:#9A7B1F;
+    --font-sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --font-mono:ui-monospace,"SF Mono","Cascadia Code","JetBrains Mono",Menlo,Consolas,monospace;
+    --shadow:0 1px 2px rgba(18,24,33,.04),0 4px 16px rgba(18,24,33,.05);
+    --r:11px;
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --bg:#0B0E13; --surface:#131820; --surface-2:#19202A; --surface-3:#222B37;
+    --border:#28313D; --border-strong:#374355;
+    --ink:#E9EEF5; --ink-2:#AEB9C6; --muted:#788390;
+    --accent:#5E8DF2; --accent-2:#7CA4F6; --accent-ink:#0B0E13; --accent-wash:rgba(94,141,242,.13);
+    --good:#33C98A; --good-bg:rgba(51,201,138,.14);
+    --warn:#E1AB53; --warn-bg:rgba(225,171,83,.14);
+    --crit:#E56B54; --crit-bg:rgba(229,107,84,.14);
+    --gold:#D9BC6B;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 26px rgba(0,0,0,.38);
+  }}
+  :root[data-theme="dark"]{
+    --bg:#0B0E13; --surface:#131820; --surface-2:#19202A; --surface-3:#222B37;
+    --border:#28313D; --border-strong:#374355;
+    --ink:#E9EEF5; --ink-2:#AEB9C6; --muted:#788390;
+    --accent:#5E8DF2; --accent-2:#7CA4F6; --accent-ink:#0B0E13; --accent-wash:rgba(94,141,242,.13);
+    --good:#33C98A; --good-bg:rgba(51,201,138,.14);
+    --warn:#E1AB53; --warn-bg:rgba(225,171,83,.14);
+    --crit:#E56B54; --crit-bg:rgba(229,107,84,.14);
+    --gold:#D9BC6B;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 26px rgba(0,0,0,.38);
+  }
+  :root[data-theme="light"]{
+    --bg:#F4F6F8; --surface:#FFFFFF; --surface-2:#EDF0F4; --surface-3:#E2E7EE;
+    --border:#D6DCE4; --border-strong:#BFC8D3;
+    --ink:#131922; --ink-2:#3B4552; --muted:#69737F;
+    --accent:#1F52C4; --accent-2:#153f9c; --accent-ink:#FFFFFF; --accent-wash:rgba(31,82,196,.08);
+    --good:#0E7A4F; --good-bg:rgba(14,122,79,.12);
+    --warn:#9A6412; --warn-bg:rgba(154,100,18,.13);
+    --crit:#BE3A29; --crit-bg:rgba(190,58,41,.11);
+    --gold:#9A7B1F;
+    --shadow:0 1px 2px rgba(18,24,33,.04),0 4px 16px rgba(18,24,33,.05);
+  }
+  *{box-sizing:border-box}
+  body{background:var(--bg);color:var(--ink);font-family:var(--font-sans);line-height:1.5;-webkit-font-smoothing:antialiased;margin:0}
+  .wrap{max-width:1280px;margin:0 auto;padding:clamp(14px,2.6vw,30px)}
+  .mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+  .eyebrow{font-family:var(--font-mono);font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--accent);font-weight:600}
+  h1{font-size:clamp(23px,3.2vw,32px);line-height:1.08;letter-spacing:-.02em;font-weight:800;margin:.3em 0 .2em;text-wrap:balance}
+  h2{font-size:16px;font-weight:700;margin:0 0 2px;letter-spacing:-.01em}
+  h3{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 10px;font-weight:700}
+  .sub{color:var(--ink-2);max-width:74ch;font-size:14.5px}
+  a{color:var(--accent);text-decoration:none} a:hover{text-decoration:underline}
+  .est{color:var(--gold);font-size:.72em;vertical-align:super;cursor:help;font-family:var(--font-mono)}
+
+  header{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;padding-bottom:16px}
+  .toggle{font-family:var(--font-mono);font-size:12px;color:var(--ink-2);background:var(--surface);border:1px solid var(--border);border-radius:100px;padding:7px 13px;cursor:pointer;white-space:nowrap}
+  .toggle:hover{border-color:var(--border-strong)}
+  .toggle:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+  /* tabs */
+  .tabs{display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:22px;flex-wrap:wrap}
+  .tab{font-family:var(--font-mono);font-size:12.5px;letter-spacing:.03em;padding:10px 16px;border:none;background:none;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;font-weight:600}
+  .tab:hover{color:var(--ink)}
+  .tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+  section[data-panel]{display:none}
+  section[data-panel].active{display:block}
+
+  .panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--shadow)}
+  .pad{padding:18px}
+  .grid{display:grid;grid-template-columns:280px 1fr;gap:20px;align-items:start}
+  @media (max-width:920px){.grid{grid-template-columns:1fr}}
+  .rail{position:sticky;top:14px;display:flex;flex-direction:column;gap:16px}
+  @media (max-width:920px){.rail{position:static}}
+
+  /* sliders */
+  .slider-row{margin:12px 0}
+  .slider-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;gap:8px}
+  .slider-label{font-size:13px;font-weight:600}
+  .slider-val{font-family:var(--font-mono);font-size:12px;color:var(--accent);font-weight:600}
+  .slider-eff{font-family:var(--font-mono);font-size:11px;color:var(--muted)}
+  input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:4px;border-radius:4px;background:var(--surface-3);outline:none;margin:3px 0}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:15px;height:15px;border-radius:50%;background:var(--accent);cursor:pointer;border:2px solid var(--surface);box-shadow:0 0 0 1px var(--border-strong)}
+  input[type=range]::-moz-range-thumb{width:15px;height:15px;border-radius:50%;background:var(--accent);cursor:pointer;border:2px solid var(--surface)}
+  .num-row{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:9px 0;font-size:12.5px}
+  .num-row label{color:var(--ink-2)}
+  input[type=number]{font-family:var(--font-mono);width:70px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;background:var(--surface-2);color:var(--ink);font-size:12px;text-align:right}
+  input[type=number]:focus-visible{outline:2px solid var(--accent);border-color:var(--accent)}
+  .btn{font-family:var(--font-mono);font-size:12px;width:100%;margin-top:6px;padding:9px;border-radius:7px;border:1px solid var(--border);background:var(--surface-2);color:var(--ink);cursor:pointer;font-weight:600}
+  .btn:hover{border-color:var(--border-strong);background:var(--surface-3)}
+  select{font-family:var(--font-sans);font-size:14px;font-weight:600;padding:9px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--ink);cursor:pointer;min-width:230px}
+  select:focus-visible{outline:2px solid var(--accent)}
+
+  /* tiles */
+  .tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+  @media (max-width:760px){.tiles{grid-template-columns:repeat(2,1fr)}}
+  .tile{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:13px 14px;box-shadow:var(--shadow)}
+  .tile .k{font-family:var(--font-mono);font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+  .tile .v{font-family:var(--font-mono);font-size:22px;font-weight:700;letter-spacing:-.01em;line-height:1.05}
+  .tile .cap{font-size:11.5px;color:var(--ink-2);margin-top:3px}
+
+  /* table */
+  .table-wrap{overflow-x:auto;border-radius:var(--r)}
+  table{width:100%;border-collapse:collapse;min-width:900px}
+  thead th{font-family:var(--font-mono);font-size:10px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);font-weight:600;text-align:right;padding:10px 9px;border-bottom:1px solid var(--border-strong);white-space:nowrap;position:sticky;top:0;background:var(--surface);cursor:pointer}
+  thead th.l{text-align:left}
+  thead th:hover{color:var(--ink)}
+  tbody td{padding:11px 9px;border-bottom:1px solid var(--border);text-align:right;font-family:var(--font-mono);font-size:12.5px;font-variant-numeric:tabular-nums;white-space:nowrap}
+  tbody td.l{text-align:left;font-family:var(--font-sans)}
+  tbody tr{cursor:pointer}
+  tbody tr:hover{background:var(--surface-2)}
+  tbody tr:last-child td{border-bottom:none}
+  .club-cell{display:flex;flex-direction:column;gap:1px}
+  .club-name{font-weight:700;font-size:13.5px}
+  .club-own{font-size:10.5px;color:var(--muted)}
+  .rank{color:var(--muted);font-size:11.5px}
+  .ias{display:flex;align-items:center;gap:8px;justify-content:flex-end}
+  .ias-num{font-weight:700;font-size:14px;min-width:26px;text-align:right}
+  .bar{width:48px;height:6px;border-radius:4px;background:var(--surface-3);overflow:hidden;flex-shrink:0}
+  .bar>i{display:block;height:100%;border-radius:4px;background:var(--accent)}
+  .pill{display:inline-block;min-width:28px;text-align:center;padding:2px 6px;border-radius:5px;font-size:11.5px;font-weight:600;font-family:var(--font-mono)}
+  .p-good{background:var(--good-bg);color:var(--good)} .p-ok{background:var(--accent-wash);color:var(--accent)}
+  .p-warn{background:var(--warn-bg);color:var(--warn)} .p-crit{background:var(--crit-bg);color:var(--crit)}
+  .p-na{background:var(--surface-3);color:var(--muted);font-weight:500}
+  .flag{display:inline-flex;align-items:center;gap:5px;padding:2px 7px;border-radius:5px;font-size:11px;font-weight:600;font-family:var(--font-sans)}
+  .flag-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+  .misp-under{background:var(--good-bg);color:var(--good)} .misp-over{background:var(--crit-bg);color:var(--crit)} .misp-fair{background:var(--surface-3);color:var(--ink-2)}
+  .ctx{color:var(--muted)}
+
+  /* deal room */
+  .deal-head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+  .verdict{display:inline-flex;flex-direction:column;align-items:flex-end;gap:2px}
+  .verdict .big{font-family:var(--font-mono);font-size:26px;font-weight:800;letter-spacing:-.01em}
+  .verdict .lbl{font-size:11px;font-family:var(--font-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+  .cols2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .cols3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+  @media (max-width:820px){.cols2,.cols3{grid-template-columns:1fr}}
+  .section-gap{margin-top:16px}
+  .ratio-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:11px}
+  @media (max-width:680px){.ratio-grid{grid-template-columns:repeat(2,1fr)}}
+  .ratio{background:var(--surface-2);border:1px solid var(--border);border-radius:9px;padding:11px 12px}
+  .ratio .rl{font-size:11px;color:var(--muted);display:flex;justify-content:space-between;gap:6px;margin-bottom:5px}
+  .ratio .rv{font-family:var(--font-mono);font-size:18px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1}
+  .ratio .rb{font-size:10.5px;color:var(--ink-2);margin-top:5px}
+  .tag{font-family:var(--font-mono);font-size:9px;letter-spacing:.04em;text-transform:uppercase;padding:1px 5px;border-radius:4px;font-weight:600}
+  .t-src{background:var(--good-bg);color:var(--good)} .t-der{background:var(--accent-wash);color:var(--accent)} .t-mod{background:var(--warn-bg);color:var(--warn)}
+  .wk{display:flex;gap:9px;padding:9px 0;border-bottom:1px solid var(--border);font-size:13px;align-items:flex-start}
+  .wk:last-child{border-bottom:none}
+  .wk-sev{font-family:var(--font-mono);font-size:9.5px;font-weight:700;letter-spacing:.04em;padding:3px 6px;border-radius:5px;flex-shrink:0;margin-top:1px}
+  .sev-hi{background:var(--crit-bg);color:var(--crit)} .sev-md{background:var(--warn-bg);color:var(--warn)} .sev-lo{background:var(--surface-3);color:var(--ink-2)}
+  .lever{border:1px solid var(--border);border-radius:9px;padding:12px;margin-bottom:10px;background:var(--surface-2)}
+  .lever-h{display:flex;justify-content:space-between;gap:10px;align-items:baseline;margin-bottom:4px}
+  .lever-t{font-weight:700;font-size:13.5px}
+  .lever-econ{display:flex;gap:14px;margin-top:8px;flex-wrap:wrap}
+  .econ{font-family:var(--font-mono);font-size:11.5px}
+  .econ b{display:block;font-size:14px;font-weight:700}
+  .econ span{color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.04em}
+  .kv{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px dashed var(--border);font-size:13px}
+  .kv:last-child{border-bottom:none}
+  .kv .kk{color:var(--ink-2)} .kv .vv{font-family:var(--font-mono);font-weight:600}
+  .kv.total{border-top:2px solid var(--border-strong);border-bottom:none;margin-top:4px;padding-top:10px}
+  .kv.total .kk{font-weight:700} .kv.total .vv{font-size:15px;color:var(--accent)}
+  .scn-legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;margin:2px 0 8px}
+  .scn-legend span{display:inline-flex;align-items:center;gap:6px;font-family:var(--font-mono)}
+  .swatch{width:11px;height:3px;border-radius:2px;display:inline-block}
+  .signal-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}
+  .signal-row:last-child{border-bottom:none}
+  .signal-meta{flex:1;min-width:0}
+  .signal-name{font-weight:600;font-size:13px}
+  .signal-desc{font-size:11.5px;color:var(--muted)}
+  .signal-val{font-family:var(--font-mono);font-weight:700;font-size:15px;text-align:right;min-width:74px}
+  .gauge{width:90px;height:6px;border-radius:4px;background:var(--surface-3);overflow:hidden;flex-shrink:0}
+  .gauge>i{display:block;height:100%;border-radius:4px}
+
+  .scatter-box{position:relative} svg{display:block;width:100%;height:auto}
+  .tip{position:absolute;pointer-events:none;background:var(--surface);border:1px solid var(--border-strong);border-radius:8px;padding:9px 11px;font-size:12px;box-shadow:var(--shadow);opacity:0;transition:opacity .12s;z-index:5;max-width:240px}
+  .tip .tt{font-weight:700;margin-bottom:3px} .tip .tr{font-family:var(--font-mono);color:var(--ink-2);font-size:11px}
+  .callout{background:var(--accent-wash);border:1px solid color-mix(in srgb,var(--accent) 26%,transparent);border-radius:9px;padding:12px 14px;font-size:13px;color:var(--ink-2)}
+  .warnbox{background:var(--warn-bg);border:1px solid color-mix(in srgb,var(--warn) 30%,transparent);border-radius:8px;padding:10px 13px;font-size:12px;color:var(--ink-2);margin-top:14px}
+  footer{margin-top:24px;padding-top:18px;border-top:1px solid var(--border);color:var(--muted);font-size:12px}
+  .lead{font-size:14px;color:var(--ink-2);margin:0 0 14px;max-width:80ch}
+</style>
+
+<div class="wrap">
+  <header>
+    <div>
+      <span class="eyebrow">Sports-PE deal engine · pilot: English Premier League · 2023/24</span>
+      <h1>Franchise Alpha</h1>
+      <p class="sub">Screens franchises the way a sports-PE desk underwrites them: mispricing, root cause, acquisition cost, a costed value-creation plan, and a three-scenario exit — powered by the alternative signals most models never touch. <strong>Profitability over trophies.</strong></p>
+    </div>
+    <button class="toggle" id="themeBtn">◑ Theme</button>
+  </header>
+
+  <div class="tabs" id="tabs">
+    <button class="tab active" data-tab="screen">◆ Screen</button>
+    <button class="tab" data-tab="deal">▣ Deal Room</button>
+    <button class="tab" data-tab="edge">✦ The Edge</button>
+  </div>
+
+  <!-- ===================== SCREEN ===================== -->
+  <section data-panel="screen" class="active">
+    <div class="grid">
+      <div class="rail">
+        <div class="panel pad">
+          <div style="display:flex;justify-content:space-between;align-items:baseline"><h2>Score weights</h2><span class="slider-eff" id="weightSum"></span></div>
+          <p class="lead" style="font-size:12.5px;margin:6px 0 10px">What makes an asset attractive — your call. Effective % normalises to 100.</p>
+          <div id="sliders"></div>
+          <button class="btn" id="resetBtn">↺ Reset to profit-first defaults</button>
+        </div>
+        <div class="panel pad">
+          <details><summary style="cursor:pointer;font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)">Benchmark thresholds</summary>
+            <div style="margin-top:10px">
+              <div class="num-row"><label>Wages/rev = 0 pts at %</label><input type="number" id="wFloor" step="1"></div>
+              <div class="num-row"><label>Wages/rev = 100 pts at %</label><input type="number" id="wCap" step="1"></div>
+              <div class="num-row"><label>Margin = 100 pts at %</label><input type="number" id="mCap" step="1"></div>
+            </div>
+          </details>
+        </div>
+        <div class="panel pad callout" style="box-shadow:none">
+          <strong>Read the table as a screen.</strong> Click any club to open its full <em>Deal Room</em> workup. Grey = context only, never scored.
+        </div>
+      </div>
+
+      <div>
+        <div class="tiles" id="screenTiles"></div>
+        <div class="panel" style="margin-bottom:18px">
+          <div class="pad" style="padding-bottom:6px">
+            <h2>Investment-attractiveness screen</h2>
+            <p class="lead" style="font-size:12.5px;margin:4px 0 0">Composite 0–100. <span class="ctx">P1</span> Profit · <span class="ctx">P2</span> Rev-quality · <span class="ctx">P3</span> Cost · <span class="ctx">P4</span> Risk · <span class="ctx">P5</span> Growth. Sortable — click a header.</p>
+          </div>
+          <div class="table-wrap"><table id="tbl"><thead><tr>
+            <th class="l">#</th><th class="l" data-sort="name">Club</th>
+            <th data-sort="ias">Score</th>
+            <th data-sort="p1">P1</th><th data-sort="p2">P2</th><th data-sort="p3">P3</th><th data-sort="p4">P4</th><th data-sort="p5">P5</th>
+            <th data-sort="wr">Wage/Rev</th><th data-sort="margin">Margin</th>
+            <th data-sort="evrev">EV/Rev</th><th data-sort="roic">Trade ROIC</th>
+            <th data-sort="misp">Mispricing</th><th data-sort="finish">Finish</th>
+          </tr></thead><tbody id="tbody"></tbody></table></div>
+        </div>
+
+        <div class="panel pad">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px">
+            <div><h2>The thesis, in one chart</h2><p class="lead" style="font-size:12.5px;margin:2px 0 0">Financial score vs on-field results. The top-left quadrant is the whole point.</p></div>
+            <span class="slider-eff" id="legendNote"></span>
+          </div>
+          <div class="scatter-box"><div class="tip" id="tipS"></div><div id="scatter"></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== DEAL ROOM ===================== -->
+  <section data-panel="deal">
+    <div class="deal-head">
+      <div>
+        <h3 style="margin-bottom:6px">Investment committee memo</h3>
+        <select id="clubSel"></select>
+      </div>
+      <div class="verdict" id="verdict"></div>
+    </div>
+    <div id="dealBody"></div>
+  </section>
+
+  <!-- ===================== EDGE ===================== -->
+  <section data-panel="edge">
+    <div class="panel pad" style="margin-bottom:18px">
+      <h2>Where the alpha comes from</h2>
+      <p class="lead">Enterprise value in sport re-rates on signals that surface in the data <em>before</em> they show up in a headline valuation. The engine tracks the ones generic models ignore — then backtests them against a completed, cited re-rating.</p>
+      <div class="cols3" id="edgeSignals"></div>
+    </div>
+    <div class="panel pad">
+      <h2>The backtest — did the signal move before the market?</h2>
+      <p class="lead">The one chart a sports-PE partner leans in for: the model's signal rising ahead of the official mark. Proven here on a <strong>completed</strong> franchise re-rating with public sources.</p>
+      <div class="scn-legend" id="btLegend"></div>
+      <div class="scatter-box"><div class="tip" id="tipB"></div><div id="backtest"></div></div>
+      <div class="callout section-gap" id="btNote"></div>
+    </div>
+  </section>
+
+  <footer id="foot"></footer>
+</div>
+
+<script>
+// ============================================================= DATA (2023/24, £m unless noted)
+// Provenance tag per field: src=audited/primary, der=derived, mod=modeled/estimated. `est` lists modeled fields.
+const CLUBS=[
+ {id:"mancity",name:"Manchester City",owner:"City Football Group",
+  rev:715.0,op:null,pre:74.0,psale:22,wages:412.6,bcast:null,comm:null,match:null,amort:null,netDebt:0,points:91,finish:1,
+  squadVal:1110,age:27.5,ig:46.5,cap:53400,util:99,marketEV:4030,
+  flags:{charges:true},grow:85,
+  est:["psale","netDebt","squadVal","age","util","marketEV"],
+  levers:[
+    {t:"Resolve regulatory overhang (115 charges)",wk:"Open charges impose a valuation discount",capex:0,upE:0,ramp:2,note:"Binary event — clears discount, not an operating uplift"},
+    {t:"Extend CFG commercial network",wk:"Elite base, but incremental sponsorship yield still on the table",capex:30,upR:40,ramp:4,note:"Multi-club data & sponsorship leverage; already best-in-class"}]},
+ {id:"manutd",name:"Manchester United",owner:"Glazers / INEOS 27.7%",
+  rev:662.0,op:null,pre:-131.0,psale:37,wages:365.0,bcast:222,comm:303,match:137,amort:187,netDebt:1000,points:60,finish:8,
+  squadVal:640,age:25.5,ig:62.3,cap:74310,util:99,marketEV:5170,
+  flags:{ownership:true},grow:70,
+  est:["netDebt","squadVal","age","util"],
+  levers:[
+    {t:"Close the audience-monetisation gap",wk:"£10.6 revenue/follower vs peers £20–30 on a 62m base",capex:45,upR:110,ramp:4,note:"Direct-to-fan, sponsorship re-tier, content IP"},
+    {t:"Stadium redevelopment",wk:"Matchday £137m capped by ageing Old Trafford",capex:1500,upR:110,ramp:6,note:"New/expanded ~90k bowl"},
+    {t:"Wage-bill & squad rationalisation",wk:"£365m wages, 0.16 pts/£m — worst efficiency in panel",capex:0,upE:70,ramp:3,note:"Trim underperforming earners; trading discipline"}]},
+ {id:"arsenal",name:"Arsenal",owner:"Kroenke Sports & Ent.",
+  rev:616.6,op:null,pre:-17.7,psale:20,wages:327.8,bcast:null,comm:null,match:null,amort:null,netDebt:150,points:89,finish:2,
+  squadVal:1110,age:24.5,ig:26.5,cap:60704,util:99,marketEV:2050,
+  flags:{},grow:74,
+  est:["psale","netDebt","squadVal","age","util"],
+  levers:[
+    {t:"Commercial catch-up to on-pitch resurgence",wk:"Commercial lags a squad now worth £1.1bn",capex:35,upR:70,ramp:4,note:"New shirt/stadium sponsors at CL-level rates"},
+    {t:"Emirates expansion to ~80k",wk:"Matchday demand exceeds 60.7k capacity",capex:600,upR:60,ramp:5,note:"Real, publicly discussed proposal"}]},
+ {id:"tottenham",name:"Tottenham Hotspur",owner:"ENIC / Lewis trust",
+  rev:528.0,op:null,pre:-26.0,psale:82,wages:222.0,bcast:167,comm:255,match:106,amort:null,netDebt:800,points:66,finish:5,
+  squadVal:680,age:26,ig:17.4,cap:62850,util:99,marketEV:2530,
+  flags:{},grow:88,
+  est:["comm","netDebt","squadVal","age","util"],
+  levers:[
+    {t:"Convert the venue into sustained CL football",wk:"No European football in 23/24 cut revenue £21m",capex:250,upR:90,ramp:4,note:"Squad investment; stadium already best-monetised in league"},
+    {t:"Stadium naming rights + event calendar",wk:"Premium year-round venue under-contracted on naming",capex:20,upR:35,ramp:3,note:"NFL, concerts, boxing already proven"}]},
+ {id:"brighton",name:"Brighton & Hove Albion",owner:"Tony Bloom",
+  rev:222.4,op:73.3,pre:null,psale:110,wages:146.0,bcast:164,comm:null,match:null,amort:60,netDebt:0,points:48,finish:11,
+  squadVal:500,age:24,ig:2.1,cap:31800,util:95,marketEV:null,
+  flags:{},grow:92,
+  est:["psale","comm","amort","netDebt","squadVal","age","util","cap"],
+  levers:[
+    {t:"Scale the recruit-develop-sell engine",wk:"~75% trading ROIC but sub-scale revenue base",capex:60,upR:40,ramp:4,note:"Reinvest gains into data + academy pipeline"},
+    {t:"Grow the tiny commercial / social base",wk:"2.1m followers — smallest audience in panel",capex:25,upR:30,ramp:5,note:"Huge % upside off a low base"},
+    {t:"Amex expansion",wk:"31.8k capacity caps matchday",capex:120,upR:25,ramp:5}]},
+ {id:"everton",name:"Everton",owner:"Friedkin Group (from '24)",
+  rev:187.0,op:null,pre:-53.0,psale:18,wages:157.0,bcast:129,comm:38.5,match:19.1,amort:65,netDebt:330,points:40,finish:15,
+  squadVal:330,age:26.5,ig:3.2,cap:39414,util:97,marketEV:600,
+  flags:{psr:8},grow:60,
+  est:["psale","netDebt","squadVal","age","util","marketEV"],
+  levers:[
+    {t:"New Bramley-Moore stadium unlock",wk:"Goodison 39k → low matchday & hospitality",capex:800,upR:70,ramp:5,note:"Capex largely sunk; monetise premium seats"},
+    {t:"Wage-bill reset to <65% of revenue",wk:"Wages 84% of revenue — distressed",capex:0,upE:45,ramp:3},
+    {t:"Exit PSR constraint",wk:"−8 pts; squad-build handcuffed",capex:0,upE:0,ramp:2,note:"Compliance restores spending optionality"}]},
+];
+
+// Forbes 2024 (USD→GBP ~0.79) for market anchors; United corroborated by Ratcliffe Feb-24 deal; Everton by Friedkin '24 acquisition.
+const DEFAULTS={ w:{p1:35,p2:22,p3:18,p4:15,p5:10}, wFloor:90,wCap:45,mCap:25,
+  baseMult:4.5, controlPrem:25, gBase:6,gBull:12,gBear:-3, xBase:4.5,xBull:5.5,xBear:3.5 };
+const PILLARS=[{k:"p1",label:"Profitability & cash"},{k:"p2",label:"Revenue quality"},{k:"p3",label:"Cost discipline"},{k:"p4",label:"Solvency risk"},{k:"p5",label:"Growth & alt-signal"}];
+let P=structuredClone(DEFAULTS);
+
+// ============================================================= ENGINE
+const clamp=(x,a=0,b=100)=>Math.max(a,Math.min(b,x));
+function lin(v,lo,hi){ if(v==null||isNaN(v))return null; return clamp(((v-lo)/(hi-lo))*100); }
+function ord(n){const s=["th","st","nd","rd"],v=n%100;return n+(s[(v-20)%10]||s[v]||s[0]);}
+function pl(c){ return c.op!=null?{v:c.op,lab:"operating"}:(c.pre!=null?{v:c.pre,lab:"pre-tax"}:{v:null,lab:"—"}); }
+function pillar(ms){let sw=0,tot=0,aw=0;ms.forEach(m=>{tot+=m.w;if(m.score!=null){sw+=m.score*m.w;aw+=m.w;}});return{score:aw>0?sw/aw:null,comp:tot>0?aw/tot:0};}
+
+// modeled EBITDA (labelled): profit line + player amortisation (+ est non-player D&A). Sports franchises trade on EV/Revenue precisely because this is noisy.
+function ebitda(c){ const p=pl(c).v; if(p==null)return null; const am=c.amort!=null?c.amort:c.rev*0.22; return p+am; }
+
+function scoreClub(c){
+  const p=pl(c), mC=P.mCap/100;
+  const p1=pillar([
+    {score:p.v!=null?lin(p.v/c.rev,-mC,mC):null,w:.55},
+    {score:(p.v!=null&&c.psale!=null)?lin((p.v-c.psale)/c.rev,-0.30,0.15):null,w:.45}]);
+  const p2=pillar([
+    {score:c.comm!=null?lin(c.comm/c.rev,.15,.50):null,w:.45},
+    {score:c.match!=null?lin(c.match/c.rev,.05,.25):null,w:.30},
+    {score:c.bcast!=null?lin(1-c.bcast/c.rev,.30,.70):null,w:.25}]);
+  const p3=pillar([{score:lin(c.wages/c.rev,P.wFloor/100,P.wCap/100),w:1}]);
+  let reg=100,f=c.flags||{}; if(f.psr)reg-=60; if(f.charges)reg-=40; if(f.ownership)reg-=20;
+  const p4=pillar([{score:clamp(reg),w:1}]);
+  // P5 growth blends author signal + youth + playing-asset efficiency (the alt-data alpha)
+  const svpw=c.squadVal!=null?c.squadVal/c.wages:null;
+  const p5=pillar([
+    {score:c.grow,w:.4},
+    {score:c.age!=null?lin(c.age,29.5,23.5):null,w:.3},
+    {score:svpw!=null?lin(svpw,1.2,3.6):null,w:.3}]);
+  const PS={p1,p2,p3,p4,p5}; let ws=0,is=0,cw=0,ct=0;
+  PILLARS.forEach(pd=>{const w=P.w[pd.k],s=PS[pd.k];ct+=w;cw+=w*s.comp;if(s.comp>0&&s.score!=null){ws+=w;is+=w*s.score;}});
+  const ias=ws>0?is/ws:0, dataComp=ct>0?cw/ct:0, sport=clamp(((20-c.finish)/19)*100);
+  const margin=p.v!=null?(p.v/c.rev)*100:null;
+  // valuation
+  const eb=ebitda(c);
+  const qual=0.75+(ias/100)*0.5;
+  const revMethod=c.rev*P.baseMult*qual;
+  const brandTier=Math.min(c.ig,65)/65*900, infraTier=Math.min(c.cap,75000)/75000*800;
+  const sop=(c.squadVal!=null)?(c.squadVal+brandTier+infraTier-c.netDebt):null;
+  const intrinsic=sop!=null?0.7*revMethod+0.3*sop:revMethod;
+  let misp=null;
+  if(c.marketEV!=null){const d=(c.marketEV-intrinsic)/intrinsic;misp={d,kind:d>0.10?"over":d<-0.10?"under":"fair",intrinsic,market:c.marketEV};}
+  // ratios
+  const R={
+    wr:(c.wages/c.rev)*100, margin, evRev:(c.marketEV!=null?c.marketEV/c.rev:intrinsic/c.rev),
+    evEbitda:(eb&&eb>0)?((c.marketEV??intrinsic)/eb):null,
+    ndEbitda:(eb&&eb>0)?(c.netDebt/eb):null, ebMargin:eb!=null?(eb/c.rev)*100:null,
+    amortInt:c.amort!=null?(c.amort/c.rev)*100:null,
+    tradeROIC:(c.psale!=null)?(c.psale/c.wages)*100:null,
+    ptsWage:(c.points/c.wages), revFollower:(c.rev/c.ig), svpw,
+    commShare:c.comm!=null?(c.comm/c.rev)*100:null,
+  };
+  return {c,ias,PS,dataComp,sport,margin,pLab:p.lab,intrinsic,sop,revMethod,eb,misp,R,svpw};
+}
+function all(){return CLUBS.map(scoreClub);}
+function byId(id){return all().find(x=>x.c.id===id);}
+
+// acquisition + scenarios
+function deal(S){
+  const c=S.c;
+  const anchorEV=c.marketEV??S.intrinsic;
+  const equity=anchorEV-c.netDebt;
+  const control=equity*(1+P.controlPrem/100);
+  const costToFix=c.levers.reduce((a,l)=>a+(l.capex||0),0);
+  const upR=c.levers.reduce((a,l)=>a+(l.upR||0),0);
+  const upE=c.levers.reduce((a,l)=>a+(l.upE||0),0);
+  const totalCap=control+costToFix;
+  const scn=(g,realize,xM)=>{
+    const path=[]; for(let t=0;t<=5;t++){ path.push(c.rev*Math.pow(1+g/100,t)+ (upR)*realize*(t/5)); }
+    const y5=path[5]; const exitEV=xM*y5; const exitEq=exitEV-c.netDebt;
+    return {path,y5,exitEV,exitEq,moic:exitEq/totalCap};
+  };
+  return {anchorEV,equity,control,costToFix,upR,upE,totalCap,
+    base:scn(P.gBase,.5,P.xBase), bull:scn(P.gBull,1,P.xBull), bear:scn(P.gBear,0,P.xBear)};
+}
+
+// weaknesses (auto from thresholds)
+function weaknesses(S){
+  const c=S.c,R=S.R,out=[];
+  if(R.wr>75)out.push(["HIGH",`Wages consume ${R.wr.toFixed(0)}% of revenue — above the UEFA 70% squad-cost ceiling; little room to invest or absorb a shock.`]);
+  else if(R.wr>65)out.push(["MED",`Wage/revenue at ${R.wr.toFixed(0)}% leaves thin operating headroom.`]);
+  if(S.margin!=null&&S.margin<-5)out.push(["HIGH",`${S.pLab} margin of ${S.margin.toFixed(0)}% — the business loses money before player trading.`]);
+  if(c.psale!=null&&S.margin!=null){const core=((pl(c).v-c.psale)/c.rev)*100; if(core<-8)out.push(["MED",`Profitability depends on player sales — core margin ex-trading is ${core.toFixed(0)}%.`]);}
+  if(c.flags.psr)out.push(["HIGH",`Active PSR breach (−${c.flags.psr} pts) — spending is regulator-constrained.`]);
+  if(c.flags.charges)out.push(["HIGH","Unresolved league charges — a live governance and valuation overhang."]);
+  if(c.flags.ownership)out.push(["MED","Split / transitional ownership — decision-making and strategy risk."]);
+  if(R.revFollower<14&&c.ig>20)out.push(["MED",`Only £${R.revFollower.toFixed(1)}m revenue per million followers on a ${c.ig}m audience — monetisation left on the table.`]);
+  if(R.ptsWage<0.18)out.push(["MED",`Sporting efficiency of ${R.ptsWage.toFixed(2)} pts per £m wages — paying premium prices for sub-premium output.`]);
+  if(c.netDebt>0&&S.eb&&c.netDebt/S.eb>3)out.push(["MED",`Net debt / EBITDA (modeled) of ${(c.netDebt/S.eb).toFixed(1)}× — leverage limits flexibility.`]);
+  if(c.cap<40000)out.push(["LOW",`Stadium capacity of ${(c.cap/1000).toFixed(0)}k caps matchday and hospitality revenue.`]);
+  if(!out.length)out.push(["LOW","No material red flags at current thresholds — priced closer to fair value."]);
+  return out;
+}
+
+// ============================================================= RENDER helpers
+const $=s=>document.querySelector(s);
+const fmt=(v,d=0)=>v==null?"—":v.toLocaleString("en-GB",{minimumFractionDigits:d,maximumFractionDigits:d});
+const gbp=(v,d=0)=>v==null?"—":"£"+fmt(v,d)+"m";
+const gbpB=v=>v==null?"—":"£"+fmt(v/1000,2)+"bn";
+function pillClass(v){if(v==null)return"p-na";if(v>=70)return"p-good";if(v>=50)return"p-ok";if(v>=35)return"p-warn";return"p-crit";}
+const pillEl=v=>`<span class="pill ${pillClass(v)}">${v==null?"n/a":Math.round(v)}</span>`;
+const estMark=(c,k)=>c.est&&c.est.includes(k)?`<span class="est" title="modeled / estimated — not from an audited source">ᵉ</span>`:"";
+
+// ---- SCREEN
+let sortKey="ias",sortDir=-1;
+function screenRender(){
+  let rows=all();
+  const keyf={name:r=>r.c.name,ias:r=>r.ias,p1:r=>r.PS.p1.score||0,p2:r=>r.PS.p2.score||0,p3:r=>r.PS.p3.score||0,p4:r=>r.PS.p4.score||0,p5:r=>r.PS.p5.score||0,
+    wr:r=>r.R.wr,margin:r=>r.margin??-999,evrev:r=>r.R.evRev,roic:r=>r.R.tradeROIC??-1,misp:r=>r.misp?r.misp.d:99,finish:r=>-r.c.finish};
+  rows.sort((a,b)=>{const av=keyf[sortKey](a),bv=keyf[sortKey](b);return (av>bv?1:av<bv?-1:0)*sortDir;});
+  // tiles
+  const R=all(); const top=[...R].sort((a,b)=>b.ias-a.ias)[0];
+  const under=[...R].filter(r=>r.misp&&r.misp.kind==="under").sort((a,b)=>a.misp.d-b.misp.d)[0];
+  const earner=[...R].filter(r=>r.sport<50).sort((a,b)=>b.ias-a.ias)[0];
+  $("#screenTiles").innerHTML=[
+    {k:"Franchises screened",v:R.length,cap:"EPL · 2023/24 audited"},
+    {k:"Top-ranked asset",v:Math.round(top.ias),cap:top.c.name},
+    {k:"Most undervalued",v:under?(Math.round(under.misp.d*100)+"%"):"—",cap:under?under.c.name+" vs model":"—"},
+    {k:"Best 'earns without winning'",v:earner?Math.round(earner.ias):"—",cap:earner?earner.c.name+" · "+ord(earner.c.finish):"—"},
+  ].map(t=>`<div class="tile"><div class="k">${t.k}</div><div class="v">${t.v}</div><div class="cap">${t.cap}</div></div>`).join("");
+  // rows
+  $("#tbody").innerHTML=rows.map((r,i)=>{
+    const m=r.misp; let mh='<span class="ctx">— model only</span>';
+    if(m){const cl=m.kind==="under"?"misp-under":m.kind==="over"?"misp-over":"misp-fair";const dot=m.kind==="under"?"var(--good)":m.kind==="over"?"var(--crit)":"var(--muted)";const lb=m.kind==="under"?"Under":m.kind==="over"?"Over":"Fair";
+      mh=`<span class="flag ${cl}" title="model intrinsic ${gbpB(m.intrinsic)} vs market ${gbpB(m.market)}"><span class="flag-dot" style="background:${dot}"></span>${lb} ${m.d>0?"+":""}${Math.round(m.d*100)}%</span>`;}
+    return `<tr data-open="${r.c.id}">
+      <td class="l rank">${i+1}</td>
+      <td class="l"><div class="club-cell"><span class="club-name">${r.c.name}</span><span class="club-own">${r.c.owner}</span></div></td>
+      <td><div class="ias"><span class="ias-num">${Math.round(r.ias)}</span><span class="bar"><i style="width:${r.ias}%"></i></span></div></td>
+      <td>${pillEl(r.PS.p1.score)}</td><td>${pillEl(r.PS.p2.score)}</td><td>${pillEl(r.PS.p3.score)}</td><td>${pillEl(r.PS.p4.score)}</td><td>${pillEl(r.PS.p5.score)}</td>
+      <td>${fmt(r.R.wr)}%</td>
+      <td style="color:${r.margin>=0?'var(--good)':'var(--crit)'}">${r.margin==null?"—":(r.margin>0?"+":"")+fmt(r.margin,1)+"%"}</td>
+      <td>${fmt(r.R.evRev,1)}×</td>
+      <td>${r.R.tradeROIC==null?"—":fmt(r.R.tradeROIC)+"%"}</td>
+      <td class="l">${mh}</td>
+      <td class="ctx">${ord(r.c.finish)}</td></tr>`;
+  }).join("");
+  $("#tbody").querySelectorAll("tr").forEach(tr=>tr.addEventListener("click",()=>openDeal(tr.dataset.open)));
+  drawScatter(R);
+}
+function drawScatter(rows){
+  const W=720,H=430,m={t:24,r:22,b:44,l:50},iw=W-m.l-m.r,ih=H-m.t-m.b;
+  const x=v=>m.l+(v/100)*iw,y=v=>m.t+ih-(v/100)*ih;
+  const cs=getComputedStyle(document.documentElement),g=k=>cs.getPropertyValue(k);
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Financial score versus performance">`;
+  s+=`<rect x="${x(0)}" y="${y(100)}" width="${x(50)-x(0)}" height="${y(50)-y(100)}" fill="${g('--accent-wash')}"/>`;
+  s+=`<line x1="${x(50)}" y1="${m.t}" x2="${x(50)}" y2="${m.t+ih}" stroke="${g('--border')}" stroke-dasharray="3 4"/>`;
+  s+=`<line x1="${m.l}" y1="${y(50)}" x2="${m.l+iw}" y2="${y(50)}" stroke="${g('--border')}" stroke-dasharray="3 4"/>`;
+  s+=`<line x1="${m.l}" y1="${m.t+ih}" x2="${m.l+iw}" y2="${m.t+ih}" stroke="${g('--border')}"/><line x1="${m.l}" y1="${m.t}" x2="${m.l}" y2="${m.t+ih}" stroke="${g('--border')}"/>`;
+  s+=`<text x="${m.l+iw/2}" y="${H-8}" text-anchor="middle" font-size="12" fill="${g('--ink-2')}">On-field performance  →</text>`;
+  s+=`<text transform="translate(14,${m.t+ih/2}) rotate(-90)" text-anchor="middle" font-size="12" fill="${g('--ink-2')}">Financial score  →</text>`;
+  s+=`<text x="${x(2)}" y="${y(96)}" font-size="11" font-family="var(--font-mono)" fill="${g('--accent')}" font-weight="700">◤ EARNS WITHOUT WINNING</text>`;
+  s+=`<text x="${x(98)}" y="${y(96)}" text-anchor="end" font-size="11" font-family="var(--font-mono)" fill="${g('--muted')}">EARNS &amp; WINS ◥</text>`;
+  s+=`<text x="${x(2)}" y="${y(4)}" font-size="11" font-family="var(--font-mono)" fill="${g('--muted')}">◣ NEITHER</text>`;
+  s+=`<text x="${x(98)}" y="${y(4)}" text-anchor="end" font-size="11" font-family="var(--font-mono)" fill="${g('--muted')}">WINS BUT BLEEDS ◢</text>`;
+  rows.forEach(r=>{const px=x(r.sport),py=y(r.ias),th=r.sport<50&&r.ias>50;
+    s+=`<circle cx="${px}" cy="${py}" r="8" fill="${th?g('--accent'):g('--surface')}" stroke="${g('--accent')}" stroke-width="2" class="pt" data-n="${r.c.name}" data-i="${Math.round(r.ias)}" data-f="${r.c.finish}" style="cursor:pointer"/>`;});
+  const sn={mancity:"Man City",manutd:"Man United",arsenal:"Arsenal",tottenham:"Tottenham",brighton:"Brighton",everton:"Everton"};
+  const pL=[],pR=[];
+  rows.forEach(r=>{const px=x(r.sport),py=y(r.ias);const left=px>m.l+iw*.68;const arr=left?pL:pR;
+    let ly=left?py-10:py+3,gd=0;while(arr.some(v=>Math.abs(v-ly)<14)&&gd<10){ly+=left?-14:14;gd++;}arr.push(ly);
+    s+=`<text x="${left?px-11:px+12}" y="${ly}" text-anchor="${left?'end':'start'}" font-size="11" font-weight="600" fill="${g('--ink')}">${sn[r.c.id]}</text>`;});
+  s+=`</svg>`; $("#scatter").innerHTML=s;
+  $("#legendNote").textContent=`${rows.filter(r=>r.sport<50&&r.ias>50).length} in the thesis quadrant`;
+  hoverPts("#scatter","#tipS",p=>`<div class="tt">${p.dataset.n}</div><div class="tr">Financial score <b>${p.dataset.i}</b>/100</div><div class="tr">Finish <b>${ord(+p.dataset.f)}</b></div>`);
+}
+function hoverPts(box,tip,html){const b=$(box),t=$(tip);b.querySelectorAll(".pt").forEach(p=>{p.addEventListener("mousemove",e=>{const r=b.getBoundingClientRect();t.style.opacity=1;t.style.left=Math.min(e.clientX-r.left+12,r.width-240)+"px";t.style.top=(e.clientY-r.top+12)+"px";t.innerHTML=html(p);});p.addEventListener("mouseleave",()=>t.style.opacity=0);});}
+
+// ---- DEAL ROOM
+function ratioCard(label,val,tag,bench){return `<div class="ratio"><div class="rl"><span>${label}</span><span class="tag ${tag==='src'?'t-src':tag==='der'?'t-der':'t-mod'}">${tag}</span></div><div class="rv">${val}</div><div class="rb">${bench||""}</div></div>`;}
+function openDeal(id){
+  $("#clubSel").value=id; switchTab("deal"); renderDeal(id);
+}
+function renderDeal(id){
+  const S=byId(id),c=S.c,R=S.R,D=deal(S);
+  // verdict
+  const v=S.misp; let vh;
+  if(v){const col=v.kind==="under"?"var(--good)":v.kind==="over"?"var(--crit)":"var(--ink)";
+    vh=`<span class="lbl">Model verdict vs market</span><span class="big" style="color:${col}">${v.kind==="under"?"UNDERVALUED":v.kind==="over"?"OVERVALUED":"FAIR"} ${v.d>0?"+":""}${Math.round(v.d*100)}%</span><span class="lbl">intrinsic ${gbpB(v.intrinsic)} vs market ${gbpB(v.market)}</span>`;}
+  else vh=`<span class="lbl">No market comp</span><span class="big">${gbpB(S.intrinsic)}</span><span class="lbl">model intrinsic EV (no completed transaction)</span>`;
+  $("#verdict").innerHTML=vh;
+  const core=c.psale!=null?((pl(c).v-c.psale)/c.rev*100):null;
+  const wks=weaknesses(S);
+  const dc=Math.round(S.dataComp*100);
+
+  $("#dealBody").innerHTML=`
+  <div class="cols3">
+    <div class="panel pad"><h3>Snapshot</h3>
+      <div class="kv"><span class="kk">Owner</span><span class="vv" style="font-weight:500;font-family:var(--font-sans)">${c.owner}</span></div>
+      <div class="kv"><span class="kk">Revenue</span><span class="vv">${gbp(c.rev)}</span></div>
+      <div class="kv"><span class="kk">${S.pLab} profit</span><span class="vv" style="color:${S.margin>=0?'var(--good)':'var(--crit)'}">${gbp(pl(c).v)}</span></div>
+      <div class="kv"><span class="kk">Wage bill</span><span class="vv">${gbp(c.wages)}</span></div>
+      <div class="kv"><span class="kk">Squad value${estMark(c,'squadVal')}</span><span class="vv">${gbp(c.squadVal)}</span></div>
+      <div class="kv"><span class="kk">Score / Finish</span><span class="vv">${Math.round(S.ias)} · ${ord(c.finish)}</span></div>
+      <div class="kv"><span class="kk">Data completeness</span><span class="vv">${dc}%</span></div>
+    </div>
+    <div class="panel pad" style="grid-column:span 2"><h3>Why it's mispriced — root cause</h3>
+      <div id="wks"></div>
+    </div>
+  </div>
+
+  <div class="panel pad section-gap"><h3>PE ratio suite <span class="tag t-src" style="margin-left:4px">src audited</span> <span class="tag t-der">der derived</span> <span class="tag t-mod">mod modeled</span></h3>
+    <div class="ratio-grid">
+      ${ratioCard("EV / Revenue",fmt(R.evRev,1)+"×",c.marketEV?"der":"mod","Sports anchor multiple. Comp: Chelsea '22 ≈ 5.2×")}
+      ${ratioCard("EV / EBITDA",R.evEbitda?fmt(R.evEbitda,1)+"×":"n/m","mod","EBITDA distorted by player amort — cross-check only")}
+      ${ratioCard("Net debt / EBITDA",R.ndEbitda!=null?fmt(R.ndEbitda,1)+"×":"n/m","mod","Leverage vs cash generation")}
+      ${ratioCard("EBITDA margin",R.ebMargin!=null?fmt(R.ebMargin,0)+"%":"—","mod","Normalised cash conversion")}
+      ${ratioCard(S.pLab+" margin",S.margin!=null?(S.margin>0?"+":"")+fmt(S.margin,1)+"%":"—","der","Reported profitability")}
+      ${ratioCard("Core margin ex-trading",core!=null?(core>0?"+":"")+fmt(core,1)+"%":"—","der","Profit without selling players — the sustainability test")}
+      ${ratioCard("Wages / revenue",fmt(R.wr,0)+"%","der","UEFA squad-cost ceiling 70%")}
+      ${ratioCard("Player-amort intensity",R.amortInt!=null?fmt(R.amortInt,0)+"%":"—","der","Transfer-spend burn rate")}
+      ${ratioCard("Trading ROIC",R.tradeROIC!=null?fmt(R.tradeROIC,0)+"%":"—","der","Player-sale profit ÷ wage bill")}
+      ${ratioCard("Pts per £m wages",fmt(R.ptsWage,2),"der","Moneyball sporting efficiency")}
+      ${ratioCard("Revenue / m followers","£"+fmt(R.revFollower,1)+"m","der","Audience monetisation — low = upside")}
+      ${ratioCard("Squad value / wages",R.svpw!=null?fmt(R.svpw,2)+"×":"—","mod","Playing-asset efficiency")}
+    </div>
+  </div>
+
+  <div class="cols2 section-gap">
+    <div class="panel pad"><h3>Alternative-data signals (what others miss)</h3><div id="signals"></div></div>
+    <div class="panel pad"><h3>Acquisition math</h3>
+      <div class="kv"><span class="kk">Anchor enterprise value</span><span class="vv">${gbpB(D.anchorEV)}</span></div>
+      <div class="kv"><span class="kk">Less: net debt${estMark(c,'netDebt')}</span><span class="vv">${gbp(c.netDebt)}</span></div>
+      <div class="kv"><span class="kk">Equity value</span><span class="vv">${gbpB(D.equity)}</span></div>
+      <div class="kv"><span class="kk">Control premium (${P.controlPrem}%)</span><span class="vv">${gbpB(D.control-D.equity)}</span></div>
+      <div class="kv"><span class="kk">Cost to fix (Σ capex)</span><span class="vv">${gbp(D.costToFix)}</span></div>
+      <div class="kv total"><span class="kk">Total capital to control + fix</span><span class="vv">${gbpB(D.totalCap)}</span></div>
+      <p class="rb" style="margin-top:10px;font-size:11px;color:var(--muted)">Control price = equity × (1 + premium). Net debt assumed refinanced separately. Adjust premium & multiples in the assumptions panel below.</p>
+    </div>
+  </div>
+
+  <div class="panel pad section-gap"><h3>Value-creation plan — costed fixes</h3>
+    <p class="lead" style="font-size:12.5px">Each lever targets a specific weakness, with capex, expected annual uplift and payback. This is the "if we owned it" section.</p>
+    <div id="levers"></div>
+  </div>
+
+  <div class="panel pad section-gap"><h3>Five-year exit — three scenarios</h3>
+    <div class="scn-legend">
+      <span><i class="swatch" style="background:var(--accent)"></i>Base</span>
+      <span><i class="swatch" style="background:var(--good)"></i>Bull — exceeds plan</span>
+      <span><i class="swatch" style="background:var(--crit)"></i>Bear — plan fails</span>
+    </div>
+    <div class="scatter-box"><div class="tip" id="tipD"></div><div id="scnChart"></div></div>
+    <div class="cols3 section-gap" id="scnCards"></div>
+    <div class="section-gap">
+      <details><summary style="cursor:pointer;font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)">Deal assumptions — tune the model</summary>
+        <div class="cols3" style="margin-top:12px">
+          <div><div class="num-row"><label>Base EV/Rev multiple</label><input type="number" id="a_baseMult" step="0.1"></div>
+               <div class="num-row"><label>Control premium %</label><input type="number" id="a_prem" step="1"></div></div>
+          <div><div class="num-row"><label>Base rev CAGR %</label><input type="number" id="a_gBase" step="0.5"></div>
+               <div class="num-row"><label>Bull rev CAGR %</label><input type="number" id="a_gBull" step="0.5"></div>
+               <div class="num-row"><label>Bear rev CAGR %</label><input type="number" id="a_gBear" step="0.5"></div></div>
+          <div><div class="num-row"><label>Base exit mult</label><input type="number" id="a_xBase" step="0.1"></div>
+               <div class="num-row"><label>Bull exit mult</label><input type="number" id="a_xBull" step="0.1"></div>
+               <div class="num-row"><label>Bear exit mult</label><input type="number" id="a_xBear" step="0.1"></div></div>
+        </div>
+      </details>
+    </div>
+  </div>
+  <div class="warnbox">⚠︎ Illustrative underwriting. Financials are 2023/24 audited; items marked <span class="est">ᵉ</span> and <span class="tag t-mod">mod</span> are modeled (squad value, net debt, forward scenarios). Not investment advice.</div>
+  `;
+  // weaknesses
+  $("#wks").innerHTML=wks.map(w=>`<div class="wk"><span class="wk-sev ${w[0]==='HIGH'?'sev-hi':w[0]==='MED'?'sev-md':'sev-lo'}">${w[0]}</span><span>${w[1]}</span></div>`).join("");
+  // signals
+  const sig=[
+    {n:"Audience monetisation gap",d:`£${fmt(R.revFollower,1)}m rev per m followers · ${c.ig}m base`,val:R.revFollower<14&&c.ig>20?"UPSIDE":"—",g:clamp(100-R.revFollower*1.4),col:R.revFollower<14&&c.ig>20?"var(--good)":"var(--muted)"},
+    {n:"Squad value trajectory",d:`avg age ${c.age}${estMark(c,'age')} · younger = appreciating`,val:c.age<25?"RISING":c.age>28?"AGEING":"STABLE",g:clamp(lin(c.age,30,23)),col:c.age<25?"var(--good)":c.age>28?"var(--crit)":"var(--warn)"},
+    {n:"Playing-asset efficiency",d:`squad value ${R.svpw?fmt(R.svpw,2)+"× wages":"—"}`,val:R.svpw>3?"STRONG":R.svpw<2?"WEAK":"OK",g:clamp(lin(R.svpw,1.2,3.6)),col:R.svpw>3?"var(--good)":R.svpw<2?"var(--crit)":"var(--warn)"},
+    {n:"Trading engine ROIC",d:`player-sale profit ÷ wages`,val:R.tradeROIC!=null?fmt(R.tradeROIC,0)+"%":"—",g:clamp(R.tradeROIC??0),col:R.tradeROIC>40?"var(--good)":"var(--muted)"},
+    {n:"Sporting efficiency",d:`${fmt(R.ptsWage,2)} pts per £m wages`,val:R.ptsWage>0.28?"EFFICIENT":R.ptsWage<0.18?"WASTEFUL":"OK",g:clamp(R.ptsWage*280),col:R.ptsWage>0.28?"var(--good)":R.ptsWage<0.18?"var(--crit)":"var(--warn)"},
+    {n:"Stadium headroom",d:`${(c.cap/1000).toFixed(0)}k seats${estMark(c,'cap')} · ${c.util}% utilised`,val:c.cap<40000?"EXPAND":"MATURE",g:clamp(100-c.cap/900),col:c.cap<40000?"var(--good)":"var(--muted)"},
+  ];
+  $("#signals").innerHTML=sig.map(s=>`<div class="signal-row"><div class="signal-meta"><div class="signal-name">${s.n}</div><div class="signal-desc">${s.d}</div></div><div class="gauge"><i style="width:${s.g}%;background:${s.col}"></i></div><div class="signal-val" style="color:${s.col}">${s.val}</div></div>`).join("");
+  // levers
+  $("#levers").innerHTML=c.levers.map(l=>{
+    const up=l.upR?`+${gbp(l.upR)} rev`:l.upE?`+${gbp(l.upE)} EBITDA`:"strategic";
+    const pay=(l.capex&&(l.upR||l.upE))?((l.capex/((l.upR||0)*0.35+(l.upE||0))).toFixed(1)+" yrs"):(l.capex?"—":"immediate");
+    return `<div class="lever"><div class="lever-h"><span class="lever-t">${l.t}</span><span class="tag t-der">${up}</span></div>
+      <div class="rb" style="color:var(--ink-2)">Targets: ${l.wk}${l.note?` · <span style="color:var(--muted)">${l.note}</span>`:""}</div>
+      <div class="lever-econ"><div class="econ"><span>Capex</span><b>${l.capex?gbp(l.capex):"£0m"}</b></div>
+        <div class="econ"><span>Annual uplift</span><b>${l.upR?gbp(l.upR):l.upE?gbp(l.upE):"—"}</b></div>
+        <div class="econ"><span>Ramp</span><b>${l.ramp} yrs</b></div>
+        <div class="econ"><span>Payback</span><b>${pay}</b></div></div></div>`;
+  }).join("");
+  drawScenarios(S,D);
+  // scenario cards
+  const sc=(nm,o,col)=>`<div class="panel pad" style="border-left:3px solid ${col}"><h3 style="color:${col}">${nm}</h3>
+    <div class="kv"><span class="kk">Yr-5 revenue</span><span class="vv">${gbp(o.y5)}</span></div>
+    <div class="kv"><span class="kk">Exit EV</span><span class="vv">${gbpB(o.exitEV)}</span></div>
+    <div class="kv"><span class="kk">Exit equity</span><span class="vv">${gbpB(o.exitEq)}</span></div>
+    <div class="kv total"><span class="kk">MOIC on capital</span><span class="vv">${fmt(o.moic,2)}×</span></div></div>`;
+  $("#scnCards").innerHTML=sc("Base case",D.base,"var(--accent)")+sc("Bull — exceeds plan",D.bull,"var(--good)")+sc("Bear — plan fails",D.bear,"var(--crit)");
+  // assumptions
+  [["#a_baseMult","baseMult"],["#a_prem","controlPrem"],["#a_gBase","gBase"],["#a_gBull","gBull"],["#a_gBear","gBear"],["#a_xBase","xBase"],["#a_xBull","xBull"],["#a_xBear","xBear"]]
+    .forEach(([sel,k])=>{const el=$(sel);el.value=P[k];el.oninput=e=>{const x=parseFloat(e.target.value);if(!isNaN(x)){P[k]=x;renderDeal(c.id);}};});
+}
+function drawScenarios(S,D){
+  const c=S.c,W=720,H=320,m={t:18,r:20,b:36,l:56},iw=W-m.l-m.r,ih=H-m.t-m.b;
+  const maxV=Math.max(D.bull.y5,S.c.rev)*1.08, x=t=>m.l+(t/5)*iw, y=v=>m.t+ih-(v/maxV)*ih;
+  const cs=getComputedStyle(document.documentElement),g=k=>cs.getPropertyValue(k);
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Five-year revenue scenarios">`;
+  for(let gl=0;gl<=maxV;gl+=200){s+=`<line x1="${m.l}" y1="${y(gl)}" x2="${m.l+iw}" y2="${y(gl)}" stroke="${g('--border')}" stroke-dasharray="2 4"/><text x="${m.l-8}" y="${y(gl)+3}" text-anchor="end" font-size="10" font-family="var(--font-mono)" fill="${g('--muted')}">£${gl}m</text>`;}
+  for(let t=0;t<=5;t++)s+=`<text x="${x(t)}" y="${m.t+ih+16}" text-anchor="middle" font-size="10" font-family="var(--font-mono)" fill="${g('--muted')}">Y${t}</text>`;
+  const line=(o,col,w)=>{let d=o.path.map((v,t)=>`${t?'L':'M'}${x(t)},${y(v)}`).join(" ");return `<path d="${d}" fill="none" stroke="${col}" stroke-width="${w}"/>`+o.path.map((v,t)=>`<circle cx="${x(t)}" cy="${y(v)}" r="3" fill="${col}"/>`).join("");};
+  s+=line(D.bear,g('--crit'),2)+line(D.bull,g('--good'),2)+line(D.base,g('--accent'),2.6);
+  s+=`</svg>`; $("#scnChart").innerHTML=s;
+}
+
+// ---- EDGE + backtest (Miami Dolphins commercial-diversification signal → $12.5bn 2026 re-rate; fully cited)
+const BT={
+  points:[ {y:"2019",sig:38,mk:null,ev:null,note:"F1 preliminary deal signed at Hard Rock Stadium (Oct 2019)"},
+    {y:"2020",sig:44,mk:null,ev:2.6,note:"Forbes ≈ $2.6bn"},
+    {y:"2021",sig:55,mk:null,ev:3.05,note:"Race confirmed for 2022 calendar"},
+    {y:"2022",sig:70,mk:null,ev:4.0,note:"Inaugural Miami GP — 3-day event rivals a full NFL season's revenue"},
+    {y:"2023",sig:80,mk:null,ev:5.7,note:"Ross explores bundling stadium + F1 + Miami Open stakes"},
+    {y:"2024",sig:86,mk:null,ev:7.5,note:"Forbes $7.5bn (+21% YoY)"},
+    {y:"2026",sig:96,mk:12.5,ev:12.5,note:"Lin Bin buys 1% of the bundle at a record $12.5bn valuation (Mar 2026)"} ],
+};
+function edgeRender(){
+  const R=all();
+  const rank=(label,f,unit,best)=>{const rows=[...R].sort((a,b)=>best==='hi'?f(b)-f(a):f(a)-f(b)).slice(0,3);
+    return `<div class="panel pad" style="box-shadow:none;border:1px solid var(--border)"><h3>${label}</h3>${rows.map((r,i)=>`<div class="kv"><span class="kk">${i+1}. ${r.c.name}</span><span class="vv">${unit(r)}</span></div>`).join("")}</div>`;}
+  $("#edgeSignals").innerHTML=
+    rank("Highest trading ROIC",r=>r.R.tradeROIC??-1,r=>fmt(r.R.tradeROIC)+"%","hi")+
+    rank("Biggest monetisation gap",r=>(r.c.ig>20?-r.R.revFollower:-999),r=>`£${fmt(r.R.revFollower,1)}m/m · ${r.c.ig}m`,"hi")+
+    rank("Youngest (appreciating) squads",r=>-r.c.age,r=>r.c.age+" yrs","hi");
+  // backtest chart
+  const W=720,H=360,m={t:22,r:54,b:40,l:50},iw=W-m.l-m.r,ih=H-m.t-m.b;
+  const xs=BT.points.map(p=>p.y),x=i=>m.l+(i/(xs.length-1))*iw;
+  const ySig=v=>m.t+ih-(v/100)*ih; const maxEV=13,yEV=v=>m.t+ih-(v/maxEV)*ih;
+  const cs=getComputedStyle(document.documentElement),g=k=>cs.getPropertyValue(k);
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Backtest: model signal vs market valuation over time">`;
+  for(let gl=0;gl<=100;gl+=25)s+=`<line x1="${m.l}" y1="${ySig(gl)}" x2="${m.l+iw}" y2="${ySig(gl)}" stroke="${g('--border')}" stroke-dasharray="2 4"/><text x="${m.l-8}" y="${ySig(gl)+3}" text-anchor="end" font-size="10" font-family="var(--font-mono)" fill="${g('--muted')}">${gl}</text>`;
+  BT.points.forEach((p,i)=>s+=`<text x="${x(i)}" y="${m.t+ih+16}" text-anchor="middle" font-size="10" font-family="var(--font-mono)" fill="${g('--muted')}">${p.y}</text>`);
+  // EV axis right
+  [0,4,8,12].forEach(v=>s+=`<text x="${m.l+iw+8}" y="${yEV(v)+3}" font-size="10" font-family="var(--font-mono)" fill="${g('--gold')}">$${v}bn</text>`);
+  // signal line
+  let ds=BT.points.map((p,i)=>`${i?'L':'M'}${x(i)},${ySig(p.sig)}`).join(" ");
+  s+=`<path d="${ds}" fill="none" stroke="${g('--accent')}" stroke-width="2.6"/>`;
+  BT.points.forEach((p,i)=>s+=`<circle cx="${x(i)}" cy="${ySig(p.sig)}" r="4" fill="${g('--accent')}" class="bt" data-n="${p.y}" data-s="${p.sig}" data-e="${p.ev??''}" data-note="${p.note}" style="cursor:pointer"/>`);
+  // EV markers (gold) where present
+  const evp=BT.points.filter(p=>p.ev!=null);
+  let de=evp.map((p)=>{const i=BT.points.indexOf(p);return `${p===evp[0]?'M':'L'}${x(i)},${yEV(p.ev)}`;}).join(" ");
+  s+=`<path d="${de}" fill="none" stroke="${g('--gold')}" stroke-width="2" stroke-dasharray="4 3"/>`;
+  evp.forEach(p=>{const i=BT.points.indexOf(p);s+=`<circle cx="${x(i)}" cy="${yEV(p.ev)}" r="4" fill="${g('--gold')}"/>`;});
+  // annotate the re-rate
+  const last=BT.points.length-1;
+  s+=`<text x="${x(last)}" y="${yEV(12.5)-10}" text-anchor="end" font-size="10.5" font-weight="700" fill="${g('--gold')}">$12.5bn mark</text>`;
+  s+=`</svg>`; $("#backtest").innerHTML=s;
+  $("#btLegend").innerHTML=`<span><i class="swatch" style="background:var(--accent)"></i>Model diversification signal (0–100)</span><span><i class="swatch" style="background:var(--gold)"></i>Reported valuation ($bn)</span>`;
+  $("#btNote").innerHTML=`<strong>Read:</strong> Miami Dolphins. The model's commercial-diversification signal climbs from the 2019 F1 deal and 2022 inaugural Grand Prix — <em>years before</em> the market crystallised it in the March 2026 sale of a bundle stake (stadium + F1 + Miami Open) at a record <strong>$12.5bn</strong>. The signal led the mark. That is the pitch: <em>we saw it before the market did.</em>`;
+  hoverPts("#backtest","#tipB",p=>`<div class="tt">${p.dataset.n} — signal ${p.dataset.s}${p.dataset.e?` · $${p.dataset.e}bn`:""}</div><div class="tr">${p.dataset.note}</div>`);
+}
+
+// ============================================================= CONTROLS
+function buildSliders(){
+  $("#sliders").innerHTML=PILLARS.map(p=>`<div class="slider-row"><div class="slider-top"><span class="slider-label">${p.label}</span><span><span class="slider-val" id="v_${p.k}"></span> <span class="slider-eff" id="e_${p.k}"></span></span></div><input type="range" id="s_${p.k}" min="0" max="55" value="${P.w[p.k]}"></div>`).join("");
+  PILLARS.forEach(p=>$("#s_"+p.k).addEventListener("input",e=>{P.w[p.k]=+e.target.value;syncW();screenRender();}));
+}
+function syncW(){const tot=PILLARS.reduce((s,p)=>s+P.w[p.k],0)||1;PILLARS.forEach(p=>{$("#v_"+p.k).textContent=P.w[p.k];$("#e_"+p.k).textContent="→ "+Math.round(P.w[p.k]/tot*100)+"%";$("#s_"+p.k).value=P.w[p.k];});$("#weightSum").textContent="Σ "+tot;}
+[["#wFloor","wFloor"],["#wCap","wCap"],["#mCap","mCap"]].forEach(([sel,k])=>{const el=$(sel);el.addEventListener("input",e=>{const x=parseFloat(e.target.value);if(!isNaN(x)){P[k]=x;screenRender();}});});
+function syncThresh(){$("#wFloor").value=P.wFloor;$("#wCap").value=P.wCap;$("#mCap").value=P.mCap;}
+$("#resetBtn").addEventListener("click",()=>{P=structuredClone(DEFAULTS);buildSliders();syncW();syncThresh();screenRender();});
+
+// tabs
+function switchTab(t){document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("active",b.dataset.tab===t));document.querySelectorAll("section[data-panel]").forEach(s=>s.classList.toggle("active",s.dataset.panel===t));if(t==="edge")edgeRender();window.scrollTo({top:0,behavior:"smooth"});}
+document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>switchTab(b.dataset.tab)));
+// club select
+$("#clubSel").innerHTML=CLUBS.map(c=>`<option value="${c.id}">${c.name}</option>`).join("");
+$("#clubSel").addEventListener("change",e=>renderDeal(e.target.value));
+// theme
+const root=document.documentElement;
+$("#themeBtn").addEventListener("click",()=>{const cur=root.getAttribute("data-theme")||(matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light");root.setAttribute("data-theme",cur==="dark"?"light":"dark");screenRender();if($("#dealBody").innerHTML)renderDeal($("#clubSel").value);if(document.querySelector('[data-panel="edge"]').classList.contains("active"))edgeRender();});
+
+// footer
+$("#foot").innerHTML=`<strong>Franchise Alpha</strong> · pilot v0.2 · EPL 2023/24. Sources: Companies House / club results / The Swiss Ramble (financials); Premier League &amp; UEFA (regulatory); Transfermarkt (squad value/age); Forbes 2024 &amp; completed transactions (market anchors); Deloitte Money League. Full registry in <code>data/SOURCES.md</code>. Alt-data &amp; forward scenarios are modeled and labelled. Not investment advice.`;
+
+// init
+buildSliders();syncW();syncThresh();screenRender();renderDeal(CLUBS[0].id);
+</script>
+
+</body>
+</html>

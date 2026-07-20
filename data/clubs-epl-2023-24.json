@@ -1,0 +1,174 @@
+{
+  "league": "English Premier League",
+  "fiscal_year": "2023-24",
+  "currency": "GBP_million",
+  "built": "2026-07-20",
+  "note": "Same-season cross-section. Every reported figure carries a source_id resolving to data/SOURCES.md. Ratios/margins are derived by the model, never stored. Fields we do not yet hold a citation for are value:null + needs_sourcing:true, and are excluded from scoring (pillar renormalises; data-completeness surfaced in UI).",
+  "clubs": [
+    {
+      "club_id": "mancity",
+      "club_name": "Manchester City",
+      "league": "English Premier League",
+      "fiscal_year": "2023-24",
+      "ownership": { "owner": "City Football Group (Abu Dhabi United Group)", "structure": "private_ltd", "source_id": "mancity_2324_sr" },
+      "financials": {
+        "revenue_total":      { "value": 715.0, "unit": "GBP_million", "reported_as": "revenue", "source_id": "mancity_2324_sr" },
+        "revenue_broadcast":  { "value": null, "unit": "GBP_million", "source_id": "mancity_2324_sr", "needs_sourcing": true },
+        "revenue_commercial": { "value": null, "unit": "GBP_million", "source_id": "mancity_2324_sr", "needs_sourcing": true },
+        "revenue_matchday":   { "value": null, "unit": "GBP_million", "source_id": "mancity_2324_sr", "needs_sourcing": true },
+        "operating_profit":   { "value": null, "unit": "GBP_million", "source_id": "mancity_2324_sr", "needs_sourcing": true },
+        "pretax_profit":      { "value": 74.0, "unit": "GBP_million", "reported_as": "profit before tax", "source_id": "mancity_2324_sr" },
+        "player_sale_profit": { "value": null, "unit": "GBP_million", "source_id": "mancity_2324_sr", "needs_sourcing": true },
+        "wage_bill":          { "value": 412.6, "unit": "GBP_million", "reported_as": "total wages", "source_id": "mancity_2324_sr" },
+        "net_debt":           { "value": null, "unit": "GBP_million", "source_id": "mancity_2324_sr", "needs_sourcing": true, "note": "City run effectively debt-free; confirm exact net cash/debt line." }
+      },
+      "risk_flags": {
+        "open_charges": { "value": 1, "unit": "count", "reported_as": "115 alleged breaches referred to independent commission (unresolved)", "source_id": "mancity_115_charges", "note": "Material governance overhang; outcome pending." }
+      },
+      "growth_optionality": {
+        "commercial_expansion": { "value": 85, "unit": "index_0_100", "estimated": true, "source_id": "mancity_2324_sr", "note": "City Football Group multi-club global network is a real, distinctive commercial platform." }
+      },
+      "context_sporting": {
+        "league_finish": { "value": 1, "unit": "count", "reported_as": "1st — 2023/24 PL champions", "source_id": "mancity_2324_sr" },
+        "european_competition": "Champions League (last 16)"
+      }
+    },
+    {
+      "club_id": "manutd",
+      "club_name": "Manchester United",
+      "league": "English Premier League",
+      "fiscal_year": "2023-24",
+      "ownership": { "owner": "Glazer family; INEOS/Ratcliffe 27.7% (Feb 2024)", "structure": "listed", "source_id": "manutd_ratcliffe_ineos" },
+      "financials": {
+        "revenue_total":      { "value": 662.0, "unit": "GBP_million", "reported_as": "revenue", "source_id": "manutd_2324_sr" },
+        "revenue_broadcast":  { "value": 222.0, "unit": "GBP_million", "reported_as": "broadcasting revenue", "source_id": "manutd_2324_sr" },
+        "revenue_commercial": { "value": 303.0, "unit": "GBP_million", "reported_as": "commercial revenue", "source_id": "manutd_2324_sr" },
+        "revenue_matchday":   { "value": 137.0, "unit": "GBP_million", "reported_as": "matchday revenue", "source_id": "manutd_2324_sr" },
+        "operating_profit":   { "value": null, "unit": "GBP_million", "source_id": "manutd_2324_sr", "needs_sourcing": true },
+        "pretax_profit":      { "value": -131.0, "unit": "GBP_million", "reported_as": "loss before tax", "source_id": "manutd_2324_sr" },
+        "player_sale_profit": { "value": 37.0, "unit": "GBP_million", "reported_as": "profit on disposal of players (2023/24)", "source_id": "manutd_2425_sky" },
+        "wage_bill":          { "value": 365.0, "unit": "GBP_million", "reported_as": "wages", "source_id": "manutd_2324_sr" },
+        "net_debt":           { "value": null, "unit": "GBP_million", "source_id": "manutd_2425_sky", "needs_sourcing": true, "note": "Gross debt ~£0.5bn + revolving facilities; total debt approached ~£1.3bn by 2024/25. Need exact 2023/24 net-debt line before scoring P4." }
+      },
+      "risk_flags": {
+        "ownership_instability": { "value": 1, "unit": "count", "reported_as": "prolonged sale/partial-sale process 2022-24; split ownership post-Ratcliffe", "source_id": "manutd_ratcliffe_ineos" }
+      },
+      "growth_optionality": {
+        "commercial_expansion": { "value": 70, "unit": "index_0_100", "estimated": true, "source_id": "manutd_2324_sr", "note": "Largest commercial base in England (£303m) but arguably under-monetised vs brand reach; new-stadium proposal is a costed future lever." }
+      },
+      "market_valuation": {
+        "implied_enterprise_value": { "value": 5000, "unit": "GBP_million", "estimated": true, "source_id": "manutd_ratcliffe_ineos", "reported_as": "equity implied by Ratcliffe $33.00/share (~£4.9-5.4bn equity range)", "note": "Minority-stake-implied, not a whole-club sale." },
+        "basis": "minority_stake_implied",
+        "as_of": "2024-02"
+      },
+      "context_sporting": {
+        "league_finish": { "value": 8, "unit": "count", "reported_as": "8th — 2023/24", "source_id": "manutd_2324_sr" },
+        "european_competition": "Champions League (group-stage exit)"
+      }
+    },
+    {
+      "club_id": "arsenal",
+      "club_name": "Arsenal",
+      "league": "English Premier League",
+      "fiscal_year": "2023-24",
+      "ownership": { "owner": "Kroenke Sports & Entertainment", "structure": "private_ltd", "source_id": "arsenal_2324_club" },
+      "financials": {
+        "revenue_total":      { "value": 616.6, "unit": "GBP_million", "reported_as": "revenue", "source_id": "arsenal_2324_club" },
+        "revenue_broadcast":  { "value": null, "unit": "GBP_million", "source_id": "arsenal_2324_club", "needs_sourcing": true, "note": "Broadcast rose >£70m YoY on CL return; need exact line." },
+        "revenue_commercial": { "value": null, "unit": "GBP_million", "source_id": "arsenal_2324_club", "needs_sourcing": true },
+        "revenue_matchday":   { "value": null, "unit": "GBP_million", "source_id": "arsenal_2324_club", "needs_sourcing": true },
+        "operating_profit":   { "value": null, "unit": "GBP_million", "source_id": "arsenal_2324_club", "needs_sourcing": true },
+        "pretax_profit":      { "value": -17.7, "unit": "GBP_million", "reported_as": "loss for the year", "source_id": "arsenal_2324_club" },
+        "player_sale_profit": { "value": null, "unit": "GBP_million", "source_id": "arsenal_2324_club", "needs_sourcing": true },
+        "wage_bill":          { "value": 327.8, "unit": "GBP_million", "reported_as": "wage costs", "source_id": "arsenal_2324_club" },
+        "net_debt":           { "value": null, "unit": "GBP_million", "source_id": "arsenal_2324_club", "needs_sourcing": true }
+      },
+      "risk_flags": {},
+      "growth_optionality": {},
+      "context_sporting": {
+        "league_finish": { "value": 2, "unit": "count", "reported_as": "2nd — 2023/24", "source_id": "arsenal_2324_club" },
+        "european_competition": "Champions League (quarter-final)"
+      }
+    },
+    {
+      "club_id": "tottenham",
+      "club_name": "Tottenham Hotspur",
+      "league": "English Premier League",
+      "fiscal_year": "2023-24",
+      "ownership": { "owner": "ENIC (Joe Lewis family trust / Daniel Levy)", "structure": "private_ltd", "source_id": "spurs_2324_sr" },
+      "financials": {
+        "revenue_total":      { "value": 528.0, "unit": "GBP_million", "reported_as": "revenue", "source_id": "spurs_2324_sr" },
+        "revenue_broadcast":  { "value": 167.0, "unit": "GBP_million", "reported_as": "broadcasting revenue", "source_id": "spurs_2324_sr" },
+        "revenue_commercial": { "value": null, "unit": "GBP_million", "source_id": "spurs_2324_sr", "needs_sourcing": true, "note": "Remainder after broadcast £167m + matchday £106m implies commercial+other ~£255m; need exact commercial line." },
+        "revenue_matchday":   { "value": 106.0, "unit": "GBP_million", "reported_as": "match day revenue", "source_id": "spurs_2324_sr" },
+        "operating_profit":   { "value": null, "unit": "GBP_million", "source_id": "spurs_2324_sr", "needs_sourcing": true },
+        "pretax_profit":      { "value": -26.0, "unit": "GBP_million", "reported_as": "loss before tax", "source_id": "spurs_2324_sr" },
+        "player_sale_profit": { "value": 82.0, "unit": "GBP_million", "reported_as": "profit on player sales", "source_id": "spurs_2324_sr" },
+        "wage_bill":          { "value": 222.0, "unit": "GBP_million", "reported_as": "wage bill", "source_id": "spurs_2324_sr" },
+        "net_debt":           { "value": null, "unit": "GBP_million", "source_id": "spurs_2324_sr", "needs_sourcing": true, "note": "Large stadium-related debt (~£850m long-term); need exact net-debt line." }
+      },
+      "risk_flags": {},
+      "growth_optionality": {
+        "stadium_media_rerate": { "value": 88, "unit": "index_0_100", "estimated": true, "source_id": "spurs_2324_sr", "note": "New stadium is a year-round venue (NFL London games, concerts, boxing, tours) — the clearest revenue-diversification asset in the panel." }
+      },
+      "context_sporting": {
+        "league_finish": { "value": 5, "unit": "count", "reported_as": "5th — 2023/24", "source_id": "spurs_2324_sr" },
+        "european_competition": "None (no European football in 2023/24)"
+      }
+    },
+    {
+      "club_id": "brighton",
+      "club_name": "Brighton & Hove Albion",
+      "league": "English Premier League",
+      "fiscal_year": "2023-24",
+      "ownership": { "owner": "Tony Bloom", "structure": "private_ltd", "source_id": "brighton_2324_sr" },
+      "financials": {
+        "revenue_total":      { "value": 222.4, "unit": "GBP_million", "reported_as": "turnover", "source_id": "brighton_2324_club" },
+        "revenue_broadcast":  { "value": 164.0, "unit": "GBP_million", "reported_as": "broadcasting revenue", "source_id": "brighton_2324_sr" },
+        "revenue_commercial": { "value": null, "unit": "GBP_million", "source_id": "brighton_2324_sr", "needs_sourcing": true },
+        "revenue_matchday":   { "value": null, "unit": "GBP_million", "source_id": "brighton_2324_sr", "needs_sourcing": true },
+        "operating_profit":   { "value": 73.3, "unit": "GBP_million", "reported_as": "operating profit before interest & tax", "source_id": "brighton_2324_club" },
+        "pretax_profit":      { "value": null, "unit": "GBP_million", "source_id": "brighton_2324_sr", "needs_sourcing": true, "note": "Headline reported as operating profit £73.3m; confirm separate pre-tax line." },
+        "player_sale_profit": { "value": 110.0, "unit": "GBP_million", "reported_as": "profit on player sales (Caicedo, Mac Allister, Sánchez)", "source_id": "brighton_2324_sr" },
+        "wage_bill":          { "value": 146.0, "unit": "GBP_million", "reported_as": "salaries and wages", "source_id": "brighton_2324_sr" },
+        "net_debt":           { "value": null, "unit": "GBP_million", "source_id": "brighton_2324_sr", "needs_sourcing": true, "note": "Owner-funded, low external debt; confirm exact line." }
+      },
+      "risk_flags": {},
+      "growth_optionality": {
+        "trading_engine": { "value": 92, "unit": "index_0_100", "estimated": true, "source_id": "brighton_2324_sr", "note": "Data-driven recruit-develop-sell model produced £110m player-sale profit; the standout, repeatable value-creation engine in the panel." }
+      },
+      "context_sporting": {
+        "league_finish": { "value": 11, "unit": "count", "reported_as": "11th — 2023/24", "source_id": "brighton_2324_sr" },
+        "european_competition": "Europa League (first-ever European campaign; last 16)"
+      }
+    },
+    {
+      "club_id": "everton",
+      "club_name": "Everton",
+      "league": "English Premier League",
+      "fiscal_year": "2023-24",
+      "ownership": { "owner": "The Friedkin Group (from Dec 2024; Farhad Moshiri in 2023/24)", "structure": "private_ltd", "source_id": "everton_2324_sr" },
+      "financials": {
+        "revenue_total":      { "value": 187.0, "unit": "GBP_million", "reported_as": "revenue", "source_id": "everton_2324_sr" },
+        "revenue_broadcast":  { "value": 129.0, "unit": "GBP_million", "reported_as": "broadcasting revenue", "source_id": "everton_2324_sr" },
+        "revenue_commercial": { "value": 38.5, "unit": "GBP_million", "reported_as": "commercial revenue", "source_id": "everton_2324_sr" },
+        "revenue_matchday":   { "value": 19.1, "unit": "GBP_million", "reported_as": "gate receipts", "source_id": "everton_2324_sr" },
+        "operating_profit":   { "value": null, "unit": "GBP_million", "source_id": "everton_2324_sr", "needs_sourcing": true },
+        "pretax_profit":      { "value": -53.0, "unit": "GBP_million", "reported_as": "loss before tax", "source_id": "everton_2324_sr" },
+        "player_sale_profit": { "value": null, "unit": "GBP_million", "source_id": "everton_2324_sr", "needs_sourcing": true, "note": "Positive net player trading reported; need exact profit-on-disposal line." },
+        "wage_bill":          { "value": 157.0, "unit": "GBP_million", "reported_as": "wages", "source_id": "everton_2324_sr" },
+        "net_debt":           { "value": null, "unit": "GBP_million", "source_id": "everton_2324_sr", "needs_sourcing": true, "note": "Significant stadium-construction + related-party debt; confirm exact line." }
+      },
+      "risk_flags": {
+        "psr_points_deduction": { "value": 8, "unit": "count", "reported_as": "8 points deducted in 2023/24 (6 + 2) for PSR breaches", "source_id": "pl_psr_everton_forest" }
+      },
+      "growth_optionality": {
+        "stadium_media_rerate": { "value": 60, "unit": "index_0_100", "estimated": true, "source_id": "everton_2324_sr", "note": "New Bramley-Moore Dock stadium materially lifts matchday/commercial capacity once open — real upside, offset by construction-debt load." }
+      },
+      "context_sporting": {
+        "league_finish": { "value": 15, "unit": "count", "reported_as": "15th — 2023/24 (after 8-pt deduction)", "source_id": "everton_2324_sr" },
+        "european_competition": "None"
+      }
+    }
+  ]
+}

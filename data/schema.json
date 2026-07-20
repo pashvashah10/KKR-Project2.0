@@ -1,0 +1,92 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Franchise financial record",
+  "description": "One record per club per fiscal year. Every numeric metric is a 'sourced value' object so that no figure can exist without a citation.",
+  "type": "object",
+  "definitions": {
+    "sourcedValue": {
+      "type": "object",
+      "description": "A numeric value that must carry provenance. Set value to null and needs_sourcing to true where not yet sourced.",
+      "properties": {
+        "value": { "type": ["number", "null"] },
+        "unit": { "type": "string", "examples": ["GBP_million", "ratio", "count", "index_0_100"] },
+        "reported_as": {
+          "type": "string",
+          "description": "Exactly what the source labels it, e.g. 'operating profit before tax', 'pre-tax loss', 'turnover'."
+        },
+        "source_id": { "type": "string", "description": "Key into data/SOURCES.md" },
+        "estimated": { "type": "boolean", "default": false },
+        "needs_sourcing": { "type": "boolean", "default": false },
+        "note": { "type": "string" }
+      },
+      "required": ["value", "unit", "source_id"]
+    }
+  },
+  "properties": {
+    "club_id": { "type": "string" },
+    "club_name": { "type": "string" },
+    "league": { "type": "string" },
+    "fiscal_year": { "type": "string", "examples": ["2023-24"] },
+    "ownership": {
+      "type": "object",
+      "properties": {
+        "owner": { "type": "string" },
+        "structure": { "type": "string", "examples": ["private_ltd", "listed", "member_owned"] },
+        "source_id": { "type": "string" }
+      }
+    },
+    "financials": {
+      "type": "object",
+      "description": "Reported primitives. Derived ratios (margins, wages/revenue) are computed by the model, never stored, so they can never drift from their inputs.",
+      "properties": {
+        "revenue_total":        { "$ref": "#/definitions/sourcedValue" },
+        "revenue_broadcast":    { "$ref": "#/definitions/sourcedValue" },
+        "revenue_commercial":   { "$ref": "#/definitions/sourcedValue" },
+        "revenue_matchday":     { "$ref": "#/definitions/sourcedValue" },
+        "operating_profit":     { "$ref": "#/definitions/sourcedValue" },
+        "pretax_profit":        { "$ref": "#/definitions/sourcedValue" },
+        "player_sale_profit":   { "$ref": "#/definitions/sourcedValue" },
+        "wage_bill":            { "$ref": "#/definitions/sourcedValue" },
+        "net_debt":             { "$ref": "#/definitions/sourcedValue" },
+        "squad_cost_ratio":     { "$ref": "#/definitions/sourcedValue" },
+        "owner_funding_3yr":    { "$ref": "#/definitions/sourcedValue" }
+      }
+    },
+    "risk_flags": {
+      "type": "object",
+      "properties": {
+        "psr_points_deduction": { "$ref": "#/definitions/sourcedValue" },
+        "open_charges":         { "$ref": "#/definitions/sourcedValue" },
+        "going_concern_note":   { "$ref": "#/definitions/sourcedValue" },
+        "ownership_instability":{ "$ref": "#/definitions/sourcedValue" }
+      }
+    },
+    "growth_optionality": {
+      "type": "object",
+      "description": "0-100 sub-scores with an evidenced, costed rationale in 'note'.",
+      "properties": {
+        "stadium_media_rerate": { "$ref": "#/definitions/sourcedValue" },
+        "trading_engine":       { "$ref": "#/definitions/sourcedValue" },
+        "commercial_expansion": { "$ref": "#/definitions/sourcedValue" }
+      }
+    },
+    "market_valuation": {
+      "type": "object",
+      "description": "The market's price signal, for the mispricing engine.",
+      "properties": {
+        "implied_enterprise_value": { "$ref": "#/definitions/sourcedValue" },
+        "basis": { "type": "string", "examples": ["completed_transaction", "minority_stake_implied", "forbes_estimate"] },
+        "as_of": { "type": "string" }
+      }
+    },
+    "context_sporting": {
+      "type": "object",
+      "description": "NOT scored. Context only, to expose profit-vs-performance divergence.",
+      "properties": {
+        "league_finish": { "$ref": "#/definitions/sourcedValue" },
+        "european_competition": { "type": "string" }
+      }
+    }
+  },
+  "required": ["club_id", "club_name", "league", "fiscal_year", "financials"]
+}
