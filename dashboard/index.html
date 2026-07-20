@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="Franchise Alpha — sports private equity research platform (EPL + IPL).">
+<meta name="description" content="Franchise Alpha — sports private equity research platform (EPL + IPL + cross-league portfolio).">
 </head>
 <body>
 <title>Franchise Alpha — Sports Private Equity Research</title>
@@ -210,6 +210,21 @@
   footer{border-top:1px solid var(--line);color:var(--muted);font-size:12px;padding:20px clamp(16px,3vw,28px);max-width:1220px;margin:0 auto}
   code{font-family:var(--mono);font-size:.88em;background:var(--paper-2);padding:1px 5px;border-radius:4px}
   .prose{max-width:78ch;font-size:14.5px;color:var(--ink-2)} .prose h3{font-family:var(--serif);font-size:17px;color:var(--ink);margin:20px 0 8px} .prose ul{padding-left:18px} .prose li{margin:5px 0}
+  /* portfolio */
+  .op{border:1px solid var(--line);border-radius:9px;padding:16px 18px;margin-bottom:14px;background:var(--paper);box-shadow:var(--sh)}
+  .op-h{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;margin-bottom:11px}
+  .op-name{font-family:var(--serif);font-size:18px;font-weight:700;letter-spacing:-.01em}
+  .op-sub{font-size:12px;color:var(--muted);margin-top:2px}
+  .op-score{text-align:center;flex-shrink:0}
+  .op-score .v{font-family:var(--mono);font-size:24px;font-weight:800;color:var(--navy);line-height:1}
+  .op-score .l{font-family:var(--mono);font-size:8px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin-top:3px;line-height:1.2}
+  .fr{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:13px}
+  .fr>span{font-size:11.5px;background:var(--paper-2);border:1px solid var(--line);border-radius:5px;padding:3px 8px}
+  .fr>span b{font-family:var(--mono);color:var(--ink-3);font-weight:600}
+  .op-stats{display:flex;gap:20px;flex-wrap:wrap;margin-bottom:13px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+  .op-stat b{font-family:var(--mono);font-size:16px;font-weight:700} .op-stat span{display:block;font-size:9px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-top:1px}
+  .cal-lbls{display:flex;gap:2px;margin-bottom:3px} .cal-lbls>span{flex:1;text-align:center;font-family:var(--mono);font-size:8px;color:var(--muted)}
+  .cal{display:flex;gap:2px} .cal .m{flex:1;height:15px;border-radius:2px;background:var(--paper-3)} .cal .m.on{background:var(--navy)}
 </style>
 
 <header class="masthead">
@@ -219,6 +234,7 @@
     <nav id="nav">
       <button class="navlink active" data-tab="screen">Screen</button>
       <button class="navlink" data-tab="deal">Deal Room</button>
+      <button class="navlink" data-tab="portfolio">Portfolio</button>
       <button class="navlink" data-tab="edge">The Edge</button>
       <button class="navlink" data-tab="method">Method</button>
     </nav>
@@ -281,6 +297,19 @@
       <div class="verdict" id="verdict"></div>
     </div>
     <div id="dealBody" style="margin-top:20px"></div>
+  </section>
+
+  <!-- ============ PORTFOLIO ============ -->
+  <section data-panel="portfolio">
+    <span class="eyebrow">Cross-league portfolio · the Arctos lens</span>
+    <h1 class="page-h">The franchise-of-franchises</h1>
+    <p class="lede">Arctos built a firm on one insight: elite franchises are a scarce, appreciating, largely uncorrelated asset class, and a diversified basket of stakes across leagues compounds like little else in private markets. This screen maps the operators already living that thesis — single brands and shared infrastructure spread across leagues, sports, geographies and, above all, the <strong>calendar</strong>.</p>
+    <div class="stats sec" id="pfStats"></div>
+    <div class="sec"><div class="sec-head"><h2>Multi-league operators</h2><span class="n">portfolio strength 0–100</span><span class="sec-note">scale · calendar coverage · diversification · brand synergy</span></div>
+      <div id="pfCards"></div></div>
+    <div class="sec"><div class="sec-head"><h2>Value vs. calendar coverage</h2><span class="sec-note">bubble size = number of leagues</span></div>
+      <div class="flat"><div id="pfChart"></div></div></div>
+    <div class="sec"><div class="callout"><strong>Why this is the KKR view.</strong> KKR is an Arctos backer, and Arctos's edge is buying <em>into networks</em>, not single teams — a minority stake in an operator like the Knight Riders or Mumbai Indians buys year-round, cross-geography content and a repeatable playbook, not one club's results. The cricket networks are early in that build; City Football Group proved it in football; Boehly's group shows the cross-sport version. This screen is the map of where a franchise-of-franchises stake creates the most diversified, calendar-spanning exposure — the native habitat of the thesis, in the APAC market that sits closest to the desk.</div></div>
   </section>
 
   <!-- ============ EDGE ============ -->
@@ -892,6 +921,100 @@ function edgeRender(){const R=all();
   hover("#backtest","#tipB",p=>`<div class="tt">${p.dataset.n} — signal ${p.dataset.s}${p.dataset.e?` · $${p.dataset.e}bn`:""}</div><div class="tr">${p.dataset.note}</div>`);
 }
 
+// ---- PORTFOLIO (cross-league, Arctos lens) — illustrative franchise-value estimates (USD m)
+const LEAGUE_MONTHS={IPL:[3,4,5],WPL:[2,3],SA20:[1,2],ILT20:[1,2],MLC:[6,7],CPL:[8,9],
+  EPL:[8,9,10,11,12,1,2,3,4,5],MLS:[2,3,4,5,6,7,8,9,10,11],ISL:[9,10,11,12,1,2,3,4],Ligue1:[8,9,10,11,12,1,2,3,4,5],LaLiga:[8,9,10,11,12,1,2,3,4,5],ALeague:[10,11,12,1,2,3,4,5],
+  MLB:[3,4,5,6,7,8,9,10],NBA:[10,11,12,1,2,3,4,5,6]};
+const LG_NAME={IPL:"IPL",WPL:"WPL",SA20:"SA20",ILT20:"ILT20",MLC:"MLC",CPL:"CPL",EPL:"Prem",MLS:"MLS",ISL:"ISL",Ligue1:"Ligue 1",LaLiga:"La Liga",ALeague:"A-League",MLB:"MLB",NBA:"NBA"};
+const CONT={India:"Asia",UAE:"Asia",England:"Europe",Spain:"Europe",France:"Europe",Italy:"Europe",Belgium:"Europe",USA:"N. America",RSA:"Africa",Caribbean:"Caribbean",Australia:"Oceania"};
+const OPERATORS=[
+ {id:"knight",name:"Knight Riders",prin:"Red Chillies (Shah Rukh Khan) + Mehta family",brand:95,
+  fr:[{n:"Kolkata Knight Riders",lg:"IPL",region:"India",sport:"cricket",val:960},{n:"Los Angeles KR",lg:"MLC",region:"USA",sport:"cricket",val:80},{n:"Abu Dhabi KR",lg:"ILT20",region:"UAE",sport:"cricket",val:40},{n:"Trinbago KR",lg:"CPL",region:"Caribbean",sport:"cricket",val:35}],
+  thesis:"The purest franchise-of-franchises: one 'Knight Riders' brand across four leagues and three continents, run as a single commercial and cricketing operation. The template a firm like Arctos underwrites."},
+ {id:"mi",name:"Mumbai Indians (Reliance)",prin:"Reliance Industries (Ambani)",brand:90,
+  fr:[{n:"Mumbai Indians",lg:"IPL",region:"India",sport:"cricket",val:1140},{n:"Mumbai Indians (WPL)",lg:"WPL",region:"India",sport:"cricket",val:95},{n:"MI New York",lg:"MLC",region:"USA",sport:"cricket",val:90},{n:"MI Cape Town",lg:"SA20",region:"RSA",sport:"cricket",val:55},{n:"MI Emirates",lg:"ILT20",region:"UAE",sport:"cricket",val:45}],
+  thesis:"One global 'MI' brand across five competitions and four countries — shared coaching, data and scouting, feeding near-year-round content into Reliance's media ecosystem (JioCinema)."},
+ {id:"cfg",name:"City Football Group",prin:"Abu Dhabi United Group (+ silver-lake stake)",brand:72,
+  fr:[{n:"Manchester City",lg:"EPL",region:"England",sport:"football",val:5100},{n:"New York City FC",lg:"MLS",region:"USA",sport:"football",val:600},{n:"Girona",lg:"LaLiga",region:"Spain",sport:"football",val:400},{n:"Melbourne City",lg:"ALeague",region:"Australia",sport:"football",val:100},{n:"Mumbai City",lg:"ISL",region:"India",sport:"football",val:60}],
+  thesis:"The original multi-club platform — 13 football clubs (five shown) across every major confederation, sharing recruitment, data and playing philosophy. The blueprint every cricket network is now copying."},
+ {id:"bluec",name:"BlueCo / Boehly",prin:"Todd Boehly + Clearlake Capital",brand:42,
+  fr:[{n:"Chelsea",lg:"EPL",region:"England",sport:"football",val:3000},{n:"Strasbourg",lg:"Ligue1",region:"France",sport:"football",val:120},{n:"LA Dodgers (stake)",lg:"MLB",region:"USA",sport:"baseball",val:1100},{n:"LA Lakers (stake)",lg:"NBA",region:"USA",sport:"basketball",val:400}],
+  thesis:"A cross-SPORT basket — Chelsea and Strasbourg in football plus Boehly's stakes in the LA Dodgers (MLB) and Lakers (NBA). The closest thing here to a pure Arctos-style, uncorrelated, year-round sports portfolio."},
+ {id:"gmr",name:"GMR 'Capitals'",prin:"GMR Group (+ JSW)",brand:65,
+  fr:[{n:"Delhi Capitals",lg:"IPL",region:"India",sport:"cricket",val:755},{n:"Delhi Capitals (WPL)",lg:"WPL",region:"India",sport:"cricket",val:85},{n:"Pretoria Capitals",lg:"SA20",region:"RSA",sport:"cricket",val:45},{n:"Dubai Capitals",lg:"ILT20",region:"UAE",sport:"cricket",val:40},{n:"Seattle Orcas",lg:"MLC",region:"USA",sport:"cricket",val:70}],
+  thesis:"The 'Capitals' network across four cricket leagues plus a WPL side — an infrastructure group using sport as a global, calendar-spanning platform."},
+ {id:"csk",name:"Super Kings (CSK)",prin:"Chennai Super Kings Cricket Ltd (India Cements)",brand:85,
+  fr:[{n:"Chennai Super Kings",lg:"IPL",region:"India",sport:"cricket",val:1080},{n:"Texas Super Kings",lg:"MLC",region:"USA",sport:"cricket",val:75},{n:"Joburg Super Kings",lg:"SA20",region:"RSA",sport:"cricket",val:50}],
+  thesis:"The 'Super Kings' brand extended from a cult IPL base into the MLC and SA20 — shared identity, fanbase and sponsor roster across three markets."},
+ {id:"royals",name:"Royals (Emerging Media)",prin:"Manoj Badale / Emerging Media",brand:80,
+  fr:[{n:"Rajasthan Royals",lg:"IPL",region:"India",sport:"cricket",val:745},{n:"Barbados Royals",lg:"CPL",region:"Caribbean",sport:"cricket",val:35},{n:"Paarl Royals",lg:"SA20",region:"RSA",sport:"cricket",val:50}],
+  thesis:"The analytics-led 'Royals' network — one development-and-recruitment model exported across the IPL, CPL and SA20. The efficiency operator."},
+ {id:"rpsg",name:"RPSG Group",prin:"Sanjiv Goenka / RPSG",brand:55,
+  fr:[{n:"Lucknow Super Giants",lg:"IPL",region:"India",sport:"cricket",val:840},{n:"Durban's Super Giants",lg:"SA20",region:"RSA",sport:"cricket",val:50},{n:"ATK Mohun Bagan",lg:"ISL",region:"India",sport:"football",val:110}],
+  thesis:"A genuine multi-SPORT portfolio — IPL and SA20 cricket plus ISL football (ATK Mohun Bagan) — diversifying across sport, not just league."},
+];
+function pfCompute(){
+  return OPERATORS.map(o=>{
+    const val=o.fr.reduce((a,f)=>a+f.val,0);
+    const leagues=new Set(o.fr.map(f=>f.lg)).size, sports=new Set(o.fr.map(f=>f.sport)).size, conts=new Set(o.fr.map(f=>CONT[f.region])).size;
+    const months=new Set(); o.fr.forEach(f=>(LEAGUE_MONTHS[f.lg]||[]).forEach(m=>months.add(m)));
+    const cov=months.size;
+    const score=0.35*clamp(lin(val,300,7000))+0.30*(cov/12*100)+0.20*clamp(lin(leagues+sports+conts,5,14))+0.15*o.brand;
+    return {o,val,leagues,sports,conts,months,cov,score};
+  }).sort((a,b)=>b.score-a.score);
+}
+function renderPortfolio(){
+  const ops=pfCompute();
+  const totalVal=ops.reduce((a,x)=>a+x.val,0);
+  const maxCov=[...ops].sort((a,b)=>b.cov-a.cov)[0];
+  const topSport=[...ops].sort((a,b)=>b.sports-a.sports)[0];
+  $("#pfStats").innerHTML=[
+    {k:"Portfolio operators",v:ops.length,c:"multi-league networks"},
+    {k:"Aggregate franchise value",v:"$"+fmt(totalVal/1000,1)+"bn",c:"gross, illustrative"},
+    {k:"Widest calendar coverage",v:maxCov.cov+"/12",c:maxCov.o.name+" · months live"},
+    {k:"Most cross-sport",v:topSport.sports+" sports",c:topSport.o.name},
+  ].map(t=>`<div class="stat"><div class="k">${t.k}</div><div class="v">${t.v}</div><div class="c">${t.c}</div></div>`).join("");
+  const MN=["J","F","M","A","M","J","J","A","S","O","N","D"];
+  $("#pfCards").innerHTML=ops.map((x,i)=>{
+    const o=x.o;
+    const cal=Array.from({length:12},(_,mi)=>`<div class="m ${x.months.has(mi+1)?'on':''}" title="${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][mi]}"></div>`).join("");
+    const chips=o.fr.map(f=>`<span>${f.n} <b>· ${LG_NAME[f.lg]}${f.val?" · $"+(f.val>=1000?(f.val/1000).toFixed(1)+"bn":f.val+"m"):""}</b></span>`).join("");
+    return `<div class="op">
+      <div class="op-h"><div><div class="op-name">${i+1}. ${o.name}</div><div class="op-sub">${o.prin}</div></div>
+        <div class="op-score"><div class="v">${Math.round(x.score)}</div><div class="l">Portfolio<br>strength</div></div></div>
+      <div class="fr">${chips}</div>
+      <div class="op-stats">
+        <div class="op-stat"><b>$${x.val>=1000?(x.val/1000).toFixed(1)+"bn":x.val+"m"}</b><span>Aggregate value</span></div>
+        <div class="op-stat"><b>${x.leagues}</b><span>Leagues</span></div>
+        <div class="op-stat"><b>${x.sports}</b><span>Sport${x.sports>1?"s":""}</span></div>
+        <div class="op-stat"><b>${x.conts}</b><span>Continents</span></div>
+        <div class="op-stat"><b>${x.cov}/12</b><span>Months live</span></div>
+      </div>
+      <div class="cal-lbls">${MN.map(m=>`<span>${m}</span>`).join("")}</div>
+      <div class="cal">${cal}</div>
+      <p class="rb" style="color:var(--ink-2);font-size:12.5px;line-height:1.5;margin:6px 0 0"><b style="color:var(--ink)">Thesis.</b> ${o.thesis}</p>
+    </div>`;
+  }).join("");
+  drawPfChart(ops);
+}
+function drawPfChart(ops){
+  const W=720,H=380,m={t:20,r:26,b:46,l:58},iw=W-m.l-m.r,ih=H-m.t-m.b,g=cvar;
+  const x=v=>m.l+(v/12)*iw, lo=Math.log10(500),hi=Math.log10(7000);
+  const y=v=>m.t+ih-((Math.log10(Math.max(v,500))-lo)/(hi-lo))*ih;
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Portfolio value vs calendar coverage">`;
+  [500,1000,2000,4000,7000].forEach(gv=>s+=`<line x1="${m.l}" y1="${y(gv)}" x2="${m.l+iw}" y2="${y(gv)}" stroke="${g('--line')}" stroke-dasharray="2 4"/><text x="${m.l-8}" y="${y(gv)+3}" text-anchor="end" font-size="10" font-family="var(--mono)" fill="${g('--muted')}">$${gv>=1000?(gv/1000)+"bn":"0.5bn"}</text>`);
+  [0,3,6,9,12].forEach(t=>s+=`<text x="${x(t)}" y="${m.t+ih+16}" text-anchor="middle" font-size="10" font-family="var(--mono)" fill="${g('--muted')}">${t}</text>`);
+  s+=`<text x="${m.l+iw/2}" y="${H-6}" text-anchor="middle" font-size="12" fill="${g('--ink-2')}">Calendar coverage (months live per year)  →</text>`;
+  s+=`<text transform="translate(14,${m.t+ih/2}) rotate(-90)" text-anchor="middle" font-size="12" fill="${g('--ink-2')}">Aggregate value (log)  →</text>`;
+  const pL=[],pR=[];
+  ops.forEach(d=>{const px=x(d.cov),py=y(d.val),r=5+d.leagues;
+    s+=`<circle cx="${px}" cy="${py}" r="${r}" fill="${g('--navy-wash')}" stroke="${g('--navy')}" stroke-width="2"/>`;});
+  ops.forEach(d=>{const px=x(d.cov),py=y(d.val),left=px>m.l+iw*.8,arr=left?pL:pR;let ly=py+3,gd=0;while(arr.some(v=>Math.abs(v-ly)<14)&&gd<14){ly+=14;gd++;}arr.push(ly);
+    const nm=d.o.name.split(" (")[0].replace("Mumbai Indians","Mumbai Indians").replace("City Football Group","CFG").replace("Knight Riders","Knight Riders");
+    s+=`<text x="${left?px-13:px+13}" y="${ly}" text-anchor="${left?'end':'start'}" font-size="10.5" font-weight="600" fill="${g('--ink')}">${nm}</text>`;});
+  s+=`</svg>`;$("#pfChart").innerHTML=s;
+}
+
 // ---- METHOD
 $("#methodBody").innerHTML=`
   <p>Franchise Alpha underwrites a sports franchise the way a private-equity desk underwrites any business — but tuned to the economics of sport, where value accrues to <strong>durable cash generation and scarce assets</strong>, not to trophies.</p>
@@ -924,12 +1047,12 @@ function switchLeague(k){if(k===LG)return;LG=k;ACT=LEAGUES[k];CLUBS=ACT.clubs;ap
   $("#clubSel").innerHTML=CLUBS.map(c=>`<option value="${c.id}">${c.name}</option>`).join("");
   setChrome();screenRender();renderDeal(CLUBS[0].id);if(document.querySelector('[data-panel="edge"]').classList.contains("active"))edgeRender();}
 document.querySelectorAll("#lgt button").forEach(b=>b.addEventListener("click",()=>switchLeague(b.dataset.lg)));
-function switchTab(t){document.querySelectorAll(".navlink").forEach(b=>b.classList.toggle("active",b.dataset.tab===t));document.querySelectorAll("section[data-panel]").forEach(s=>s.classList.toggle("active",s.dataset.panel===t));if(t==="edge")edgeRender();window.scrollTo({top:0,behavior:"smooth"});}
+function switchTab(t){document.querySelectorAll(".navlink").forEach(b=>b.classList.toggle("active",b.dataset.tab===t));document.querySelectorAll("section[data-panel]").forEach(s=>s.classList.toggle("active",s.dataset.panel===t));if(t==="edge")edgeRender();if(t==="portfolio")renderPortfolio();window.scrollTo({top:0,behavior:"smooth"});}
 document.querySelectorAll(".navlink").forEach(b=>b.addEventListener("click",()=>switchTab(b.dataset.tab)));
 $("#clubSel").innerHTML=CLUBS.map(c=>`<option value="${c.id}">${c.name}</option>`).join("");
 $("#clubSel").addEventListener("change",e=>renderDeal(e.target.value));
 const root=document.documentElement;
-$("#themeBtn").addEventListener("click",()=>{const cur=root.getAttribute("data-theme")||(matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light");root.setAttribute("data-theme",cur==="dark"?"light":"dark");screenRender();if($("#dealBody").innerHTML)renderDeal($("#clubSel").value);if(document.querySelector('[data-panel="edge"]').classList.contains("active"))edgeRender();});
+$("#themeBtn").addEventListener("click",()=>{const cur=root.getAttribute("data-theme")||(matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light");root.setAttribute("data-theme",cur==="dark"?"light":"dark");screenRender();if($("#dealBody").innerHTML)renderDeal($("#clubSel").value);if(document.querySelector('[data-panel="edge"]').classList.contains("active"))edgeRender();if(document.querySelector('[data-panel="portfolio"]').classList.contains("active"))renderPortfolio();});
 $("#foot").innerHTML=`<strong>Franchise Alpha</strong> · EPL 2023/24 (11 clubs) + IPL FY2024 (10 franchises). Sources: Companies House / club results / The Swiss Ramble (EPL financials &amp; debt); Premier League &amp; UEFA (regulatory); Transfermarkt (squad value/age); Forbes 2024 (EPL market); CSK audited filings, Houlihan Lokey IPL Valuation Study 2024 &amp; 2022 franchise auctions (IPL). Full registry in <code>data/SOURCES.md</code>. IPL financials beyond CSK, all asset values and forward scenarios are modeled and labelled. Not investment advice.`;
 applyLeagueParams();setChrome();buildSliders();syncW();syncTh();screenRender();renderDeal(CLUBS[0].id);
 </script>

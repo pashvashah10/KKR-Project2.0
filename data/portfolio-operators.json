@@ -1,0 +1,26 @@
+{
+  "view": "Cross-league portfolio (the Arctos lens)",
+  "built": "2026-07-20",
+  "note": "Operator-level view: multi-league 'franchise-of-franchises' networks. Franchise membership across leagues is factual (see source_ids); individual franchise values are ILLUSTRATIVE estimates in USD millions (private franchises rarely disclose). Portfolio-strength score blends scale, calendar coverage, diversification and brand synergy. Not investment advice.",
+  "sources": {
+    "multi_league_networks": "ipl_multileague (Mumbai Indians / Knight Riders / Super Kings / Royals / GMR Capitals / RPSG networks)",
+    "cfg": "City Football Group club roster — public",
+    "blueco": "BlueCo (Chelsea, Strasbourg) + Boehly stakes in LA Dodgers (MLB) and Lakers (NBA) — public"
+  },
+  "league_calendar_months": {
+    "IPL": [3,4,5], "WPL": [2,3], "SA20": [1,2], "ILT20": [1,2], "MLC": [6,7], "CPL": [8,9],
+    "EPL": [8,9,10,11,12,1,2,3,4,5], "MLS": [2,3,4,5,6,7,8,9,10,11], "ISL": [9,10,11,12,1,2,3,4],
+    "Ligue1": [8,9,10,11,12,1,2,3,4,5], "LaLiga": [8,9,10,11,12,1,2,3,4,5], "ALeague": [10,11,12,1,2,3,4,5],
+    "MLB": [3,4,5,6,7,8,9,10], "NBA": [10,11,12,1,2,3,4,5,6]
+  },
+  "operators": [
+    {"id":"knight","name":"Knight Riders","principal":"Red Chillies (Shah Rukh Khan) + Mehta family","franchises":[{"n":"Kolkata Knight Riders","league":"IPL","region":"India","sport":"cricket","value_usd_m":960},{"n":"Los Angeles KR","league":"MLC","region":"USA","sport":"cricket","value_usd_m":80},{"n":"Abu Dhabi KR","league":"ILT20","region":"UAE","sport":"cricket","value_usd_m":40},{"n":"Trinbago KR","league":"CPL","region":"Caribbean","sport":"cricket","value_usd_m":35}]},
+    {"id":"mi","name":"Mumbai Indians (Reliance)","principal":"Reliance Industries (Ambani)","franchises":[{"n":"Mumbai Indians","league":"IPL","region":"India","sport":"cricket","value_usd_m":1140},{"n":"Mumbai Indians (WPL)","league":"WPL","region":"India","sport":"cricket","value_usd_m":95},{"n":"MI New York","league":"MLC","region":"USA","sport":"cricket","value_usd_m":90},{"n":"MI Cape Town","league":"SA20","region":"RSA","sport":"cricket","value_usd_m":55},{"n":"MI Emirates","league":"ILT20","region":"UAE","sport":"cricket","value_usd_m":45}]},
+    {"id":"cfg","name":"City Football Group","principal":"Abu Dhabi United Group (+ Silver Lake)","franchises":[{"n":"Manchester City","league":"EPL","region":"England","sport":"football","value_usd_m":5100},{"n":"New York City FC","league":"MLS","region":"USA","sport":"football","value_usd_m":600},{"n":"Girona","league":"LaLiga","region":"Spain","sport":"football","value_usd_m":400},{"n":"Melbourne City","league":"ALeague","region":"Australia","sport":"football","value_usd_m":100},{"n":"Mumbai City","league":"ISL","region":"India","sport":"football","value_usd_m":60}],"note":"CFG holds 13 clubs; five marquee shown."},
+    {"id":"blueco","name":"BlueCo / Boehly","principal":"Todd Boehly + Clearlake Capital","franchises":[{"n":"Chelsea","league":"EPL","region":"England","sport":"football","value_usd_m":3000},{"n":"Strasbourg","league":"Ligue1","region":"France","sport":"football","value_usd_m":120},{"n":"LA Dodgers (stake)","league":"MLB","region":"USA","sport":"baseball","value_usd_m":1100},{"n":"LA Lakers (stake)","league":"NBA","region":"USA","sport":"basketball","value_usd_m":400}]},
+    {"id":"gmr","name":"GMR 'Capitals'","principal":"GMR Group (+ JSW)","franchises":[{"n":"Delhi Capitals","league":"IPL","region":"India","sport":"cricket","value_usd_m":755},{"n":"Delhi Capitals (WPL)","league":"WPL","region":"India","sport":"cricket","value_usd_m":85},{"n":"Pretoria Capitals","league":"SA20","region":"RSA","sport":"cricket","value_usd_m":45},{"n":"Dubai Capitals","league":"ILT20","region":"UAE","sport":"cricket","value_usd_m":40},{"n":"Seattle Orcas","league":"MLC","region":"USA","sport":"cricket","value_usd_m":70}]},
+    {"id":"csk","name":"Super Kings (CSK)","principal":"Chennai Super Kings Cricket Ltd (India Cements)","franchises":[{"n":"Chennai Super Kings","league":"IPL","region":"India","sport":"cricket","value_usd_m":1080},{"n":"Texas Super Kings","league":"MLC","region":"USA","sport":"cricket","value_usd_m":75},{"n":"Joburg Super Kings","league":"SA20","region":"RSA","sport":"cricket","value_usd_m":50}]},
+    {"id":"royals","name":"Royals (Emerging Media)","principal":"Manoj Badale / Emerging Media","franchises":[{"n":"Rajasthan Royals","league":"IPL","region":"India","sport":"cricket","value_usd_m":745},{"n":"Barbados Royals","league":"CPL","region":"Caribbean","sport":"cricket","value_usd_m":35},{"n":"Paarl Royals","league":"SA20","region":"RSA","sport":"cricket","value_usd_m":50}]},
+    {"id":"rpsg","name":"RPSG Group","principal":"Sanjiv Goenka / RPSG","franchises":[{"n":"Lucknow Super Giants","league":"IPL","region":"India","sport":"cricket","value_usd_m":840},{"n":"Durban's Super Giants","league":"SA20","region":"RSA","sport":"cricket","value_usd_m":50},{"n":"ATK Mohun Bagan","league":"ISL","region":"India","sport":"football","value_usd_m":110}]}
+  ]
+}

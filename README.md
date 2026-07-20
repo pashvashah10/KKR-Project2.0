@@ -21,8 +21,19 @@ For any franchise it produces:
 - Four tabs:
   - **Screen** — league-wide investment-attractiveness ranking with live weight sliders and the profit-vs-performance "thesis" chart.
   - **Deal Room** — a full investment-committee memo per club (see below).
+  - **Portfolio** — the Arctos-style cross-league view (see below).
   - **The Edge** — the alpha signals and the cited backtest.
   - **Method** — how the engine thinks.
+
+### Portfolio — the franchise-of-franchises (the Arctos lens)
+
+A cross-league view that treats **owners as the unit of analysis**. Arctos's thesis is that elite franchises are a scarce, appreciating, largely uncorrelated asset class and that a diversified basket of stakes across leagues compounds — so this screen ranks the multi-league operators already living that thesis on scale, diversification, brand synergy and, crucially, **year-round calendar coverage**:
+
+- the cricket networks — **Knight Riders** (IPL/MLC/ILT20/CPL), **Mumbai Indians** (five competitions), **Super Kings**, **GMR 'Capitals'**, **Royals**, **RPSG** (multi-sport);
+- **City Football Group** — the original 13-club football platform;
+- **BlueCo / Boehly** — the cross-sport basket (Chelsea, Strasbourg + LA Dodgers/Lakers stakes).
+
+Each operator card shows the franchises held, aggregate value, league/sport/continent diversification, a 12-month calendar-coverage strip, and the synergy thesis. This is the most KKR-relevant screen: KKR backs Arctos, and the point is buying *into networks*, not single teams — a minority stake in an operator buys year-round, cross-geography exposure and a repeatable playbook. Franchise membership is factual; individual values are illustrative estimates (see `data/portfolio-operators.json`).
 
 ### What each Deal Room contains
 
@@ -51,6 +62,7 @@ The pilot is the English Premier League because it is the **most financially tra
 | `data/altdata-epl-2023-24.json` | Alt-data + market-anchor layer (squad value, social, stadium, market EV) |
 | `data/valuation-inputs-epl-2023-24.json` | Hardened valuation inputs — net debt (gross sourced), stadium ownership & asset values |
 | `data/ipl-clubs-fy2024.json` | IPL pilot — 10 franchises (CSK audited, rest estimated), brand values, market EVs, multi-league networks |
+| `data/portfolio-operators.json` | Cross-league Portfolio view — multi-league operator networks, calendar coverage (illustrative values) |
 | `data/SOURCES.md` | Master citation registry |
 
 ## Two leagues
