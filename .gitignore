@@ -1,0 +1,18 @@
+# AI assistant tooling (regenerable: npx ui-ux-pro-max-cli init --ai claude)
+.claude/
+
+# Dependencies
+node_modules/
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*.swp
+.vscode/
+.idea/
+
+# Logs & temp
+*.log
+npm-debug.log*
+.cache/
+tmp/
