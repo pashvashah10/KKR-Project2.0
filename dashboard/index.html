@@ -11,7 +11,7 @@
   :root{
     --bg:#F5F6F8; --paper:#FFFFFF; --paper-2:#F0F2F5; --paper-3:#E6E9EE;
     --line:#DBE0E7; --line-2:#C7CED8;
-    --ink:#0E141C; --ink-2:#42505F; --ink-3:#6B7684; --muted:#8A95A2;
+    --ink:#0E141C; --ink-2:#42505F; --ink-3:#6B7684; --muted:#646E7B;
     --navy:#1C3D73; --navy-2:#14305C; --navy-ink:#FFFFFF; --navy-wash:rgba(28,61,115,.07);
     --good:#0B7A4B; --good-bg:rgba(11,122,75,.10);
     --warn:#8A5A0E; --warn-bg:rgba(138,90,14,.12);
@@ -25,7 +25,7 @@
   @media (prefers-color-scheme:dark){:root{
     --bg:#0A0D12; --paper:#111721; --paper-2:#161D28; --paper-3:#1F2836;
     --line:#232C3A; --line-2:#33404F;
-    --ink:#EAEFF6; --ink-2:#AEB9C6; --ink-3:#8592A0; --muted:#6C7885;
+    --ink:#EAEFF6; --ink-2:#AEB9C6; --ink-3:#8592A0; --muted:#7A8695;
     --navy:#6E97DB; --navy-2:#8AAEE8; --navy-ink:#0A0D12; --navy-wash:rgba(110,151,219,.12);
     --good:#34C98A; --good-bg:rgba(52,201,138,.13);
     --warn:#DDA84E; --warn-bg:rgba(221,168,78,.13);
@@ -36,14 +36,14 @@
   :root[data-theme="dark"]{
     --bg:#0A0D12; --paper:#111721; --paper-2:#161D28; --paper-3:#1F2836;
     --line:#232C3A; --line-2:#33404F;
-    --ink:#EAEFF6; --ink-2:#AEB9C6; --ink-3:#8592A0; --muted:#6C7885;
+    --ink:#EAEFF6; --ink-2:#AEB9C6; --ink-3:#8592A0; --muted:#7A8695;
     --navy:#6E97DB; --navy-2:#8AAEE8; --navy-ink:#0A0D12; --navy-wash:rgba(110,151,219,.12);
     --good:#34C98A; --good-bg:rgba(52,201,138,.13); --warn:#DDA84E; --warn-bg:rgba(221,168,78,.13);
     --crit:#E56B54; --crit-bg:rgba(229,107,84,.13); --gold:#C9A94E; --sh:0 1px 2px rgba(0,0,0,.4);
   }
   :root[data-theme="light"]{
     --bg:#F5F6F8; --paper:#FFFFFF; --paper-2:#F0F2F5; --paper-3:#E6E9EE;
-    --line:#DBE0E7; --line-2:#C7CED8; --ink:#0E141C; --ink-2:#42505F; --ink-3:#6B7684; --muted:#8A95A2;
+    --line:#DBE0E7; --line-2:#C7CED8; --ink:#0E141C; --ink-2:#42505F; --ink-3:#6B7684; --muted:#646E7B;
     --navy:#1C3D73; --navy-2:#14305C; --navy-ink:#FFFFFF; --navy-wash:rgba(28,61,115,.07);
     --good:#0B7A4B; --good-bg:rgba(11,122,75,.10); --warn:#8A5A0E; --warn-bg:rgba(138,90,14,.12);
     --crit:#B23320; --crit-bg:rgba(178,51,32,.10); --gold:#8A6D18; --sh:0 1px 2px rgba(14,20,28,.05);
@@ -209,6 +209,16 @@
   .warn{background:var(--warn-bg);border:1px solid color-mix(in srgb,var(--warn) 28%,transparent);border-radius:7px;padding:10px 13px;font-size:12px;color:var(--ink-2);margin-top:14px}
   footer{border-top:1px solid var(--line);color:var(--muted);font-size:12px;padding:20px clamp(16px,3vw,28px);max-width:1220px;margin:0 auto}
   code{font-family:var(--mono);font-size:.88em;background:var(--paper-2);padding:1px 5px;border-radius:4px}
+  /* --- accessibility: visible focus, keyboard affordance, reduced motion --- */
+  .navlink:focus-visible,.lgt button:focus-visible,.tgl:focus-visible,select:focus-visible,
+  thead th:focus-visible,tbody tr:focus-visible,summary:focus-visible,.btn:focus-visible{
+    outline:2px solid var(--navy);outline-offset:2px;border-radius:4px}
+  tbody tr:focus-visible{outline-offset:-2px;background:var(--paper-2)}
+  @media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;
+      transition-duration:.01ms !important;scroll-behavior:auto !important}}
+  .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
+    clip:rect(0,0,0,0);white-space:nowrap;border:0}
   .prose{max-width:78ch;font-size:14.5px;color:var(--ink-2)} .prose h3{font-family:var(--serif);font-size:17px;color:var(--ink);margin:20px 0 8px} .prose ul{padding-left:18px} .prose li{margin:5px 0}
   /* portfolio */
   .op{border:1px solid var(--line);border-radius:9px;padding:16px 18px;margin-bottom:14px;background:var(--paper);box-shadow:var(--sh)}
@@ -273,7 +283,7 @@
         <div class="sec">
           <div class="sec-head"><h2>Investment-attractiveness ranking</h2><span class="n">IAS 0–100</span><span class="sec-note">Click any row → full Deal Room workup</span></div>
           <div class="tbl-wrap"><table id="tbl"><thead><tr>
-            <th class="l">#</th><th class="l" data-sort="name">Franchise</th><th data-sort="ias">Score</th>
+            <th class="l" scope="col">#</th><th class="l" data-sort="name" scope="col" tabindex="0" role="columnheader">Franchise</th><th data-sort="ias">Score</th>
             <th data-sort="p1">P1</th><th data-sort="p2">P2</th><th data-sort="p3">P3</th><th data-sort="p4">P4</th><th data-sort="p5">P5</th>
             <th data-sort="wr">Wage/Rev</th><th data-sort="margin">Margin</th><th data-sort="evrev">EV/Rev</th><th data-sort="roic">Trade ROIC</th>
             <th data-sort="misp">Mispricing</th><th data-sort="finish">Finish</th>
@@ -281,7 +291,8 @@
         </div>
         <div class="sec">
           <div class="sec-head"><h2>The thesis, in one chart</h2><span class="sec-note" id="legendNote"></span></div>
-          <div class="flat"><div class="chart-box"><div class="tip" id="tipS"></div><div id="scatter"></div></div></div>
+          <p id="chartAlt" class="sr-only">Scatter plot of financial score against on-field performance. Clubs in the upper-left quadrant earn without winning. The same values are listed in the ranking table above.</p>
+          <div class="flat"><div class="chart-box" aria-describedby="chartAlt"><div class="tip" id="tipS"></div><div id="scatter"></div></div></div>
         </div>
       </div>
     </div>
@@ -683,12 +694,13 @@ function screenRender(){
   $("#tbody").innerHTML=rows.map((r,i)=>{const m=r.misp;let mh='<span class="ctx">model only</span>';
     if(m){const cl=m.kind==="under"?"u-under":m.kind==="over"?"u-over":"u-fair";const dc=m.kind==="under"?"var(--good)":m.kind==="over"?"var(--crit)":"var(--muted)";const lb=m.kind==="under"?"Under":m.kind==="over"?"Over":"Fair";
       mh=`<span class="tag ${cl}" title="model intrinsic ${gbpB(m.intrinsic)} vs market ${gbpB(m.market)}"><span class="dot" style="background:${dc}"></span>${lb} ${m.d>0?"+":""}${Math.round(m.d*100)}%</span>`;}
-    return `<tr data-open="${r.c.id}"><td class="l rk">${i+1}</td><td class="l"><div><div class="cn">${r.c.name}</div><div class="co">${r.c.owner}</div></div></td>
+    return `<tr data-open="${r.c.id}" tabindex="0" role="button" aria-label="Open Deal Room workup for ${r.c.name}"><td class="l rk">${i+1}</td><td class="l"><div><div class="cn">${r.c.name}</div><div class="co">${r.c.owner}</div></div></td>
       <td><div class="scorebar"><b>${Math.round(r.ias)}</b><span class="bar"><i style="width:${r.ias}%"></i></span></div></td>
       <td>${pill(r.PS.p1.score)}</td><td>${pill(r.PS.p2.score)}</td><td>${pill(r.PS.p3.score)}</td><td>${pill(r.PS.p4.score)}</td><td>${pill(r.PS.p5.score)}</td>
       <td>${fmt(r.R.wr)}%</td><td style="color:${r.margin>=0?'var(--good)':'var(--crit)'}">${r.margin==null?"—":(r.margin>0?"+":"")+fmt(r.margin,1)+"%"}</td>
       <td>${fmt(r.R.evRev,1)}×</td><td>${r.R.tradeROIC==null?"—":fmt(r.R.tradeROIC)+"%"}</td><td class="l">${mh}</td><td class="ctx">${ord(r.c.finish)}</td></tr>`;}).join("");
-  $("#tbody").querySelectorAll("tr").forEach(tr=>tr.addEventListener("click",()=>openDeal(tr.dataset.open)));
+  $("#tbody").querySelectorAll("tr").forEach(tr=>{tr.addEventListener("click",()=>openDeal(tr.dataset.open));
+    tr.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();openDeal(tr.dataset.open);}});});
   drawScatter(R);
 }
 function drawScatter(rows){
