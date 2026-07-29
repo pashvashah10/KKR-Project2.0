@@ -1,0 +1,615 @@
+<title>Downside — Climate Engine Preview</title>
+<style>
+:root{
+  color-scheme: light;
+  --ground:#FAFAF9;
+  --panel:#FFFFFF;
+  --panel-2:#F2F3F2;
+  --ink:#111619;
+  --ink-2:#414C52;
+  --muted:#6E7C84;
+  --rule:rgba(17,22,25,.12);
+  --rule-soft:rgba(17,22,25,.06);
+  --warm:#B4531F;
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100;
+  --grid:rgba(17,22,25,.09);
+  --good:#0ca30c; --crit:#d03b3b;
+  --shadow:0 1px 2px rgba(17,22,25,.05),0 8px 24px -12px rgba(17,22,25,.16);
+}
+@media (prefers-color-scheme: dark){
+  :root:where(:not([data-theme="light"])){
+    color-scheme: dark;
+    --ground:#0E1317;
+    --panel:#141A1F;
+    --panel-2:#1A2229;
+    --ink:#E8EDEF;
+    --ink-2:#A9B7BF;
+    --muted:#7E8C95;
+    --rule:rgba(232,237,239,.14);
+    --rule-soft:rgba(232,237,239,.07);
+    --warm:#D9762F;
+    --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500;
+    --grid:rgba(232,237,239,.10);
+    --good:#0ca30c; --crit:#d03b3b;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px -14px rgba(0,0,0,.7);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --ground:#0E1317; --panel:#141A1F; --panel-2:#1A2229;
+  --ink:#E8EDEF; --ink-2:#A9B7BF; --muted:#7E8C95;
+  --rule:rgba(232,237,239,.14); --rule-soft:rgba(232,237,239,.07);
+  --warm:#D9762F;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500;
+  --grid:rgba(232,237,239,.10);
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px -14px rgba(0,0,0,.7);
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:var(--ground);
+  color:var(--ink);
+  font-family:system-ui,-apple-system,"Segoe UI",sans-serif;
+  font-size:15px;
+  line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1180px;margin:0 auto;padding:0 24px 96px}
+
+/* ---------- masthead ---------- */
+.mast{
+  border-bottom:1px solid var(--rule);
+  padding:40px 0 28px;
+  margin-bottom:8px;
+}
+.eyebrow{
+  font-size:11px;letter-spacing:.17em;text-transform:uppercase;
+  color:var(--muted);font-weight:650;
+}
+h1{
+  font-size:clamp(30px,5.2vw,52px);
+  line-height:1.02;letter-spacing:-.033em;font-weight:760;
+  margin:14px 0 0;text-wrap:balance;max-width:19ch;
+}
+h1 em{font-style:normal;color:var(--warm)}
+.dek{
+  margin:16px 0 0;max-width:62ch;color:var(--ink-2);font-size:16.5px;
+}
+.provenance{
+  margin-top:22px;display:flex;gap:10px;align-items:flex-start;
+  padding:12px 14px;border:1px solid var(--rule);border-radius:2px;
+  background:var(--panel);max-width:74ch;
+}
+.provenance b{color:var(--warm);font-weight:660}
+.provenance p{margin:0;font-size:13.5px;color:var(--ink-2);line-height:1.5}
+.flag{
+  flex:0 0 auto;width:18px;height:18px;border-radius:50%;
+  border:2px solid var(--warm);margin-top:2px;
+  display:grid;place-items:center;font-size:11px;font-weight:800;color:var(--warm)
+}
+
+/* ---------- stat rail ---------- */
+.rail{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));
+  gap:1px;background:var(--rule);border:1px solid var(--rule);
+  margin:32px 0 12px;
+}
+.stat{background:var(--panel);padding:16px 16px 14px}
+.stat .k{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:650}
+.stat .v{
+  font-size:29px;font-weight:700;letter-spacing:-.028em;margin-top:7px;
+  font-variant-numeric:tabular-nums;line-height:1;
+}
+.stat .s{font-size:12.5px;color:var(--muted);margin-top:6px}
+.stat .v .u{font-size:15px;font-weight:600;color:var(--ink-2);letter-spacing:0}
+
+/* ---------- exhibits ---------- */
+.exhibit{padding:44px 0;border-bottom:1px solid var(--rule-soft)}
+.exhead{display:flex;gap:16px;align-items:baseline;margin-bottom:6px}
+.num{
+  font-size:11px;font-weight:750;color:var(--warm);
+  font-variant-numeric:tabular-nums;letter-spacing:.1em;
+  flex:0 0 auto;padding-top:3px;
+}
+h2{font-size:21px;font-weight:690;letter-spacing:-.018em;margin:0;text-wrap:balance}
+.claim{margin:8px 0 0 40px;color:var(--ink-2);max-width:70ch;font-size:15px}
+.claim strong{color:var(--ink);font-weight:640}
+.figure{margin:24px 0 0 0}
+figcaption{
+  margin-top:12px;font-size:13px;color:var(--muted);max-width:74ch;
+}
+svg{display:block;width:100%;height:auto;overflow:visible}
+.axis{font-size:11px;fill:var(--muted);font-variant-numeric:tabular-nums}
+.gridline{stroke:var(--grid);stroke-width:1}
+.axisline{stroke:var(--rule);stroke-width:1}
+.serieslabel{font-size:11.5px;font-weight:660;font-variant-numeric:tabular-nums}
+
+/* ---------- legend ---------- */
+.legend{display:flex;flex-wrap:wrap;gap:8px 18px;margin:14px 0 0;padding:0;list-style:none}
+.legend li{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--ink-2)}
+.swatch{width:11px;height:11px;border-radius:2px;flex:0 0 auto}
+
+/* ---------- table ---------- */
+.tablewrap{overflow-x:auto;margin-top:20px;border:1px solid var(--rule)}
+table{border-collapse:collapse;width:100%;min-width:560px;font-size:13.5px}
+th,td{padding:9px 13px;text-align:right;border-bottom:1px solid var(--rule-soft);white-space:nowrap}
+th{
+  font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--muted);
+  font-weight:650;background:var(--panel-2);position:sticky;top:0;
+}
+td{font-variant-numeric:tabular-nums}
+th:first-child,td:first-child{text-align:left;font-variant-numeric:normal}
+tbody tr:hover{background:var(--panel-2)}
+.sig{color:var(--good);font-weight:660}
+.nosig{color:var(--muted)}
+
+/* ---------- two-up ---------- */
+.twoup{display:grid;grid-template-columns:1fr 1fr;gap:32px}
+@media (max-width:820px){.twoup{grid-template-columns:1fr;gap:36px}}
+
+.note{
+  margin-top:40px;padding:16px 18px;border-left:2px solid var(--warm);
+  background:var(--panel);font-size:14px;color:var(--ink-2);max-width:76ch
+}
+.note b{color:var(--ink)}
+code{
+  font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:.9em;
+  background:var(--panel-2);padding:1px 5px;border-radius:2px
+}
+
+/* ---------- motion ---------- */
+.draw{stroke-dasharray:var(--len);stroke-dashoffset:var(--len);animation:draw 1.5s cubic-bezier(.4,.1,.2,1) forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+.rise{opacity:0;transform:translateY(10px);animation:rise .6s cubic-bezier(.2,.6,.2,1) forwards}
+@keyframes rise{to{opacity:1;transform:none}}
+.grow{transform:scaleY(0);transform-origin:bottom;animation:grow .8s cubic-bezier(.2,.7,.2,1) forwards}
+@keyframes grow{to{transform:scaleY(1)}}
+.fade{opacity:0;animation:fade .9s ease forwards}
+@keyframes fade{to{opacity:1}}
+@media (prefers-reduced-motion:reduce){
+  .draw,.rise,.grow,.fade{animation:none;opacity:1;transform:none;stroke-dashoffset:0}
+}
+</style>
+
+<div class="wrap">
+
+<header class="mast">
+  <div class="eyebrow">Downside · Climate Engine · Build Preview</div>
+  <h1>A century of weather, turned into a <em>price</em>.</h1>
+  <p class="dek">
+    This is live output from the analytics engine, not a mockup. Every number below
+    is computed at run time from a hundred years of daily weather at one coordinate —
+    fitted, projected to 2125 under four emissions pathways, and pushed through to a
+    loss curve.
+  </p>
+  <div class="provenance">
+    <div class="flag">!</div>
+    <p>
+      <b>Reading this honestly.</b> The station feed is blocked in this environment, so the
+      record behind these charts is a <b>calibrated surrogate</b>, not observations — built
+      forward from published monthly normals and a physical forcing path. The
+      <em>method</em> is real and every estimator is exercised end to end. The
+      <em>numbers</em> become a real forecast for a real place the moment NOAA is reachable,
+      which is a one-line source swap.
+    </p>
+  </div>
+</header>
+
+<div class="rail" id="rail"></div>
+
+<section class="exhibit">
+  <div class="exhead"><span class="num">01</span><h2>The record, and what the model sees in it</h2></div>
+  <p class="claim">
+    Summer maxima at Austin, 1926–2025. The fitted line is not a trend through time — it is
+    the response to <strong>modelled global temperature</strong>. That is why it reproduces the
+    1940–75 plateau and the volcanic dips without being told they exist.
+  </p>
+  <figure class="figure"><div id="c-history"></div>
+  <figcaption>Thin line: annual mean of daily maxima, June–August. Heavy line: fitted climatology.
+  Fitting on forcing rather than on time is what keeps the century from being averaged into a single slope.</figcaption></figure>
+</section>
+
+<section class="exhibit">
+  <div class="exhead"><span class="num">02</span><h2>The next hundred years, by pathway</h2></div>
+  <p class="claim">
+    The same fitted response, driven forward by each SSP forcing path through a two-box energy
+    balance model. The shaded band is the 95% interval on the central pathway —
+    <strong>it widens because the far future genuinely is less knowable</strong>, not as decoration.
+  </p>
+  <figure class="figure"><div id="c-projection"></div>
+  <ul class="legend" id="leg-projection"></ul>
+  <figcaption>Projected June–August mean daily maximum, °C. Warming is applied through the
+  station's own fitted amplification factor, shrunk toward its regional prior.</figcaption></figure>
+</section>
+
+<section class="exhibit">
+  <div class="exhead"><span class="num">03</span><h2>Where the uncertainty actually comes from</h2></div>
+  <p class="claim">
+    This is the chart that decides how the book should be priced. Near-dated risk is almost all
+    weather noise, so history is nearly sufficient. Beyond mid-century the dominant unknown is
+    <strong>which emissions path the world takes</strong> — and no amount of historical data
+    resolves that.
+  </p>
+  <figure class="figure"><div id="c-uncertainty"></div>
+  <ul class="legend" id="leg-uncertainty"></ul>
+  <figcaption>Share of total projection variance by source. Internal variability is roughly constant in
+  absolute terms, so its share decays as the forced signal grows.</figcaption></figure>
+</section>
+
+<div class="twoup">
+  <section class="exhibit" style="border-bottom:none">
+    <div class="exhead"><span class="num">04</span><h2>The tail, fitted properly</h2></div>
+    <p class="claim" style="margin-left:40px">
+      Daily rainfall return levels from a Generalised Pareto fit to exceedances. A Gaussian tail
+      would understate these badly — and the tail is the entire product.
+    </p>
+    <figure class="figure"><div id="c-return"></div>
+    <figcaption>Return level vs return period, log scale. Shape ξ &gt; 0 means heavy-tailed and unbounded.</figcaption></figure>
+  </section>
+
+  <section class="exhibit" style="border-bottom:none">
+    <div class="exhead"><span class="num">05</span><h2>The trigger, discovered not asked</h2></div>
+    <p class="claim" style="margin-left:40px">
+      Contribution margin regressed on rainfall with a piecewise-linear basis. The curve is flat,
+      then falls off a cliff. <strong>Ask an operator and you get "rain hurts us".</strong>
+    </p>
+    <figure class="figure"><div id="c-loss"></div>
+    <figcaption>Margin lost per day vs daily rainfall. Marker: steepest segment — the empirical trigger.
+    Revenue here is placeholder; real daily revenue is the single most valuable input the platform takes.</figcaption></figure>
+  </section>
+</div>
+
+<section class="exhibit" style="padding-top:8px">
+  <div class="exhead"><span class="num">06</span><h2>What it means for a product</h2></div>
+  <p class="claim">
+    Days above 35 °C in a June–August window — the trigger a golf or festival operator would buy
+    against. Today's frequency is not next decade's, and by 2125 the pathway choice is worth
+    <strong id="heat-spread">—</strong> days of payout.
+  </p>
+  <figure class="figure"><div id="c-heat"></div>
+  <ul class="legend" id="leg-heat"></ul>
+  <figcaption>Expected count of triggering days per 92-day summer window, by target year and pathway.</figcaption></figure>
+</section>
+
+<section class="exhibit">
+  <div class="exhead"><span class="num">07</span><h2>The regression, shown not asserted</h2></div>
+  <p class="claim">
+    The fitted mean model. <strong>The standard errors are the finding here.</strong> Classical OLS
+    treats 36,525 autocorrelated days as independent evidence; a year-block bootstrap says the
+    warming coefficient is <span id="infl">—</span>× less precise than that. Every long-dated price
+    widens accordingly.
+  </p>
+  <div class="tablewrap"><table id="regtable">
+    <thead><tr><th>Term</th><th>β</th><th>SE</th><th>z</th><th>95% interval</th><th>Keep</th></tr></thead>
+    <tbody></tbody>
+  </table></div>
+  <div class="note" id="fnote"></div>
+</section>
+
+</div>
+
+<script id="payload" type="application/json">__DATA__</script>
+<script>
+const D = JSON.parse(document.getElementById('payload').textContent);
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const NS = 'http://www.w3.org/2000/svg';
+const fmt = (n,d=1)=>Number(n).toFixed(d);
+
+function el(tag, attrs={}, parent=null){
+  const e = document.createElementNS(NS, tag);
+  for(const k in attrs) e.setAttribute(k, attrs[k]);
+  if(parent) parent.appendChild(e);
+  return e;
+}
+function svg(host, w, h){
+  const s = el('svg', {viewBox:`0 0 ${w} ${h}`, role:'img'});
+  document.getElementById(host).appendChild(s);
+  return s;
+}
+function scale(d0,d1,r0,r1){ const k=(r1-r0)/((d1-d0)||1); return v=>r0+(v-d0)*k; }
+function path(pts){ return pts.map((p,i)=>(i?'L':'M')+fmt(p[0],2)+' '+fmt(p[1],2)).join(' '); }
+function animate(node, cls){
+  if(reduce) return;
+  if(cls==='draw'){ const L=node.getTotalLength(); node.style.setProperty('--len', L); }
+  node.classList.add(cls);
+}
+
+/* ---------------- stat rail ---------------- */
+(function(){
+  const r = D.regression, hd = D.heat_days.rows;
+  const now = hd[0].ssp245, then = hd[hd.length-1].ssp245;
+  const items = [
+    ['Record length', '100', 'yr', `${D.location.name.split(',')[0]} · ${r.n.toLocaleString()} daily observations`],
+    ['Model fit', fmt(r.r2,3), 'R²', 'Seasonal + forcing mean model'],
+    ['Amplification', fmt(r.amplification,2), '°C/°C', `±${fmt(r.amp_se_boot,2)} bootstrap · ${fmt(r.se_inflation,1)}× the classical SE`],
+    ['Summer heat days', `${fmt(now,0)}→${fmt(then,0)}`, '', 'Above 35 °C, 2026 → 2125 (SSP2-4.5)'],
+    ['Rainfall tail', fmt(D.return_levels.shape,2), 'ξ', `100-yr level ${fmt(D.return_levels.rows.find(x=>x.period===100).level,0)} mm`],
+    ['Loss trigger', fmt(D.loss_curve.breakpoint_mm,1), 'mm', 'Regressed from daily margin, not asked'],
+  ];
+  const rail = document.getElementById('rail');
+  items.forEach(([k,v,u,s],i)=>{
+    const d = document.createElement('div');
+    d.className='stat';
+    d.innerHTML = `<div class="k">${k}</div><div class="v">${v}${u?` <span class="u">${u}</span>`:''}</div><div class="s">${s}</div>`;
+    if(!reduce){ d.classList.add('rise'); d.style.animationDelay = (i*55)+'ms'; }
+    rail.appendChild(d);
+  });
+  document.getElementById('heat-spread').textContent =
+    fmt(hd[hd.length-1].ssp585 - hd[hd.length-1].ssp126, 0);
+  document.getElementById('infl').textContent = fmt(r.se_inflation,1);
+})();
+
+/* ---------------- 01 history ---------------- */
+(function(){
+  const obs = D.observed_summer, fit = D.fitted_summer;
+  const W=1100,H=380,M={t:16,r:52,b:34,l:46};
+  const s = svg('c-history', W, H);
+  const ys = obs.map(d=>d.year);
+  const vals = obs.map(d=>d.tmax).concat(fit.map(d=>d.tmax));
+  const x = scale(Math.min(...ys), Math.max(...ys), M.l, W-M.r);
+  const lo = Math.min(...vals)-0.4, hi = Math.max(...vals)+0.4;
+  const y = scale(lo, hi, H-M.b, M.t);
+
+  for(let t=Math.ceil(lo); t<=hi; t++){
+    if(t%1!==0) continue;
+    el('line',{x1:M.l,x2:W-M.r,y1:y(t),y2:y(t),class:'gridline'},s);
+    el('text',{x:M.l-9,y:y(t)+4,class:'axis','text-anchor':'end'},s).textContent=t;
+  }
+  for(let yr=1930; yr<=2020; yr+=15){
+    el('text',{x:x(yr),y:H-M.b+19,class:'axis','text-anchor':'middle'},s).textContent=yr;
+  }
+  el('line',{x1:M.l,x2:W-M.r,y1:H-M.b,y2:H-M.b,class:'axisline'},s);
+
+  el('path',{d:path(obs.map(d=>[x(d.year),y(d.tmax)])),fill:'none',
+    stroke:'var(--s1)','stroke-width':1.1,'stroke-opacity':.5,'stroke-linejoin':'round'},s);
+  const f = el('path',{d:path(fit.map(d=>[x(d.year),y(d.tmax)])),fill:'none',
+    stroke:'var(--warm)','stroke-width':2.4,'stroke-linecap':'round','stroke-linejoin':'round'},s);
+  animate(f,'draw');
+
+  [[1963.5,'Agung'],[1982.4,'El Chichón'],[1991.6,'Pinatubo']].forEach(([yr,name])=>{
+    el('line',{x1:x(yr),x2:x(yr),y1:M.t,y2:H-M.b,stroke:'var(--rule)','stroke-width':1,'stroke-dasharray':'2 4'},s);
+    const t=el('text',{x:x(yr),y:M.t+12,class:'axis','text-anchor':'middle'},s);
+    t.textContent=name;
+  });
+  // Direct labels, pushed apart when the two series end close together.
+  let yf = y(fit[fit.length-1].tmax), yo = y(obs[obs.length-1].tmax);
+  if(Math.abs(yf-yo) < 15){ const mid=(yf+yo)/2; yf = mid-8; yo = mid+8; }
+  el('text',{x:W-M.r+7,y:yf+4,class:'serieslabel',fill:'var(--warm)'},s).textContent='fitted';
+  el('text',{x:W-M.r+7,y:yo+4,class:'serieslabel',fill:'var(--s1)'},s).textContent='observed';
+})();
+
+/* ---------------- 02 projection ---------------- */
+(function(){
+  const SC = D.scenarios, P = D.projection;
+  const COL = {ssp126:'var(--s3)', ssp245:'var(--s1)', ssp370:'var(--s4)', ssp585:'var(--s2)'};
+  const W=1100,H=420,M={t:18,r:96,b:34,l:46};
+  const s = svg('c-projection', W, H);
+  let lo=1e9, hi=-1e9;
+  SC.forEach(sc=>P[sc.id].forEach(d=>{lo=Math.min(lo,d.lo);hi=Math.max(hi,d.hi);}));
+  lo-=0.3; hi+=0.3;
+  const x = scale(2026, 2125, M.l, W-M.r), y = scale(lo, hi, H-M.b, M.t);
+
+  for(let t=Math.ceil(lo); t<=hi; t++){
+    el('line',{x1:M.l,x2:W-M.r,y1:y(t),y2:y(t),class:'gridline'},s);
+    el('text',{x:M.l-9,y:y(t)+4,class:'axis','text-anchor':'end'},s).textContent=t;
+  }
+  [2026,2050,2075,2100,2125].forEach(yr=>
+    el('text',{x:x(yr),y:H-M.b+19,class:'axis','text-anchor':'middle'},s).textContent=yr);
+  el('line',{x1:M.l,x2:W-M.r,y1:H-M.b,y2:H-M.b,class:'axisline'},s);
+
+  const band = P.ssp245;
+  const bandPts = band.map(d=>[x(d.year),y(d.hi)])
+    .concat(band.slice().reverse().map(d=>[x(d.year),y(d.lo)]));
+  const bp = el('path',{d:path(bandPts)+'Z',fill:'var(--s1)','fill-opacity':.13,stroke:'none'},s);
+  animate(bp,'fade');
+
+  SC.forEach((sc,i)=>{
+    const rows = P[sc.id];
+    const p = el('path',{d:path(rows.map(d=>[x(d.year),y(d.mean)])),fill:'none',
+      stroke:COL[sc.id],'stroke-width':sc.id==='ssp245'?2.6:1.9,
+      'stroke-linecap':'round','stroke-linejoin':'round'},s);
+    if(!reduce){ const L=p.getTotalLength(); p.style.setProperty('--len',L);
+      p.style.animationDelay=(i*120)+'ms'; p.classList.add('draw'); }
+    const last = rows[rows.length-1];
+    const t = el('text',{x:W-M.r+8,y:y(last.mean)+4,class:'serieslabel',fill:COL[sc.id]},s);
+    t.textContent = sc.short;
+  });
+
+  const leg = document.getElementById('leg-projection');
+  SC.forEach(sc=>{
+    const li=document.createElement('li');
+    li.innerHTML=`<span class="swatch" style="background:${COL[sc.id]}"></span>${sc.short} — ${sc.description}`;
+    leg.appendChild(li);
+  });
+})();
+
+/* ---------------- 03 uncertainty ---------------- */
+(function(){
+  const U = D.uncertainty;
+  const W=1100,H=330,M={t:16,r:52,b:34,l:46};
+  const s = svg('c-uncertainty', W, H);
+  const x = scale(U[0].year, U[U.length-1].year, M.l, W-M.r), y = scale(0,1,H-M.b,M.t);
+  const layers = [
+    ['internal','var(--s1)','Internal variability — weather noise'],
+    ['parameter','var(--s3)','Parameter — what 100 years can pin down'],
+    ['scenario','var(--s2)','Scenario — which path the world takes'],
+  ];
+  [0,.25,.5,.75,1].forEach(t=>{
+    el('line',{x1:M.l,x2:W-M.r,y1:y(t),y2:y(t),class:'gridline'},s);
+    el('text',{x:M.l-9,y:y(t)+4,class:'axis','text-anchor':'end'},s).textContent=(t*100)+'%';
+  });
+  [2026,2050,2075,2100,2125].forEach(yr=>
+    el('text',{x:x(yr),y:H-M.b+19,class:'axis','text-anchor':'middle'},s).textContent=yr);
+
+  let base = U.map(()=>0);
+  layers.forEach(([key,col,label],i)=>{
+    const top = U.map((d,j)=>base[j]+d[key]);
+    const pts = U.map((d,j)=>[x(d.year),y(top[j])])
+      .concat(U.slice().reverse().map((d,j)=>{
+        const k=U.length-1-j; return [x(d.year),y(base[k])];
+      }));
+    const p = el('path',{d:path(pts)+'Z',fill:col,'fill-opacity':.85,
+      stroke:'var(--panel)','stroke-width':1.4},s);
+    if(!reduce){ p.style.animationDelay=(i*140)+'ms'; p.classList.add('fade'); }
+    base = top;
+  });
+
+  // crossover marker: first year scenario overtakes internal
+  const cross = U.find(d=>d.scenario>d.internal);
+  if(cross){
+    el('line',{x1:x(cross.year),x2:x(cross.year),y1:M.t,y2:H-M.b,
+      stroke:'var(--ink)','stroke-width':1.4,'stroke-dasharray':'3 3','stroke-opacity':.65},s);
+    const t=el('text',{x:x(cross.year)+7,y:M.t+14,class:'axis',fill:'var(--ink)','font-weight':'650'},s);
+    t.textContent=`${cross.year} — scenario overtakes noise`;
+  }
+  const leg=document.getElementById('leg-uncertainty');
+  layers.forEach(([k,c,label])=>{
+    const li=document.createElement('li');
+    li.innerHTML=`<span class="swatch" style="background:${c}"></span>${label}`;
+    leg.appendChild(li);
+  });
+})();
+
+/* ---------------- 04 return levels ---------------- */
+(function(){
+  const R = D.return_levels.rows;
+  const W=540,H=310,M={t:16,r:24,b:38,l:52};
+  const s = svg('c-return', W, H);
+  const lx = v=>Math.log10(v);
+  const x = scale(lx(2), lx(250), M.l, W-M.r);
+  const hi = Math.max(...R.map(d=>d.level))*1.08;
+  const y = scale(0, hi, H-M.b, M.t);
+
+  [0,50,100,150,200,250].filter(t=>t<=hi).forEach(t=>{
+    el('line',{x1:M.l,x2:W-M.r,y1:y(t),y2:y(t),class:'gridline'},s);
+    el('text',{x:M.l-9,y:y(t)+4,class:'axis','text-anchor':'end'},s).textContent=t;
+  });
+  [2,5,10,25,50,100,250].forEach(p=>
+    el('text',{x:x(lx(p)),y:H-M.b+19,class:'axis','text-anchor':'middle'},s).textContent=p);
+  el('line',{x1:M.l,x2:W-M.r,y1:H-M.b,y2:H-M.b,class:'axisline'},s);
+
+  const p=el('path',{d:path(R.map(d=>[x(lx(d.period)),y(d.level)])),fill:'none',
+    stroke:'var(--s2)','stroke-width':2.4,'stroke-linecap':'round'},s);
+  animate(p,'draw');
+  R.forEach((d,i)=>{
+    const c=el('circle',{cx:x(lx(d.period)),cy:y(d.level),r:4,fill:'var(--s2)',
+      stroke:'var(--panel)','stroke-width':2},s);
+    if(!reduce){c.style.animationDelay=(400+i*70)+'ms';c.classList.add('fade');}
+  });
+  const last=R[R.length-1];
+  el('text',{x:x(lx(last.period)),y:y(last.level)-13,class:'serieslabel',
+    fill:'var(--s2)','text-anchor':'end'},s).textContent=fmt(last.level,0)+' mm';
+  el('text',{x:(M.l+W-M.r)/2,y:H-4,class:'axis','text-anchor':'middle'},s)
+    .textContent='return period (years)';
+})();
+
+/* ---------------- 05 loss curve ---------------- */
+(function(){
+  const L = D.loss_curve.rows, bp = D.loss_curve.breakpoint_mm;
+  const W=540,H=310,M={t:16,r:24,b:38,l:62};
+  const s = svg('c-loss', W, H);
+  const xs=L.map(d=>d.x), hi=Math.max(...L.map(d=>d.loss))*1.1;
+  const x = scale(0, Math.max(...xs), M.l, W-M.r), y = scale(0, hi, H-M.b, M.t);
+
+  const step = hi>60000?20000:10000;
+  for(let t=0;t<=hi;t+=step){
+    el('line',{x1:M.l,x2:W-M.r,y1:y(t),y2:y(t),class:'gridline'},s);
+    el('text',{x:M.l-9,y:y(t)+4,class:'axis','text-anchor':'end'},s)
+      .textContent='$'+(t/1000)+'k';
+  }
+  [0,10,20,30,40,50,60].filter(v=>v<=Math.max(...xs)).forEach(v=>
+    el('text',{x:x(v),y:H-M.b+19,class:'axis','text-anchor':'middle'},s).textContent=v);
+  el('line',{x1:M.l,x2:W-M.r,y1:H-M.b,y2:H-M.b,class:'axisline'},s);
+
+  const area = L.map(d=>[x(d.x),y(d.loss)])
+    .concat([[x(Math.max(...xs)),y(0)],[x(0),y(0)]]);
+  const ap=el('path',{d:path(area)+'Z',fill:'var(--s4)','fill-opacity':.16,stroke:'none'},s);
+  animate(ap,'fade');
+  const p=el('path',{d:path(L.map(d=>[x(d.x),y(d.loss)])),fill:'none',
+    stroke:'var(--s4)','stroke-width':2.4,'stroke-linejoin':'round'},s);
+  animate(p,'draw');
+
+  el('line',{x1:x(bp),x2:x(bp),y1:M.t,y2:H-M.b,stroke:'var(--warm)',
+    'stroke-width':1.6,'stroke-dasharray':'4 3'},s);
+  const t=el('text',{x:x(bp)+7,y:M.t+13,class:'serieslabel',fill:'var(--warm)'},s);
+  t.textContent=fmt(bp,1)+' mm — the cliff';
+  el('text',{x:(M.l+W-M.r)/2,y:H-4,class:'axis','text-anchor':'middle'},s)
+    .textContent='daily rainfall (mm)';
+})();
+
+/* ---------------- 06 heat days ---------------- */
+(function(){
+  const rows = D.heat_days.rows, SC = D.scenarios;
+  const COL = {ssp126:'var(--s3)', ssp245:'var(--s1)', ssp370:'var(--s4)', ssp585:'var(--s2)'};
+  const W=1100,H=330,M={t:18,r:24,b:44,l:46};
+  const s = svg('c-heat', W, H);
+  const hi = 92;  // the full window length: the ceiling a day-count trigger can reach
+  const y = scale(0, hi, H-M.b, M.t);
+  const groupW = (W-M.l-M.r)/rows.length;
+  const barW = Math.min(26, (groupW-26)/SC.length);
+
+  [0,23,46,69,92].forEach(t=>{
+    el('line',{x1:M.l,x2:W-M.r,y1:y(t),y2:y(t),class:'gridline'},s);
+    el('text',{x:M.l-9,y:y(t)+4,class:'axis','text-anchor':'end'},s).textContent=t;
+  });
+  el('line',{x1:M.l,x2:W-M.r,y1:H-M.b,y2:H-M.b,class:'axisline'},s);
+
+  rows.forEach((row,gi)=>{
+    const gx = M.l + groupW*gi + groupW/2;
+    SC.forEach((sc,si)=>{
+      const v = row[sc.id];
+      const bx = gx - (SC.length*barW+ (SC.length-1)*2)/2 + si*(barW+2);
+      const g = el('g',{},s);
+      const r = el('rect',{x:bx,y:y(v),width:barW,height:(H-M.b)-y(v),
+        fill:COL[sc.id],rx:3},g);
+      if(!reduce){ g.style.animationDelay=(gi*90+si*40)+'ms'; g.classList.add('grow'); }
+    });
+    el('text',{x:gx,y:H-M.b+19,class:'axis','text-anchor':'middle'},s).textContent=row.year;
+  });
+  el('text',{x:M.l,y:H-8,class:'axis'},s)
+    .textContent='days above 35 °C per 92-day summer';
+
+  const leg=document.getElementById('leg-heat');
+  SC.forEach(sc=>{
+    const li=document.createElement('li');
+    li.innerHTML=`<span class="swatch" style="background:${COL[sc.id]}"></span>${sc.short}`;
+    leg.appendChild(li);
+  });
+})();
+
+/* ---------------- 07 regression table ---------------- */
+(function(){
+  const r = D.regression;
+  const tb = document.querySelector('#regtable tbody');
+  const pretty = {
+    intercept:'Intercept', global:'Global temperature (amplification)',
+    drift_per_century:'Station drift (frozen, not projected)'
+  };
+  r.rows.forEach(row=>{
+    const tr=document.createElement('tr');
+    let name = pretty[row.name] || row.name
+      .replace(/^cos(\d)$/,'Seasonal cos $1').replace(/^sin(\d)$/,'Seasonal sin $1')
+      .replace(/^global_cos(\d)$/,'Seasonal amplification cos $1')
+      .replace(/^global_sin(\d)$/,'Seasonal amplification sin $1');
+    const isAmp = row.name==='global';
+    const se = isAmp ? r.amp_se_boot : row.se;
+    const z = isAmp ? row.beta/se : row.z;
+    tr.innerHTML =
+      `<td>${name}${isAmp?' <span style="color:var(--warm);font-size:11px">bootstrap SE</span>':''}</td>`+
+      `<td>${fmt(row.beta,3)}</td><td>${fmt(se,3)}</td><td>${fmt(z,1)}</td>`+
+      `<td>${fmt(row.beta-2*se,2)} to ${fmt(row.beta+2*se,2)}</td>`+
+      `<td class="${Math.abs(z)>=2?'sig':'nosig'}">${Math.abs(z)>=2?'yes':'no'}</td>`;
+    tb.appendChild(tr);
+  });
+  document.getElementById('fnote').innerHTML =
+    `<b>Joint tests.</b> The warming block as a whole: F = ${fmt(r.trend_f.f,1)} on `+
+    `${r.trend_f.df_num} and ${r.trend_f.df_den.toLocaleString()} df, p ${r.trend_f.p<1e-6?'< 1e-6':'= '+r.trend_f.p.toExponential(1)}. `+
+    `Seasonal amplification block: F = ${fmt(r.seasonal_f.f,1)}, p ${r.seasonal_f.p<1e-6?'< 1e-6':'= '+fmt(r.seasonal_f.p,4)} — `+
+    `winter and summer degrees are measurably different degrees. `+
+    `Adding the drift control moves the amplification by ${fmt(Math.abs(r.ovb.ovb),3)} °C/°C `+
+    `(${fmt(Math.abs(r.ovb.ovb_in_se),1)} bootstrap SE), so the estimate is `+
+    `${Math.abs(r.ovb.ovb_in_se)<1?'robust to':'sensitive to'} that specification choice. `+
+    `Residual lag-1 autocorrelation is ${fmt(r.ar1,2)} — which is exactly why the classical SE cannot be used.`;
+})();
+</script>
