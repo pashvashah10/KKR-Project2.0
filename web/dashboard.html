@@ -373,7 +373,7 @@ function view_overview(L){
      <div class="card"><h4>${L.contract?'Premium as the climate moves':'No sellable peril'}</h4>
        <div id="ov-price"></div>
        <figcaption>${L.contract
-         ?'Same contract, repriced for each target year. The gap against a history-based price is what a static rate card misses.'
+         ?'Same contract, revalued for each target year. Both lines are fair value, so the gap is climate alone — it is what a static rate card misses.'
          :'Nothing at this site triggers often enough to underwrite, so no premium curve is shown.'}</figcaption></div>
    </div>`;
 
@@ -823,24 +823,29 @@ function drawPriceCurve(host,L,W,H){
   // Bottom margin has to clear the year ticks *and* the caption below them.
   const M={t:12,r:16,b:44,l:52};
   const s=SVG(W,H), Q=L.contract.quotes;
-  const hi=Math.max(...Q.map(q=>Math.max(q.ask,q.theo_hist)))*1.1;
+  // Compare like with like: both lines are *fair value*. Plotting the loaded
+  // quoted mid against an unloaded historical fair value made the gap look
+  // enormous and meant nothing --- most of that difference would have been the
+  // risk loads, not the climate.
+  const hi=Math.max(...Q.map(q=>Math.max(q.theo,q.theo_hist)))*1.18||1;
   const x=sc(0,Q.length-1,M.l,W-M.r), y=sc(0,hi,H-M.b,M.t);
-  ticks(0,hi,4).forEach(t=>{
+  const tk=ticks(0,hi,4);
+  tk.forEach(t=>{
     E('line',{x1:M.l,x2:W-M.r,y1:y(t),y2:y(t),class:'gridline'},s);
     E('text',{x:M.l-7,y:y(t)+4,class:'axis','text-anchor':'end'},s).textContent=money(t);
   });
   Q.forEach((q,i)=>E('text',{x:x(i),y:H-M.b+16,class:'axis','text-anchor':'middle'},s).textContent=q.year);
   E('line',{x1:M.l,x2:W-M.r,y1:H-M.b,y2:H-M.b,class:'axisline'},s);
-  E('path',{d:P(Q.map((q,i)=>[x(i),y(q.ask)]).concat(Q.slice().reverse().map((q,i)=>
-    [x(Q.length-1-i),y(q.bid)])))+'Z',fill:'var(--s1)','fill-opacity':.15},s);
-  const pm=E('path',{d:P(Q.map((q,i)=>[x(i),y(q.mid)])),fill:'none',stroke:'var(--s1)','stroke-width':2.4},s);
+  E('path',{d:P(Q.map((q,i)=>[x(i),y(q.theo)]).concat([[x(Q.length-1),y(0)],[x(0),y(0)]]))+'Z',
+    fill:'var(--s1)','fill-opacity':.12},s);
+  E('path',{d:P(Q.map((q,i)=>[x(i),y(q.theo_hist)])),fill:'none',stroke:'var(--muted)',
+    'stroke-width':1.7,'stroke-dasharray':'4 3'},s);
+  const pm=E('path',{d:P(Q.map((q,i)=>[x(i),y(q.theo)])),fill:'none',stroke:'var(--s1)','stroke-width':2.4},s);
   animPath(pm);
-  const ph=E('path',{d:P(Q.map((q,i)=>[x(i),y(q.theo_hist)])),fill:'none',stroke:'var(--muted)',
-    'stroke-width':1.6,'stroke-dasharray':'4 3'},s);
-  E('circle',{cx:x(state.yearIdx),cy:y(Q[state.yearIdx].mid),r:5.5,fill:'var(--s1)',
+  E('circle',{cx:x(state.yearIdx),cy:y(Q[state.yearIdx].theo),r:5.5,fill:'var(--s1)',
     stroke:'var(--panel)','stroke-width':2},s);
   E('text',{x:(M.l+W-M.r)/2,y:H-6,class:'axis','text-anchor':'middle'},s)
-    .textContent='solid = forward price · dashed = priced off 2010 climate';
+    .textContent='fair value: solid = forward climate · dashed = 2010 climate';
   drawIn(host,s);
 }
 
