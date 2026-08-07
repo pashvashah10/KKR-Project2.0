@@ -605,7 +605,10 @@ function pushWeather(){
     const b=document.createElement('button');
     b.className='loc'; b.type='button';
     b.setAttribute('aria-pressed', l.id===state.loc.id);
-    b.innerHTML=`<span class="n">${l.name.split(',')[0]}</span><span class="v">${l.vertical}</span>`;
+    const bad=l.quality&&!l.quality.usable;
+    const mark=bad?` <span style="color:var(--${l.quality.verdict==='unreliable'?'crit':'serious'})"
+      title="${l.quality.problems.join(' ')}">&#9679;</span>`:'';
+    b.innerHTML=`<span class="n">${l.name.split(',')[0]}${mark}</span><span class="v">${l.vertical}</span>`;
     b.onclick=()=>{
       state.loc=l;
       rail.querySelectorAll('.loc').forEach(x=>x.setAttribute('aria-pressed','false'));
@@ -1286,6 +1289,21 @@ function prettyTerm(n){
     .replace(/^global_cos(\d)$/,'Seasonal amplification cos $1')
     .replace(/^global_sin(\d)$/,'Seasonal amplification sin $1');
 }
+function qualityBanner(L){
+  const q=L.quality;
+  if(!q||q.usable) return '';
+  const cls=q.verdict==='unreliable'?'bad':'warn';
+  return `<div class="note" style="border-left-color:var(--${q.verdict==='unreliable'?'crit':'serious'});margin-bottom:16px">
+    <b><span class="pill ${cls}">${q.verdict==='unreliable'?'Do not quote':'Treat with caution'}</span></b>
+    <div style="margin-top:7px">This site failed its quality gate. Numbers below are shown so the
+    problem is visible, <b>not because they should be used</b>.</div>
+    <ul style="margin:8px 0 0;padding-left:18px">${q.problems.map(p=>`<li>${p}</li>`).join('')}</ul>
+    ${q.inhomogeneity&&q.inhomogeneity.detected?`<div style="margin-top:8px">The usual fix is pairwise
+    homogenisation against neighbouring stations, which is not implemented here — so the honest
+    action is to flag it rather than quote through it.</div>`:''}
+  </div>`;
+}
+
 function provBadge(L){
   const real=L.provenance==='noaa-ghcnd'||L.provenance==='era5-openmeteo';
   const cls=real?'ok':'warn';
@@ -1305,6 +1323,10 @@ const VIEWS={overview:view_overview,climate:view_climate,outlook:view_outlook,
 function render(){
   const host=document.getElementById('view');
   host.innerHTML='';
+  const banner=qualityBanner(state.loc);
+  if(banner){
+    const d=document.createElement('div'); d.innerHTML=banner; host.appendChild(d.firstElementChild);
+  }
   host.appendChild(VIEWS[state.tab](state.loc));
 }
 document.getElementById('yearOut').textContent=state.loc.target_years[0];

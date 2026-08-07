@@ -93,7 +93,16 @@ def build_location(loc, verbose: bool = True) -> dict:
     ]
 
     # --- diagnostics --------------------------------------------------------
-    bt = walk_forward(record, model.response, "tmax_c", split_year=1995, trigger_threshold=32.0)
+    # Reliability needs a threshold this site actually crosses. A fixed 32 degC
+    # is meaningless at a ski resort in its November-April season --- every
+    # forecast probability is zero and the curve collapses to a single point at
+    # the origin. The 90th percentile of in-season maxima is exceeded often
+    # enough everywhere to say something.
+    in_season_tmax = record.tmax_c[np.isin(record.doy, window.astype(int))]
+    rel_threshold = float(np.percentile(in_season_tmax, 90))
+    bt = walk_forward(
+        record, model.response, "tmax_c", split_year=1995, trigger_threshold=rel_threshold
+    )
     inhom = detect_inhomogeneity(record, model.tmax)
     out["quality"] = assess_quality(model.tmax.amplification, bt, inhom)
     out["quality"]["inhomogeneity"] = inhom
@@ -122,6 +131,7 @@ def build_location(loc, verbose: bool = True) -> dict:
             "pit_max_deviation": r3(bt.pit_max_deviation),
             "pit": bt.pit_histogram,
             "reliability": bt.reliability,
+            "reliability_threshold": r3(rel_threshold),
         },
         "regression": [
             {k: (r3(v) if isinstance(v, float) else v) for k, v in row.items()}
@@ -248,9 +258,30 @@ def build_location(loc, verbose: bool = True) -> dict:
     # A realistic contract: aggregate cover with an attachment, so it pays for a
     # genuinely bad season rather than for the ordinary friction the business
     # already absorbs.
-    primary = next((p for p in perils if record.usable(p.variable)), perils[0])
-    sim_now = model.simulate(TARGET_YEARS[0], window, BASE, n_paths=N_PATHS, rng=rng)
-    typical_days = float(primary.triggered(sim_now.get(primary.variable)).sum(axis=1).mean())
+    #
+    # The peril is chosen by how often it actually fires, not by list order.
+    # Taking the first usable peril gave Vail a high-wind contract that triggers
+    # on 0.0% of seasons --- fair value zero, yet still quoted at $20k because the
+    # expense load does not depend on fair value. A contract that cannot pay is
+    # not a product, and quoting one is the most embarrassing possible output.
+    usable_perils = [p for p in perils if record.usable(p.variable)]
+    scored = []
+    for p in usable_perils or perils:
+        hit = p.triggered(grid[(BASE.id, TARGET_YEARS[0])].get(p.variable))
+        days = float(hit.mean() if p.statistic == "consecutive" else hit.sum(axis=1).mean())
+        scored.append((days, p))
+    scored.sort(key=lambda t: -t[0])
+    typical_days, primary = scored[0]
+
+    if typical_days < 0.5:
+        # Nothing at this site triggers often enough to underwrite.
+        out["contract"] = None
+        out["hedge"] = None
+        if verbose:
+            print(f"  {loc.id:14s} no sellable peril (best {primary.label} at "
+                  f"{typical_days:.2f} days/season)", flush=True)
+        return out
+
     attach = int(max(np.ceil(typical_days * 1.25), 1))
     per_day = round(lc.baseline_margin * 0.55, -2) or 5000.0
 

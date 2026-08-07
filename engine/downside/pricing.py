@@ -329,7 +329,11 @@ def price_contract(
         half_width=float(half_width),
         inventory_skew=float(inventory_skew),
         rate_on_line=float(mid / max(contract.max_payout, 1e-9)),
-        loading_multiple=float(mid / max(theo, 1e-9)),
+        # Guard the ratio: with a near-zero fair value the loading multiple is
+        # meaningless rather than large (it reached 2e13 on a contract that never
+        # triggers). Anything past 50x is reported as 0 and read as "not a
+        # meaningful ratio" by the caller.
+        loading_multiple=float(mid / theo) if theo > max(mid, 1.0) * 0.02 else 0.0,
         scenario_theos={k: float(v) for k, v in scenario_theos.items()},
     )
     return quote, dist

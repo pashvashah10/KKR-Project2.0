@@ -100,7 +100,8 @@ button:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible,.t
 .loc .v{display:block;font-size:11px;color:var(--muted);margin-top:1px}
 @media (max-width:900px){.loc .v{display:none}}
 
-main{padding:20px 24px 40px;min-width:0}
+/* Bottom padding clears the sticky scrubber so nothing sits permanently under it. */
+main{padding:20px 24px 72px;min-width:0}
 .tabs{display:flex;gap:2px;flex-wrap:wrap;border-bottom:1px solid var(--rule);margin-bottom:20px}
 .tab{
   border:none;background:none;border-radius:0;padding:9px 14px;
@@ -352,7 +353,7 @@ function view_overview(L){
   const yr=L.target_years[state.yearIdx];
   const amb=L.ambient[state.scenario][state.yearIdx];
   const amb0=L.ambient[state.scenario][0];
-  const q=L.contract.quotes[state.yearIdx];
+  const q=L.contract?L.contract.quotes[state.yearIdx]:null;
   const d=L.diagnostics;
   const el=document.createElement('div'); el.className='fade-in';
 
@@ -367,9 +368,11 @@ function view_overview(L){
    <div class="grid g2" style="margin-top:14px">
      <div class="card"><h4>Century of observed season means</h4><div id="ov-hist"></div>
        <figcaption>Thin: observed. Heavy: fitted response to global forcing.</figcaption></div>
-     <div class="card"><h4>Premium as the climate moves</h4><div id="ov-price"></div>
-       <figcaption>Same contract, repriced for each target year. The gap against a
-       history-based price is what a static rate card misses.</figcaption></div>
+     <div class="card"><h4>${L.contract?'Premium as the climate moves':'No sellable peril'}</h4>
+       <div id="ov-price"></div>
+       <figcaption>${L.contract
+         ?'Same contract, repriced for each target year. The gap against a history-based price is what a static rate card misses.'
+         :'Nothing at this site triggers often enough to underwrite, so no premium curve is shown.'}</figcaption></div>
    </div>`;
 
   setTimeout(()=>{
@@ -378,8 +381,10 @@ function view_overview(L){
        `${amb.tmax>amb0.tmax?'+':''}${f(amb.tmax-amb0.tmax,2)}°C vs ${L.target_years[0]}`],
       ['Wet days in window', pct(amb.wet_frac), '',
        `${f(amb.wet_frac*seasonLen(L),0)} of ${seasonLen(L)} days`],
-      ['Contract mid', money(q.mid), '',
-       `Rate on line ${pct(q.rate_on_line,1)} · loading ×${f(q.loading,2)}`],
+      ['Contract mid', L.contract?money(q.mid):'—', '',
+       L.contract?`Rate on line ${pct(q.rate_on_line,1)}`+
+         (q.loading>0?` · loading ×${f(q.loading,2)}`:'')
+        :'No peril here triggers often enough to underwrite'],
       ['Model skill', d.backtest.calibrated?'Calibrated':'Biased', '',
        `Out-of-sample bias ${f(d.backtest.bias,2)}°C on ${d.backtest.test[0]}–${d.backtest.test[1]}`],
     ];
@@ -390,7 +395,7 @@ function view_overview(L){
       host.appendChild(c);
     });
     drawHistory(el.querySelector('#ov-hist'), L, 520, 250);
-    drawPriceCurve(el.querySelector('#ov-price'), L, 520, 250);
+    if(L.contract) drawPriceCurve(el.querySelector('#ov-price'), L, 520, 270);
   });
   return el;
 }
@@ -467,6 +472,7 @@ function view_perils(L){
 
 function view_pricing(L){
   const el=document.createElement('div'); el.className='fade-in';
+  if(!L.contract){ el.innerHTML=noContractNotice(L,'priced'); return el; }
   const c=L.contract, q=c.quotes[state.yearIdx];
   el.innerHTML=`
    <div class="vhead"><h1>Pricing desk</h1>
@@ -508,8 +514,9 @@ function view_pricing(L){
 }
 
 function view_hedge(L){
-  const h=L.hedge, lc=L.loss_curve;
   const el=document.createElement('div'); el.className='fade-in';
+  if(!L.hedge){ el.innerHTML=noContractNotice(L,'hedged'); return el; }
+  const h=L.hedge, lc=L.loss_curve;
   el.innerHTML=`
    <div class="vhead"><h1>How much to hedge</h1>
    <p>Every hedge loses money in expected dollars — the premium contains the seller's risk load.
@@ -557,7 +564,9 @@ function view_model(L){
        <figcaption>Where each out-of-sample day fell in its own predicted distribution. Flat = honest.
        U-shaped = overconfident, which underprices every tail sold.</figcaption></div>
      <div class="card"><h4>Reliability — do stated odds hold?</h4><div id="m-rel"></div>
-       <figcaption>Of days given an x% chance of exceeding 32°C, what share exceeded it. On the diagonal is correct.</figcaption></div>
+       <figcaption>Of days given an x% chance of exceeding
+       ${f(b.reliability_threshold!=null?b.reliability_threshold:32,1)}°C — this site's 90th
+       percentile in season — what share exceeded it. On the diagonal is correct.</figcaption></div>
    </div>
    <div class="card" style="margin-top:14px"><h4>Fitted mean model</h4>
      <div class="tablewrap"><table id="m-tab">
@@ -799,7 +808,8 @@ function drawReturn(host,L,W,H){
 }
 
 function drawPriceCurve(host,L,W,H){
-  const M={t:12,r:16,b:26,l:52};
+  // Bottom margin has to clear the year ticks *and* the caption below them.
+  const M={t:12,r:16,b:44,l:52};
   const s=SVG(W,H), Q=L.contract.quotes;
   const hi=Math.max(...Q.map(q=>Math.max(q.ask,q.theo_hist)))*1.1;
   const x=sc(0,Q.length-1,M.l,W-M.r), y=sc(0,hi,H-M.b,M.t);
@@ -817,7 +827,8 @@ function drawPriceCurve(host,L,W,H){
     'stroke-width':1.6,'stroke-dasharray':'4 3'},s);
   E('circle',{cx:x(state.yearIdx),cy:y(Q[state.yearIdx].mid),r:5.5,fill:'var(--s1)',
     stroke:'var(--panel)','stroke-width':2},s);
-  E('text',{x:M.l,y:H-6,class:'axis'},s).textContent='solid = forward price · dashed = priced off 2010 climate';
+  E('text',{x:(M.l+W-M.r)/2,y:H-6,class:'axis','text-anchor':'middle'},s)
+    .textContent='solid = forward price · dashed = priced off 2010 climate';
   drawIn(host,s);
 }
 
@@ -854,7 +865,7 @@ function drawWaterfall(host,q,W,H){
 }
 
 function drawMarket(host,L,W,H){
-  const M={t:16,r:16,b:30,l:52};
+  const M={t:16,r:16,b:44,l:52};
   const s=SVG(W,H), Q=L.contract.quotes;
   const hi=Math.max(...Q.map(q=>q.ask))*1.1;
   const x=sc(0,Q.length-1,M.l,W-M.r), y=sc(0,hi,H-M.b,M.t);
@@ -870,7 +881,8 @@ function drawMarket(host,L,W,H){
     E('text',{x:cx,y:H-M.b+16,class:'axis','text-anchor':'middle'},s).textContent=q.year;
   });
   E('line',{x1:M.l,x2:W-M.r,y1:H-M.b,y2:H-M.b,class:'axisline'},s);
-  E('text',{x:M.l,y:H-4,class:'axis'},s).textContent='bar = bid→ask · dot = fair value';
+  E('text',{x:(M.l+W-M.r)/2,y:H-6,class:'axis','text-anchor':'middle'},s)
+    .textContent='bar = bid→ask · dot = fair value';
   drawIn(host,s);
 }
 
@@ -983,9 +995,25 @@ function prettyTerm(n){
     .replace(/^global_cos(\d)$/,'Seasonal amplification cos $1')
     .replace(/^global_sin(\d)$/,'Seasonal amplification sin $1');
 }
+function noContractNotice(L,verb){
+  return `<div class="vhead"><h1>Nothing to be ${verb} here</h1>
+   <p>No peril at ${L.name.split(',')[0]} triggers often enough to underwrite. Writing cover on an
+   event that never fires produces a premium made entirely of expenses and a payout of zero —
+   so no quote is shown.</p></div>
+   <div class="note"><b>What would change this.</b> A lower threshold, a longer accumulation
+   window, or a different settlement variable. Those are product decisions rather than model
+   decisions, so they are not chosen automatically.</div>`;
+}
+
 function qualityBanner(L){
   const q=L.quality;
-  if(!q||q.usable) return '';
+  if(!q) return '';
+  if(q.usable){
+    if(!q.notes||!q.notes.length) return '';
+    return `<div class="note" style="margin-bottom:16px">
+      <b><span class="pill info">Note on the record</span></b>
+      <div style="margin-top:7px">${q.notes.join(' ')}</div></div>`;
+  }
   const cls=q.verdict==='unreliable'?'bad':'warn';
   return `<div class="note" style="border-left-color:var(--${q.verdict==='unreliable'?'crit':'serious'});margin-bottom:16px">
     <b><span class="pill ${cls}">${q.verdict==='unreliable'?'Do not quote':'Treat with caution'}</span></b>
