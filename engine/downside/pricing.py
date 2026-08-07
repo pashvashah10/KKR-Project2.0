@@ -227,7 +227,19 @@ class Quote:
 LAMBDA_CVAR = 0.16       # share of the CVaR-minus-mean capital band charged
 LAMBDA_SD = 0.10         # standard-deviation load
 LAMBDA_PARAM = 1.25      # multiple of model-uncertainty sd charged
-EXPENSE_RATIO = 0.045    # origination, settlement, data
+
+#: Expense is charged on the *risk premium*, not on the limit.
+#:
+#: Charging a percentage of the limit looks harmless and is not: for a remote,
+#: low-probability layer the limit is large while the expected loss is small, so
+#: the expense term swamps everything. Boston's rain contract came out quoted at
+#: 11x fair value, almost all of it expense, and at that price no operator should
+#: hedge --- which is exactly what the hedging screen then reported.
+#:
+#: Real origination and settlement cost is mostly fixed per contract plus a
+#: margin on the risk actually carried, which is what this charges.
+EXPENSE_FIXED = 1_500.0  # origination, data, settlement per contract
+EXPENSE_RATIO = 0.12     # margin on the risk premium carried
 #: Basis load per km of gauge-to-venue distance, as a share of theo. A venue 20 km
 #: from its settlement gauge carries roughly a 9% load on this scale.
 BASIS_PER_KM = 0.0045
@@ -292,7 +304,9 @@ def price_contract(
     load_capital = LAMBDA_CVAR * max(dist.cvar(0.99) - theo, 0.0) + LAMBDA_SD * dist.sd
     load_parameter = LAMBDA_PARAM * sigma_model
     load_basis = BASIS_PER_KM * location.station_distance_km * theo
-    load_expense = EXPENSE_RATIO * contract.max_payout * _duration_factor(contract)
+    load_expense = EXPENSE_FIXED * _duration_factor(contract) + EXPENSE_RATIO * (
+        theo + load_capital + load_parameter + load_basis
+    )
 
     risk_premium = load_capital + load_parameter + load_basis + load_expense
     mid = theo + risk_premium
