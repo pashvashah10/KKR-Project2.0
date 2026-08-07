@@ -264,21 +264,32 @@ def build_location(loc, verbose: bool = True) -> dict:
     # on 0.0% of seasons --- fair value zero, yet still quoted at $20k because the
     # expense load does not depend on fair value. A contract that cannot pay is
     # not a product, and quoting one is the most embarrassing possible output.
-    usable_perils = [p for p in perils if record.usable(p.variable)]
-    scored = []
-    for p in usable_perils or perils:
-        hit = p.triggered(grid[(BASE.id, TARGET_YEARS[0])].get(p.variable))
-        days = float(hit.mean() if p.statistic == "consecutive" else hit.sum(axis=1).mean())
-        scored.append((days, p))
+    # Only per-day perils are eligible for the aggregate structure, which counts
+    # independent triggering days beyond an attachment. A rolling-window statistic
+    # like snow drought does not produce independent days: every day inside a dry
+    # spell registers, so Vail scored 174 "days", took an attachment of 174, and
+    # then could never reach it inside a 181-day season. Selling a seasonal
+    # accumulation peril properly needs a different contract shape.
+    eligible = [
+        p for p in perils if record.usable(p.variable) and p.statistic == "daily"
+    ]
+    scored = [
+        (
+            float(p.triggered(grid[(BASE.id, TARGET_YEARS[0])].get(p.variable)).sum(axis=1).mean()),
+            p,
+        )
+        for p in eligible
+    ]
     scored.sort(key=lambda t: -t[0])
-    typical_days, primary = scored[0]
+    typical_days, primary = scored[0] if scored else (0.0, None)
 
-    if typical_days < 0.5:
+    if primary is None or typical_days < 0.5:
         # Nothing at this site triggers often enough to underwrite.
         out["contract"] = None
         out["hedge"] = None
+        best = primary.label if primary else "none eligible"
         if verbose:
-            print(f"  {loc.id:14s} no sellable peril (best {primary.label} at "
+            print(f"  {loc.id:14s} no sellable peril (best {best} at "
                   f"{typical_days:.2f} days/season)", flush=True)
         return out
 
