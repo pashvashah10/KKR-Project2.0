@@ -523,7 +523,12 @@ function view_hedge(L){
    <div class="vhead"><h1>How much to hedge</h1>
    <p>Every hedge loses money in expected dollars — the premium contains the seller's risk load.
       Judged on expected value the right hedge is always zero. <strong>Businesses maximise survival,
-      not expected value</strong>, so this sizes against ruin probability instead.</p></div>
+      not expected value</strong>, so this sizes against ruin probability instead.</p>
+   <p style="font-size:13px;color:var(--muted)">Measured on the shortfall against a
+      <em>normal</em> season (${money(h.normal_season_loss||0)} of margin lost to weather in a median
+      year, which the business already budgets for), not the gross weather loss. Reserves and fixed
+      burn below are illustrative — they are operator inputs, and they are the two numbers that most
+      change the answer.</p></div>
    <div class="grid g4" id="h-stats"></div>
    <div class="grid g2" style="margin-top:14px">
      <div class="card"><h4>Loss curve — regressed, not asked</h4><div id="h-loss"></div>

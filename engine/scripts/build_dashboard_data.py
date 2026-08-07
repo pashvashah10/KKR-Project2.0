@@ -355,15 +355,33 @@ def build_location(loc, verbose: bool = True) -> dict:
         payout_per_day=per_day, limit=per_day * 12, attachment_days=attach,
     )
     payout = evaluate_payout(contract0, primary, sim_h).payouts
-    reserves = float(np.percentile(loss, 60) * 2.2)
-    burn = float(lc.baseline_margin * 6.0)
-    ha = analyse_hedge(loss, payout, price=quotes[0]["ask"], reserves=reserves,
+
+    # Hedge against the *unexpected* shortfall, not the whole weather loss.
+    #
+    # `loss_at` measures margin lost against a dry-day baseline, so summing it
+    # over a season gives everything rain costs across the year. A business
+    # already plans around a normal amount of rain; that figure is in its budget,
+    # not a threat to its survival. Feeding the gross number in put ruin
+    # probability at 94.9% before any hedge and recommended size at zero, because
+    # no hedge could save a business that is ruined in the median season.
+    #
+    # What threatens solvency is a season materially worse than a normal one, so
+    # ruin is measured on the excess over the median season.
+    normal_season = float(np.median(loss))
+    excess = loss - normal_season
+
+    # Demo balance sheet. Real reserves and fixed burn are operator inputs and
+    # are the two numbers that most change the recommended hedge.
+    reserves = float(np.percentile(excess, 90) * 2.0)
+    burn = reserves / 12.0
+    ha = analyse_hedge(excess, payout, price=quotes[0]["ask"], reserves=reserves,
                        fixed_burn_monthly=burn)
     out["hedge"] = {
         "reserves": r3(reserves),
         "burn_monthly": r3(burn),
-        "loss_mean": r3(loss.mean()),
-        "loss_p95": r3(np.percentile(loss, 95)),
+        "normal_season_loss": r3(normal_season),
+        "loss_mean": r3(excess.mean()),
+        "loss_p95": r3(np.percentile(excess, 95)),
         "correlation": r3(ha.correlation),
         "h_star": r3(ha.min_variance_ratio),
         "basis_risk": r3(ha.basis_risk_share),
