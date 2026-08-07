@@ -540,7 +540,14 @@ function view_hedge(L){
        input this platform takes.</figcaption></div>
      <div class="card"><h4>Ruin probability vs hedge size</h4><div id="h-frontier"></div>
        <figcaption>Hedging past the marked point buys risk premium, not survival.</figcaption></div>
-   </div>`;
+   </div>
+   <div class="card" style="margin-top:14px"><h4>The same exposure, different balance sheets</h4>
+     <div id="h-sens"></div>
+     <figcaption>Recommended hedge against cash reserves, holding exposure, contract and quote
+     fixed. <b>This is the whole argument.</b> A $28k loss against $60k of reserves is potentially
+     existential; against $2M it is a rounding error. Expected-value reasoning cannot produce a
+     different answer for the two — it says zero for both, because every hedge has negative expected
+     value. Sizing to survival can, and does.</figcaption></div>`;
   setTimeout(()=>{
     const stats=[
       ['Correlation ρ', f(h.correlation,2),'',`Basis risk ${pct(h.basis_risk)} of loss variance is unreachable`],
@@ -557,6 +564,7 @@ function view_hedge(L){
     });
     drawLoss(el.querySelector('#h-loss'),L,520,240);
     drawFrontier(el.querySelector('#h-frontier'),L,520,240);
+    if(h.sensitivity) drawSensitivity(el.querySelector('#h-sens'),L,1080,250);
   });
   return el;
 }
@@ -945,6 +953,47 @@ function drawFrontier(host,L,W,H){
   E('text',{x:x(rec)+5,y:M.t+11,class:'slab',fill:'var(--accent)'},s).textContent='recommended '+f(rec,2)+'×';
   E('line',{x1:M.l,x2:W-M.r,y1:H-M.b,y2:H-M.b,class:'axisline'},s);
   E('text',{x:(M.l+W-M.r)/2,y:H-4,class:'axis','text-anchor':'middle'},s).textContent='hedge size (multiples of h*)';
+  drawIn(host,s);
+}
+
+function drawSensitivity(host,L,W,H){
+  const M={t:16,r:56,b:46,l:56};
+  const s=SVG(W,H), S=L.hedge.sensitivity;
+  const xr=S.map(d=>d.reserves);
+  const x=sc(Math.min(...xr),Math.max(...xr),M.l,W-M.r);
+  const hiF=Math.max(...S.map(d=>d.recommended),0.2)*1.25;
+  const y=sc(0,hiF,H-M.b,M.t);
+  const yr=sc(0,Math.max(...S.map(d=>d.ruin_unhedged),0.02)*1.25,H-M.b,M.t);
+
+  const tk=ticks(0,hiF,4);
+  tk.forEach(t=>{
+    E('line',{x1:M.l,x2:W-M.r,y1:y(t),y2:y(t),class:'gridline'},s);
+    E('text',{x:M.l-7,y:y(t)+4,class:'axis','text-anchor':'end'},s).textContent=fmtTick(t,tk.step)+'×';
+  });
+  S.forEach(d=>E('text',{x:x(d.reserves),y:H-M.b+16,class:'axis','text-anchor':'middle'},s)
+    .textContent=money(d.reserves));
+  E('line',{x1:M.l,x2:W-M.r,y1:H-M.b,y2:H-M.b,class:'axisline'},s);
+
+  // Ruin without a hedge, as context for why the recommendation moves.
+  E('path',{d:P(S.map(d=>[x(d.reserves),yr(d.ruin_unhedged)])),fill:'none',
+    stroke:'var(--muted)','stroke-width':1.6,'stroke-dasharray':'4 3'},s);
+
+  const p=E('path',{d:P(S.map(d=>[x(d.reserves),y(d.recommended)])),fill:'none',
+    stroke:'var(--s3)','stroke-width':2.6,'stroke-linecap':'round'},s);
+  animPath(p);
+  S.forEach((d,i)=>{
+    const c=E('circle',{cx:x(d.reserves),cy:y(d.recommended),r:4,fill:'var(--s3)',
+      stroke:'var(--panel)','stroke-width':1.8},s);
+    if(!reduce){c.style.animationDelay=(300+i*60)+'ms';c.classList.add('fade');}
+  });
+  // Mark where this operator actually sits.
+  E('line',{x1:x(L.hedge.reserves),x2:x(L.hedge.reserves),y1:M.t,y2:H-M.b,
+    stroke:'var(--accent)','stroke-width':1.5,'stroke-dasharray':'4 3'},s);
+  E('text',{x:x(L.hedge.reserves)+6,y:M.t+12,class:'slab',fill:'var(--accent)'},s)
+    .textContent='this operator';
+
+  E('text',{x:(M.l+W-M.r)/2,y:H-6,class:'axis','text-anchor':'middle'},s)
+    .textContent='cash reserves · solid = recommended hedge (left axis) · dashed = unhedged ruin probability';
   drawIn(host,s);
 }
 

@@ -388,10 +388,33 @@ def build_location(loc, verbose: bool = True) -> dict:
     burn = reserves / 12.0
     ha = analyse_hedge(excess, payout, price=quotes[0]["ask"], reserves=reserves,
                        fixed_burn_monthly=burn)
+    # The product's actual thesis, as a chart: two identical businesses with
+    # identical exposure and an identical quote should hedge *different amounts*
+    # if their cash positions differ. Expected-value reasoning cannot produce
+    # that; a ruin constraint can. Recomputed across a range of reserve levels
+    # so the operator can find themselves on the curve.
+    sensitivity = []
+    for mult in (0.35, 0.5, 0.75, 1.0, 1.5, 2.0, 3.0, 4.5):
+        r_i = float(np.percentile(excess, 90) * mult)
+        h_i = analyse_hedge(
+            excess, payout, price=quotes[0]["ask"],
+            reserves=r_i, fixed_burn_monthly=r_i / 12.0,
+        )
+        sensitivity.append(
+            {
+                "reserves": r3(r_i),
+                "recommended": r3(h_i.recommended_fraction),
+                "kelly": r3(h_i.kelly_fraction),
+                "ruin_unhedged": r3(h_i.unhedged_ruin),
+                "ruin_hedged": r3(h_i.hedged_ruin),
+            }
+        )
+
     out["hedge"] = {
         "reserves": r3(reserves),
         "burn_monthly": r3(burn),
         "normal_season_loss": r3(normal_season),
+        "sensitivity": sensitivity,
         "loss_mean": r3(excess.mean()),
         "loss_p95": r3(np.percentile(excess, 95)),
         "correlation": r3(ha.correlation),
