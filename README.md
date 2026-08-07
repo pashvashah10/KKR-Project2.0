@@ -7,24 +7,40 @@ projected forward under four emissions pathways; and a price on the contracts
 that sit on top.
 
 ```
-engine/     Python analytics engine — the models and the math
-web/        Dashboard and preview page
+api/        FastAPI service --- what a customer actually talks to
+engine/     Python analytics engine --- the models and the math
+web/        Customer app and the internal terminal
 docs/       Methodology
 ```
 
 ---
 
-## Quick start
+## How a business uses this
 
 ```bash
-pip install -r engine/requirements.txt
-
-cd engine
-python3 scripts/build_dashboard_data.py      # fetches NOAA, fits, projects, prices
-python3 -m http.server -d ../web 8000        # open localhost:8000/dashboard.html
+pip install -r api/requirements.txt -r engine/requirements.txt
+python3 web/build.py all
+python3 -m uvicorn api.main:app --port 8000    # then open localhost:8000
 ```
 
-The build takes a few minutes on first run and is cached to `.cache/` after that.
+The landing page takes coordinates, fits a century of weather at that point,
+and returns an exposure, suggested terms and a price. Nothing is precomputed.
+
+Everything it does is a public endpoint --- see `api/README.md`, or `/docs` for
+the interactive reference:
+
+| | |
+|---|---|
+| `POST /v1/accounts` | sign up, receive an API key |
+| `POST /v1/sites` | add a venue at any coordinates (async, returns a job) |
+| `POST /v1/sites/{id}/revenue` | upload daily revenue CSV |
+| `GET /v1/sites/{id}/exposure` | your loss curve and expected loss |
+| `GET /v1/sites/{id}/suggested-terms` | terms proposed from your own exposure |
+| `POST /v1/sites/{id}/quote` | price a contract |
+| `POST /v1/sites/{id}/hedge` | size it against your balance sheet |
+
+Fitting takes 1--3 minutes and happens once per site; the model is cached, so
+every quote afterwards returns in milliseconds.
 
 ---
 
