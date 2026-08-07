@@ -1,46 +1,67 @@
 <title>Downside — Weather Risk Terminal</title>
 <style>
+__FONTS__
+
 :root{
-  color-scheme:light;
-  --ground:#F4F6F7; --panel:#FFFFFF; --panel-2:#EDF0F2; --panel-3:#E3E8EB;
-  --ink:#0F171D; --ink-2:#41525F; --muted:#6B7C8A;
-  --rule:rgba(15,23,29,.14); --rule-soft:rgba(15,23,29,.07);
-  --accent:#B4531F; --accent-soft:rgba(180,83,31,.10);
+  color-scheme: light;
+  /* Ground: pale mineral blue-grey, the colour of a met chart --- deliberately
+     not the warm cream that every generated page reaches for. */
+  --paper:#E9EEF0;
+  --panel:#FBFCFC;
+  --panel-2:#F1F4F5;
+  --panel-3:#E4EAEC;
+  /* Ink is deep petrol, never pure black. */
+  --ink:#12262F;
+  --ink-2:#42606C;
+  --muted:#7893A0;
+  --rule:rgba(18,38,47,.16);
+  --rule-soft:rgba(18,38,47,.07);
+  /* Two accents with distinct jobs: teal is the instrument, ember is heat. */
+  --accent:#0A5866;
+  --accent-soft:rgba(10,88,102,.09);
+  --ember:#B8471F;
   --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100;
-  --grid:rgba(15,23,29,.09);
+  --grid:rgba(18,38,47,.10);
   --good:#0ca30c; --warn:#fab219; --serious:#ec835a; --crit:#d03b3b;
-  --shadow:0 1px 2px rgba(15,23,29,.06),0 10px 30px -16px rgba(15,23,29,.28);
-  --canvas-alpha:.34;
+  --shadow:0 1px 2px rgba(18,38,47,.05),0 12px 34px -18px rgba(18,38,47,.35);
+  --canvas-alpha:.85;
+
+  --display:"Instrument Serif",Georgia,serif;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
 }
 @media (prefers-color-scheme:dark){:root:where(:not([data-theme="light"])){
-  color-scheme:dark;
-  --ground:#080D12; --panel:#0F161D; --panel-2:#16202A; --panel-3:#1E2A35;
-  --ink:#E6EDF3; --ink-2:#9FB0BE; --muted:#6B7C8A;
-  --rule:rgba(230,237,243,.14); --rule-soft:rgba(230,237,243,.07);
-  --accent:#E8974A; --accent-soft:rgba(232,151,74,.13);
+  color-scheme: dark;
+  --paper:#08161C; --panel:#0E1F27; --panel-2:#142A34; --panel-3:#1C3641;
+  --ink:#E4EEF1; --ink-2:#9DB6C0; --muted:#6E8B98;
+  --rule:rgba(228,238,241,.15); --rule-soft:rgba(228,238,241,.07);
+  --accent:#4FB8CE; --accent-soft:rgba(79,184,206,.13);
+  --ember:#E4753F;
   --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500;
-  --grid:rgba(230,237,243,.10);
-  --shadow:0 1px 2px rgba(0,0,0,.5),0 14px 40px -18px rgba(0,0,0,.85);
+  --grid:rgba(228,238,241,.10);
+  --shadow:0 1px 2px rgba(0,0,0,.5),0 16px 44px -22px rgba(0,0,0,.9);
   --canvas-alpha:.5;
 }}
 :root[data-theme="dark"]{
-  color-scheme:dark;
-  --ground:#080D12; --panel:#0F161D; --panel-2:#16202A; --panel-3:#1E2A35;
-  --ink:#E6EDF3; --ink-2:#9FB0BE; --muted:#6B7C8A;
-  --rule:rgba(230,237,243,.14); --rule-soft:rgba(230,237,243,.07);
-  --accent:#E8974A; --accent-soft:rgba(232,151,74,.13);
+  color-scheme: dark;
+  --paper:#08161C; --panel:#0E1F27; --panel-2:#142A34; --panel-3:#1C3641;
+  --ink:#E4EEF1; --ink-2:#9DB6C0; --muted:#6E8B98;
+  --rule:rgba(228,238,241,.15); --rule-soft:rgba(228,238,241,.07);
+  --accent:#4FB8CE; --accent-soft:rgba(79,184,206,.13);
+  --ember:#E4753F;
   --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500;
-  --grid:rgba(230,237,243,.10);
-  --shadow:0 1px 2px rgba(0,0,0,.5),0 14px 40px -18px rgba(0,0,0,.85);
+  --grid:rgba(228,238,241,.10);
+  --shadow:0 1px 2px rgba(0,0,0,.5),0 16px 44px -22px rgba(0,0,0,.9);
   --canvas-alpha:.5;
 }
 
 *{box-sizing:border-box}
 html,body{height:100%}
 body{
-  margin:0;background:var(--ground);color:var(--ink);
-  font-family:system-ui,-apple-system,"Segoe UI",sans-serif;
-  font-size:14.5px;line-height:1.5;-webkit-font-smoothing:antialiased;
+  margin:0;background:var(--paper);color:var(--ink);
+  font-family:var(--sans);
+  font-size:14.5px;line-height:1.55;-webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
   overflow-x:hidden;
 }
 #sky{
@@ -58,7 +79,7 @@ header{
   backdrop-filter:blur(14px);position:sticky;top:0;z-index:20;
 }
 .brand{display:flex;align-items:baseline;gap:10px;margin-right:auto}
-.brand b{font-size:17px;font-weight:740;letter-spacing:-.02em}
+.brand b{font-family:var(--display);font-size:24px;font-weight:400;letter-spacing:-.005em}
 .brand span{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:640}
 .ctl{display:flex;align-items:center;gap:8px}
 .ctl label{font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);font-weight:640}
@@ -112,7 +133,8 @@ main{padding:20px 24px 72px;min-width:0}
 
 /* ---------- view head ---------- */
 .vhead{margin-bottom:18px}
-h1{font-size:clamp(21px,3vw,29px);font-weight:730;letter-spacing:-.026em;margin:0;text-wrap:balance}
+h1{font-family:var(--display);font-size:clamp(30px,4.2vw,46px);font-weight:400;
+   letter-spacing:-.012em;line-height:1.04;margin:0;text-wrap:balance}
 .vhead p{margin:7px 0 0;color:var(--ink-2);max-width:74ch}
 .vhead p strong{color:var(--ink);font-weight:640}
 
@@ -122,14 +144,16 @@ h1{font-size:clamp(21px,3vw,29px);font-weight:730;letter-spacing:-.026em;margin:
 .g3{grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
 .g4{grid-template-columns:repeat(auto-fit,minmax(168px,1fr))}
 .card{
-  background:color-mix(in srgb,var(--panel) 88%,transparent);
-  border:1px solid var(--rule);border-radius:4px;padding:15px 16px;box-shadow:var(--shadow);
+  background:color-mix(in srgb,var(--panel) 90%,transparent);
+  border:1px solid var(--rule-soft);border-radius:3px;padding:18px 20px;
+  box-shadow:var(--shadow);
 }
 .card h4{
   font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);
   margin:0 0 10px;font-weight:660;
 }
-.card .big{font-size:27px;font-weight:720;letter-spacing:-.028em;font-variant-numeric:tabular-nums;line-height:1.05}
+.card .big{font-family:var(--mono);font-size:26px;font-weight:500;letter-spacing:-.03em;
+  font-variant-numeric:tabular-nums;line-height:1.05}
 .card .big .u{font-size:14px;font-weight:600;color:var(--ink-2);letter-spacing:0}
 .card .sub{font-size:12px;color:var(--muted);margin-top:5px;line-height:1.42}
 .card figcaption{font-size:12px;color:var(--muted);margin-top:10px;line-height:1.45}
@@ -142,7 +166,7 @@ h1{font-size:clamp(21px,3vw,29px);font-weight:730;letter-spacing:-.026em;margin:
 .pill.info{color:var(--muted)}
 
 svg{display:block;width:100%;height:auto;overflow:visible}
-.axis{font-size:10.5px;fill:var(--muted);font-variant-numeric:tabular-nums}
+.axis{font-size:10.5px;fill:var(--muted);font-family:var(--mono);font-variant-numeric:tabular-nums}
 .gridline{stroke:var(--grid);stroke-width:1}
 .axisline{stroke:var(--rule);stroke-width:1}
 .slab{font-size:11px;font-weight:660;font-variant-numeric:tabular-nums}
@@ -155,7 +179,7 @@ svg{display:block;width:100%;height:auto;overflow:visible}
 table{border-collapse:collapse;width:100%;min-width:520px;font-size:13px}
 th,td{padding:8px 12px;text-align:right;border-bottom:1px solid var(--rule-soft);white-space:nowrap}
 th{font-size:10px;letter-spacing:.11em;text-transform:uppercase;color:var(--muted);font-weight:650;background:var(--panel-2)}
-td{font-variant-numeric:tabular-nums}
+td{font-family:var(--mono);font-size:12.5px;font-variant-numeric:tabular-nums}
 th:first-child,td:first-child{text-align:left;font-variant-numeric:normal}
 tbody tr:hover{background:var(--panel-2)}
 
@@ -167,7 +191,8 @@ tbody tr:hover{background:var(--panel-2)}
   display:flex;align-items:center;gap:18px;flex-wrap:wrap;
 }
 .scrub .lab{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:640}
-.scrub .yr{font-size:22px;font-weight:730;font-variant-numeric:tabular-nums;letter-spacing:-.02em;min-width:3.4ch}
+.scrub .yr{font-family:var(--mono);font-size:22px;font-weight:500;
+  font-variant-numeric:tabular-nums;letter-spacing:-.02em;min-width:4ch}
 input[type=range]{
   flex:1;min-width:180px;accent-color:var(--accent);height:22px;cursor:pointer;background:transparent;
 }

@@ -1,0 +1,523 @@
+<title>Downside — Weather risk for outdoor operators</title>
+<style>
+__FONTS__
+
+:root{
+  color-scheme: light;
+  --paper:#E9EEF0; --panel:#FBFCFC; --panel-2:#F1F4F5; --panel-3:#E4EAEC;
+  --ink:#12262F; --ink-2:#42606C; --muted:#7893A0;
+  --rule:rgba(18,38,47,.16); --rule-soft:rgba(18,38,47,.07);
+  --accent:#0A5866; --accent-soft:rgba(10,88,102,.09);
+  --ember:#B8471F;
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100;
+  --grid:rgba(18,38,47,.10);
+  --good:#0ca30c; --crit:#d03b3b; --serious:#ec835a;
+  --shadow:0 1px 2px rgba(18,38,47,.05),0 14px 40px -20px rgba(18,38,47,.4);
+  --canvas-alpha:.85;
+  --display:"Instrument Serif",Georgia,serif;
+  --sans:"IBM Plex Sans",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:where(:not([data-theme="light"])){
+  color-scheme: dark;
+  --paper:#08161C; --panel:#0E1F27; --panel-2:#142A34; --panel-3:#1C3641;
+  --ink:#E4EEF1; --ink-2:#9DB6C0; --muted:#6E8B98;
+  --rule:rgba(228,238,241,.15); --rule-soft:rgba(228,238,241,.07);
+  --accent:#4FB8CE; --accent-soft:rgba(79,184,206,.13); --ember:#E4753F;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500;
+  --grid:rgba(228,238,241,.10);
+  --shadow:0 1px 2px rgba(0,0,0,.5),0 18px 48px -24px rgba(0,0,0,.9);
+  --canvas-alpha:.5;
+}}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --paper:#08161C; --panel:#0E1F27; --panel-2:#142A34; --panel-3:#1C3641;
+  --ink:#E4EEF1; --ink-2:#9DB6C0; --muted:#6E8B98;
+  --rule:rgba(228,238,241,.15); --rule-soft:rgba(228,238,241,.07);
+  --accent:#4FB8CE; --accent-soft:rgba(79,184,206,.13); --ember:#E4753F;
+  --grid:rgba(228,238,241,.10);
+  --shadow:0 1px 2px rgba(0,0,0,.5),0 18px 48px -24px rgba(0,0,0,.9);
+  --canvas-alpha:.5;
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);
+  font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;overflow-x:hidden;
+}
+#sky{position:fixed;inset:0;width:100%;height:100%;z-index:0;
+  opacity:var(--canvas-alpha);pointer-events:none}
+#page{position:relative;z-index:1}
+.wrap{max-width:1080px;margin:0 auto;padding:0 28px}
+
+/* ---------- hero ---------- */
+.hero{padding:76px 0 56px;min-height:66vh;display:flex;flex-direction:column;justify-content:center}
+.brand{font-family:var(--display);font-size:26px;letter-spacing:-.005em;margin-bottom:auto}
+.brand span{font-family:var(--sans);font-size:10.5px;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--muted);font-weight:600;margin-left:12px}
+h1{font-family:var(--display);font-weight:400;font-size:clamp(40px,7vw,80px);
+  line-height:1.0;letter-spacing:-.018em;margin:44px 0 0;max-width:15ch;text-wrap:balance}
+h1 em{font-style:italic;color:var(--accent)}
+.lede{font-size:19px;color:var(--ink-2);max-width:56ch;margin:26px 0 0}
+.lede b{color:var(--ink);font-weight:600}
+
+.cta{display:flex;gap:14px;flex-wrap:wrap;margin-top:34px;align-items:center}
+button,.btn{
+  font:inherit;font-size:15px;font-weight:500;font-family:var(--sans);
+  border:1px solid var(--accent);background:var(--accent);color:#fff;
+  padding:11px 22px;border-radius:2px;cursor:pointer;text-decoration:none;
+  transition:transform .16s cubic-bezier(.2,.7,.2,1),box-shadow .16s ease,opacity .16s;
+}
+button:hover,.btn:hover{transform:translateY(-1px);box-shadow:0 6px 18px -8px var(--accent)}
+button:active{transform:translateY(0)}
+button.ghost{background:none;color:var(--ink);border-color:var(--rule)}
+button.ghost:hover{background:var(--panel-2);box-shadow:none}
+button:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:none}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+
+/* ---------- steps ---------- */
+.steps{display:grid;gap:1px;background:var(--rule);border-block:1px solid var(--rule);margin:64px 0 0;
+  grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
+.step{background:var(--panel);padding:24px 22px}
+.step .n{font-family:var(--mono);font-size:11px;color:var(--accent);font-weight:500;letter-spacing:.08em}
+.step h3{font-family:var(--display);font-size:22px;font-weight:400;margin:10px 0 6px}
+.step p{margin:0;font-size:14px;color:var(--ink-2)}
+
+/* ---------- console ---------- */
+section{padding:64px 0}
+h2{font-family:var(--display);font-size:clamp(28px,4vw,40px);font-weight:400;
+  letter-spacing:-.012em;margin:0 0 10px;text-wrap:balance}
+.sub{color:var(--ink-2);max-width:62ch;margin:0 0 28px}
+
+.panel{background:var(--panel);border:1px solid var(--rule-soft);border-radius:3px;
+  padding:26px;box-shadow:var(--shadow)}
+form{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+label{display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--muted);font-weight:600;margin-bottom:6px}
+input,select{
+  width:100%;font:inherit;font-size:15px;font-family:var(--sans);color:var(--ink);
+  background:var(--panel-2);border:1px solid var(--rule);border-radius:2px;padding:10px 12px;
+}
+input[type=number]{font-family:var(--mono)}
+.field.wide{grid-column:1 / -1}
+.hint{font-size:12.5px;color:var(--muted);margin-top:6px}
+.hint b{color:var(--ink-2)}
+
+.progress{height:3px;background:var(--panel-3);border-radius:2px;overflow:hidden;margin:18px 0 10px}
+.progress i{display:block;height:100%;background:var(--accent);width:0;
+  transition:width .6s cubic-bezier(.3,.7,.2,1)}
+.status{font-size:14px;color:var(--ink-2);display:flex;gap:10px;align-items:center}
+.spinner{width:13px;height:13px;border:2px solid var(--rule);border-top-color:var(--accent);
+  border-radius:50%;animation:spin .8s linear infinite;flex:0 0 auto}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.result{display:grid;gap:1px;background:var(--rule);border:1px solid var(--rule);margin-top:22px}
+.cell{background:var(--panel);padding:18px 20px}
+.cell .k{font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.cell .v{font-family:var(--mono);font-size:25px;font-weight:500;letter-spacing:-.02em;margin-top:8px}
+.cell .s{font-size:12.5px;color:var(--muted);margin-top:5px}
+@media (min-width:720px){.result{grid-template-columns:repeat(4,1fr)}}
+
+pre{background:var(--panel-2);border:1px solid var(--rule-soft);border-radius:2px;
+  padding:16px;overflow-x:auto;font-family:var(--mono);font-size:12.5px;line-height:1.6;margin:0}
+pre .c{color:var(--muted)}
+pre .m{color:var(--accent);font-weight:500}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;
+  padding:3px 10px;border-radius:99px;border:1px solid currentColor}
+.pill.ok{color:var(--good)} .pill.warn{color:var(--serious)} .pill.info{color:var(--muted)}
+.err{color:var(--crit);font-size:14px;margin-top:12px}
+
+svg{display:block;width:100%;height:auto;overflow:visible}
+.axis{font-size:10.5px;fill:var(--muted);font-family:var(--mono)}
+.gridline{stroke:var(--grid);stroke-width:1}
+
+footer{border-top:1px solid var(--rule);padding:40px 0 64px;color:var(--muted);font-size:13.5px}
+footer a{color:var(--accent)}
+
+.rise{opacity:0;transform:translateY(14px);animation:rise .7s cubic-bezier(.2,.7,.2,1) forwards}
+@keyframes rise{to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){
+  .rise{animation:none;opacity:1;transform:none}
+  .spinner{animation:none}
+  button:hover,.btn:hover{transform:none}
+}
+</style>
+
+<canvas id="sky" aria-hidden="true"></canvas>
+
+<div id="page">
+<div class="wrap">
+
+  <header class="hero">
+    <div class="brand">Downside<span>Weather risk</span></div>
+    <h1 class="rise">Sensible Weather protects the guest. We protect the <em>business</em>.</h1>
+    <p class="lede rise" style="animation-delay:.12s">
+      Put in your coordinates and we fit <b>a hundred years of daily weather</b> at that exact
+      point, project it forward to 2125, and tell you what a bad season costs you — and what it
+      costs to protect against one.
+    </p>
+    <div class="cta rise" style="animation-delay:.24s">
+      <button onclick="document.getElementById('start').scrollIntoView({behavior:'smooth'})">
+        Model my venue
+      </button>
+      <button class="ghost" onclick="document.getElementById('how').scrollIntoView({behavior:'smooth'})">
+        How it works
+      </button>
+      <span class="pill info" id="apistatus">checking service…</span>
+    </div>
+  </header>
+
+  <div class="steps" id="how">
+    <div class="step"><div class="n">01</div><h3>Give us a point</h3>
+      <p>Coordinates, not a town. An airport gauge eighteen miles away is a materially
+         different bet, and that gap gets priced.</p></div>
+    <div class="step"><div class="n">02</div><h3>We fit the record</h3>
+      <p>A century of daily observations from NOAA, fitted against modelled global temperature
+         rather than against calendar time. Takes a couple of minutes, once.</p></div>
+    <div class="step"><div class="n">03</div><h3>Add your revenue</h3>
+      <p>Daily revenue for two or three seasons. We regress your actual weather sensitivity
+         instead of asking you what threshold hurts.</p></div>
+    <div class="step"><div class="n">04</div><h3>Get a number</h3>
+      <p>Expected loss, the distribution around it, what cover costs, and how much of it
+         your balance sheet justifies buying.</p></div>
+  </div>
+
+  <section id="start">
+    <h2>Model your venue</h2>
+    <p class="sub">This runs against the live API. Nothing here is precomputed — the coordinates
+      you type are fetched, fitted and priced on the spot.</p>
+
+    <div class="panel">
+      <form id="siteForm" autocomplete="off">
+        <div class="field wide">
+          <label for="f-name">Venue name</label>
+          <input id="f-name" required value="Charleston Waterfront Park">
+        </div>
+        <div class="field">
+          <label for="f-lat">Latitude</label>
+          <input id="f-lat" type="number" step="0.0001" required value="32.7796">
+        </div>
+        <div class="field">
+          <label for="f-lon">Longitude</label>
+          <input id="f-lon" type="number" step="0.0001" required value="-79.9245">
+        </div>
+        <div class="field">
+          <label for="f-vertical">Business type</label>
+          <select id="f-vertical"></select>
+        </div>
+        <div class="field">
+          <label for="f-from">Season starts</label>
+          <select id="f-from"></select>
+        </div>
+        <div class="field">
+          <label for="f-to">Season ends</label>
+          <select id="f-to"></select>
+        </div>
+        <div class="field">
+          <label for="f-vcr">Variable cost ratio</label>
+          <input id="f-vcr" type="number" step="0.01" min="0" max="0.95" value="0.32">
+          <div class="hint">Loss is <b>contribution margin</b>, not revenue. A washed-out
+            $40k day that saves $12k of variable cost is a $28k loss.</div>
+        </div>
+        <div class="field wide">
+          <button type="submit" id="go">Fit a century of weather here</button>
+          <span class="hint" style="margin-left:12px">Takes 1–3 minutes. Runs once per venue.</span>
+        </div>
+      </form>
+
+      <div id="running" hidden>
+        <div class="progress"><i id="bar"></i></div>
+        <div class="status"><span class="spinner"></span><span id="step">Starting…</span></div>
+      </div>
+      <div class="err" id="err" hidden></div>
+    </div>
+
+    <div id="out" hidden>
+      <div class="result" id="cells"></div>
+      <div class="panel" style="margin-top:22px">
+        <h3 style="font-family:var(--display);font-weight:400;font-size:24px;margin:0 0 4px">
+          Your loss curve</h3>
+        <p class="sub" style="margin-bottom:18px">Contribution margin lost per day, regressed
+          against the settlement variable. Flat, then a cliff — that edge is your real trigger,
+          and you did not have to know it.</p>
+        <div id="curve"></div>
+      </div>
+      <div class="panel" style="margin-top:22px">
+        <h3 style="font-family:var(--display);font-weight:400;font-size:24px;margin:0 0 4px">
+          Terms we would suggest</h3>
+        <div id="terms"></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Or drive it from your own systems</h2>
+    <p class="sub">Everything the page above does is a public endpoint. Booking systems, BI tools
+      and finance stacks can call it directly.</p>
+    <pre><span class="c"># sign up once; the key is shown once</span>
+curl -X POST $API<span class="m">/v1/accounts</span> -d '{"name":"...","email":"..."}'
+
+<span class="c"># add a venue --- returns 202 with a job to poll</span>
+curl -X POST $API<span class="m">/v1/sites</span> -H "authorization: Bearer $KEY" \
+  -d '{"name":"...","lat":32.7796,"lon":-79.9245,"vertical":"Waterfront venue",
+       "season_start_month":3,"season_end_month":11,"variable_cost_ratio":0.32}'
+
+<span class="c"># your daily revenue --- the single most valuable input</span>
+curl -X POST $API<span class="m">/v1/sites/$SITE/revenue</span> -F file=@revenue.csv
+
+<span class="c"># your exposure, suggested terms, a price, and how much to buy</span>
+curl $API<span class="m">/v1/sites/$SITE/exposure</span>
+curl $API<span class="m">/v1/sites/$SITE/suggested-terms</span>
+curl -X POST $API<span class="m">/v1/sites/$SITE/quote</span>  -d '{...}'
+curl -X POST $API<span class="m">/v1/sites/$SITE/hedge</span>  -d '{...}'</pre>
+    <p class="hint" style="margin-top:14px">Full reference at <b>/docs</b>.</p>
+  </section>
+
+  <footer>
+    <p><b>What to be honest about.</b> Without your revenue the loss curve is fitted against
+    placeholder data and describes a plausible business rather than yours. Out-of-sample skill
+    against plain climatology is a couple of percent — the value is in the trend, the tails and
+    the distribution, not in daily point forecasts. Sites whose station record has an unexplained
+    discontinuity are flagged and not quoted.</p>
+    <p style="margin-bottom:0">Already fitted a venue? <a href="/dashboard">Open the terminal →</a></p>
+  </footer>
+</div>
+</div>
+
+<script type="module">
+__CANVAS__
+
+const API = location.origin;
+const NS = 'http://www.w3.org/2000/svg';
+const MONTHS = ['January','February','March','April','May','June','July','August',
+                'September','October','November','December'];
+const money = n => { const a=Math.abs(n);
+  return a>=1e6?'$'+(n/1e6).toFixed(2)+'M' : a>=1e3?'$'+(n/1e3).toFixed(0)+'k' : '$'+n.toFixed(0); };
+const f = (n,d=1)=>Number(n).toFixed(d);
+
+const sky = new WeatherCanvas(document.getElementById('sky'));
+sky.set({ wet:.34, heavy:.05, snow:0, windy:.12, hot:.18, tmax:22, wind:5 });
+sky.start();
+
+/* ---- form scaffolding ---- */
+const vertSel = document.getElementById('f-vertical');
+const fromSel = document.getElementById('f-from');
+const toSel   = document.getElementById('f-to');
+MONTHS.forEach((m,i)=>{
+  fromSel.add(new Option(m, i+1, false, i===2));
+  toSel.add(new Option(m, i+1, false, i===10));
+});
+
+fetch(API + '/v1/health').then(r=>r.json()).then(d=>{
+  d.verticals.forEach(v=>vertSel.add(new Option(v, v, false, v==='Waterfront venue')));
+  const p = document.getElementById('apistatus');
+  p.className = 'pill ok'; p.textContent = 'service online';
+}).catch(()=>{
+  const p = document.getElementById('apistatus');
+  p.className = 'pill warn';
+  p.textContent = 'API not reachable — start it with: uvicorn api.main:app';
+  ['Ski resort','Golf resort','Festival grounds','Winery & events','Campground group',
+   'Waterfront venue','Outdoor attraction'].forEach(v=>vertSel.add(new Option(v,v)));
+});
+
+/* ---- the flow ---- */
+let KEY = sessionStorage.getItem('downside_key') || null;
+
+async function api(path, opts={}) {
+  const res = await fetch(API + path, {
+    ...opts,
+    headers: { ...(opts.headers||{}), ...(KEY ? {authorization:'Bearer '+KEY} : {}) },
+  });
+  if (!res.ok) {
+    let detail = res.statusText;
+    try { detail = (await res.json()).detail || detail; } catch {}
+    throw new Error(detail);
+  }
+  return res.json();
+}
+
+async function ensureAccount() {
+  if (KEY) return;
+  const acct = await api('/v1/accounts', {
+    method:'POST',
+    headers:{'content-type':'application/json'},
+    body: JSON.stringify({
+      name: document.getElementById('f-name').value + ' (demo)',
+      // A throwaway account per browser session; a real signup collects this.
+      email: 'demo+' + Math.random().toString(36).slice(2,10) + '@downside.example',
+    }),
+  });
+  KEY = acct.api_key;
+  sessionStorage.setItem('downside_key', KEY);
+}
+
+const bar = document.getElementById('bar');
+const stepEl = document.getElementById('step');
+const errEl = document.getElementById('err');
+
+document.getElementById('siteForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  errEl.hidden = true;
+  document.getElementById('go').disabled = true;
+  document.getElementById('running').hidden = false;
+  document.getElementById('out').hidden = true;
+
+  try {
+    await ensureAccount();
+    stepEl.textContent = 'Creating the venue…';
+    bar.style.width = '6%';
+
+    const created = await api('/v1/sites', {
+      method:'POST', headers:{'content-type':'application/json'},
+      body: JSON.stringify({
+        name: document.getElementById('f-name').value,
+        lat: parseFloat(document.getElementById('f-lat').value),
+        lon: parseFloat(document.getElementById('f-lon').value),
+        vertical: vertSel.value,
+        season_start_month: parseInt(fromSel.value,10),
+        season_end_month: parseInt(toSel.value,10),
+        variable_cost_ratio: parseFloat(document.getElementById('f-vcr').value),
+      }),
+    });
+    const siteId = created.site.id;
+
+    // Poll until the fit lands. Progress and step text come from the worker.
+    for (;;) {
+      await new Promise(r=>setTimeout(r, 3000));
+      const s = await api('/v1/sites/' + siteId);
+      const job = s.job || {};
+      bar.style.width = Math.max(6, (job.progress||0)*100) + '%';
+      if (job.step) stepEl.textContent = job.step + '…';
+      if (s.site.status === 'ready') break;
+      if (s.site.status === 'failed') throw new Error(job.error || 'Fitting failed.');
+    }
+
+    bar.style.width = '100%';
+    stepEl.textContent = 'Computing your exposure…';
+    const [exposure, terms, site] = await Promise.all([
+      api('/v1/sites/'+siteId+'/exposure'),
+      api('/v1/sites/'+siteId+'/suggested-terms'),
+      api('/v1/sites/'+siteId),
+    ]);
+
+    let quote = null;
+    if (terms.available) {
+      stepEl.textContent = 'Pricing…';
+      quote = await api('/v1/sites/'+siteId+'/quote', {
+        method:'POST', headers:{'content-type':'application/json'},
+        body: JSON.stringify({
+          peril_id: terms.peril_id, year: terms.year,
+          payout_per_day: terms.payout_per_day, limit: terms.limit,
+          attachment_days: terms.attachment_days,
+        }),
+      });
+    }
+
+    document.getElementById('running').hidden = true;
+    render(site, exposure, terms, quote);
+
+  } catch (ex) {
+    errEl.hidden = false;
+    errEl.textContent = ex.message;
+    document.getElementById('running').hidden = true;
+  } finally {
+    document.getElementById('go').disabled = false;
+  }
+});
+
+function render(site, exposure, terms, quote) {
+  const out = document.getElementById('out');
+  out.hidden = false;
+
+  const s = site.site;
+  const cells = [
+    ['Record fitted', s.provenance === 'noaa-ghcnd' ? 'NOAA station' :
+       s.provenance === 'era5-openmeteo' ? 'ERA5' : 'Surrogate',
+     s.provenance === 'noaa-ghcnd' ? '100 years of station observations'
+       : s.provenance === 'era5-openmeteo' ? 'Reanalysis at your exact point'
+       : 'No real record reachable'],
+    ['Your trigger', f(exposure.breakpoint,1) + (exposure.variable==='precip_mm'?' mm':' °C'),
+     'Regressed from revenue, not asked'],
+    ['Expected seasonal loss', money(exposure.expected_seasonal_loss),
+     '1-in-20 bad season: ' + money(exposure.p95_seasonal_loss)],
+    quote
+      ? ['Cover would cost', money(quote.mid),
+         'Rate on line ' + (quote.rate_on_line*100).toFixed(1) + '% · pays ' +
+         (quote.prob_trigger*100).toFixed(0) + '% of seasons']
+      : ['Cover', '—', 'No peril here triggers often enough to underwrite'],
+  ];
+  const host = document.getElementById('cells');
+  host.innerHTML = '';
+  cells.forEach(([k,v,sub],i)=>{
+    const d = document.createElement('div');
+    d.className = 'cell rise'; d.style.animationDelay = (i*70)+'ms';
+    d.innerHTML = `<div class="k">${k}</div><div class="v">${v}</div><div class="s">${sub}</div>`;
+    host.appendChild(d);
+  });
+
+  drawCurve(exposure);
+
+  const t = document.getElementById('terms');
+  t.innerHTML = terms.available
+    ? `<p class="sub" style="margin:0 0 16px">${terms.rationale}</p>
+       <div class="result" style="margin:0">
+         <div class="cell"><div class="k">Peril</div><div class="v" style="font-size:19px">${terms.peril}</div></div>
+         <div class="cell"><div class="k">Attaches after</div><div class="v">${terms.attachment_days}<span style="font-size:14px"> days</span></div></div>
+         <div class="cell"><div class="k">Pays per day</div><div class="v">${money(terms.payout_per_day)}</div></div>
+         <div class="cell"><div class="k">Limit</div><div class="v">${money(terms.limit)}</div></div>
+       </div>
+       <p class="hint" style="margin-top:16px"><b>Upload your daily revenue</b> to replace the
+       placeholder behind this loss curve. That is the input that turns a plausible number into
+       your number.</p>`
+    : `<p class="sub" style="margin:0">${terms.reason}</p>`;
+
+  out.scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function drawCurve(exposure) {
+  const R = exposure.curve.filter(r => r.x <= (exposure.variable==='precip_mm'?55:45));
+  const W=1000,H=280,M={t:16,r:20,b:44,l:70};
+  const svg = document.createElementNS(NS,'svg');
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+  const E=(tag,a)=>{const e=document.createElementNS(NS,tag);
+    for(const k in a) e.setAttribute(k,a[k]); svg.appendChild(e); return e;};
+
+  const xs=R.map(d=>d.x), hi=Math.max(...R.map(d=>d.loss),1)*1.12;
+  const xmax=Math.max(...xs,1);
+  const X=v=>M.l+(v/xmax)*(W-M.l-M.r), Y=v=>H-M.b-(v/hi)*(H-M.t-M.b);
+
+  for(let i=0;i<=4;i++){
+    const t=hi*i/4;
+    E('line',{x1:M.l,x2:W-M.r,y1:Y(t),y2:Y(t),class:'gridline'});
+    const lab=E('text',{x:M.l-9,y:Y(t)+4,class:'axis','text-anchor':'end'});
+    lab.textContent=money(t);
+  }
+  for(let i=0;i<=5;i++){
+    const v=xmax*i/5;
+    const lab=E('text',{x:X(v),y:H-M.b+18,class:'axis','text-anchor':'middle'});
+    lab.textContent=v.toFixed(0);
+  }
+  const path=R.map((d,i)=>(i?'L':'M')+X(d.x).toFixed(1)+' '+Y(d.loss).toFixed(1)).join(' ');
+  E('path',{d:path+`L${X(xmax)} ${Y(0)}L${X(0)} ${Y(0)}Z`,fill:'var(--accent)','fill-opacity':.10});
+  const line=E('path',{d:path,fill:'none',stroke:'var(--accent)','stroke-width':2.6,'stroke-linecap':'round'});
+  if(!matchMedia('(prefers-reduced-motion: reduce)').matches){
+    const L=line.getTotalLength();
+    line.animate([{strokeDasharray:L,strokeDashoffset:L},{strokeDasharray:L,strokeDashoffset:0}],
+      {duration:1200,easing:'cubic-bezier(.4,.1,.2,1)',fill:'forwards'});
+  }
+  const bp=exposure.breakpoint;
+  if(bp>0 && bp<=xmax){
+    E('line',{x1:X(bp),x2:X(bp),y1:M.t,y2:H-M.b,stroke:'var(--ember)','stroke-width':1.6,'stroke-dasharray':'4 3'});
+    const t=E('text',{x:X(bp)+7,y:M.t+13,class:'axis',fill:'var(--ember)','font-weight':'500'});
+    t.textContent=f(bp,1)+(exposure.variable==='precip_mm'?' mm — the cliff':' °C — the cliff');
+  }
+  const ax=E('text',{x:(M.l+W-M.r)/2,y:H-6,class:'axis','text-anchor':'middle'});
+  ax.textContent = exposure.variable==='precip_mm' ? 'daily rainfall (mm)'
+                 : exposure.variable==='tmax_c' ? 'daily maximum temperature (°C)'
+                 : exposure.variable;
+  const host=document.getElementById('curve');
+  host.innerHTML=''; host.appendChild(svg);
+}
+</script>
