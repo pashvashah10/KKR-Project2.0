@@ -532,10 +532,12 @@ function view_hedge(L){
    <div class="grid g4" id="h-stats"></div>
    <div class="grid g2" style="margin-top:14px">
      <div class="card"><h4>Loss curve — regressed, not asked</h4><div id="h-loss"></div>
-       <figcaption>Contribution margin lost per day vs rainfall, from a piecewise-linear fit.
-       The curve is flat then falls off a cliff at <b>${f(lc.breakpoint,1)} mm</b>. Ask an operator
-       and you get "rain hurts us". <b>Revenue here is placeholder</b> — real daily revenue is the
-       single most valuable input this platform takes.</figcaption></div>
+       <figcaption>Contribution margin lost per day vs ${lossAxisLabel(L).replace(/ \(.*/,'')},
+       from a piecewise-linear fit. The curve is flat then falls off a cliff at
+       <b>${f(lc.breakpoint,1)} ${lossUnit(L)}</b>. Ask an operator and you get "bad weather hurts us".
+       Fitted on the <b>contract's own settlement variable</b>, so the hedge ratio beside it means
+       something. <b>Revenue here is placeholder</b> — real daily revenue is the single most valuable
+       input this platform takes.</figcaption></div>
      <div class="card"><h4>Ruin probability vs hedge size</h4><div id="h-frontier"></div>
        <figcaption>Hedging past the marked point buys risk premium, not survival.</figcaption></div>
    </div>`;
@@ -921,7 +923,8 @@ function drawLoss(host,L,W,H){
   E('line',{x1:x(bp),x2:x(bp),y1:M.t,y2:H-M.b,stroke:'var(--accent)','stroke-width':1.5,'stroke-dasharray':'4 3'},s);
   E('text',{x:x(bp)+5,y:M.t+11,class:'slab',fill:'var(--accent)'},s).textContent=f(bp,1)+' mm — the cliff';
   E('line',{x1:M.l,x2:W-M.r,y1:H-M.b,y2:H-M.b,class:'axisline'},s);
-  E('text',{x:(M.l+W-M.r)/2,y:H-4,class:'axis','text-anchor':'middle'},s).textContent='daily rainfall (mm)';
+  E('text',{x:(M.l+W-M.r)/2,y:H-4,class:'axis','text-anchor':'middle'},s)
+    .textContent=lossAxisLabel(L);
   drawIn(host,s);
 }
 
@@ -1019,6 +1022,19 @@ function prettyTerm(n){
     .replace(/^global_cos(\d)$/,'Seasonal amplification cos $1')
     .replace(/^global_sin(\d)$/,'Seasonal amplification sin $1');
 }
+function lossAxisLabel(L){
+  const v=L.loss_curve&&L.loss_curve.variable;
+  return v==='tmax_c'?'daily maximum temperature (°C)'
+       : v==='tmin_c'?'daily minimum temperature (°C)'
+       : v==='wind_ms'?'daily mean wind (m/s)'
+       : v==='snow_mm'?'daily snowfall (mm)'
+       : 'daily rainfall (mm)';
+}
+function lossUnit(L){
+  const v=L.loss_curve&&L.loss_curve.variable;
+  return (v==='tmax_c'||v==='tmin_c')?'°C' : v==='wind_ms'?'m/s' : 'mm';
+}
+
 function sourceLabel(L){
   return L.provenance==='noaa-ghcnd' ? `station ${L.station}`
        : L.provenance==='era5-openmeteo' ? 'ERA5 reanalysis'

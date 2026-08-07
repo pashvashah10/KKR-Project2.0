@@ -244,16 +244,6 @@ def build_location(loc, verbose: bool = True) -> dict:
 
     # --- loss curve + pricing + hedge -----------------------------------------
     revenue = synthetic_revenue(record, loc.vertical)
-    lc = fit_loss_curve(record, revenue, "precip_mm", variable_cost_ratio=0.30)
-    out["loss_curve"] = {
-        "r2": r3(lc.r_squared),
-        "breakpoint": r3(lc.breakpoint),
-        "baseline": r3(lc.baseline_margin),
-        "rows": [{"x": r3(r["x"]), "loss": r3(r["loss"])} for r in lc.curve_rows() if r["x"] <= 55],
-        "segments": [
-            {"from": r3(s["from"]), "to": r3(s["to"]), "slope": r3(s["slope"])} for s in lc.segment_slopes
-        ],
-    }
 
     # A realistic contract: aggregate cover with an attachment, so it pays for a
     # genuinely bad season rather than for the ordinary friction the business
@@ -287,14 +277,36 @@ def build_location(loc, verbose: bool = True) -> dict:
         # Nothing at this site triggers often enough to underwrite.
         out["contract"] = None
         out["hedge"] = None
+        out["loss_curve"] = None
         best = primary.label if primary else "none eligible"
         if verbose:
             print(f"  {loc.id:14s} no sellable peril (best {best} at "
                   f"{typical_days:.2f} days/season)", flush=True)
         return out
 
+    # The loss curve is fitted on the *contract's own* settlement variable.
+    #
+    # Fitting it on rainfall regardless of the peril made the hedge meaningless:
+    # a rain-driven loss against a heat-driven payout correlated at rho = -0.01,
+    # so basis risk read 100% and no notional could reduce ruin. The operator's
+    # loss and the contract's trigger have to be measured on the same quantity
+    # before a hedge ratio means anything.
+    lc = fit_loss_curve(record, revenue, primary.variable, variable_cost_ratio=0.30)
+    x_cap = 55 if primary.variable == "precip_mm" else 1e9
+    out["loss_curve"] = {
+        "variable": primary.variable,
+        "unit": primary.unit,
+        "r2": r3(lc.r_squared),
+        "breakpoint": r3(lc.breakpoint),
+        "baseline": r3(lc.baseline_margin),
+        "rows": [{"x": r3(r["x"]), "loss": r3(r["loss"])} for r in lc.curve_rows() if r["x"] <= x_cap],
+        "segments": [
+            {"from": r3(s["from"]), "to": r3(s["to"]), "slope": r3(s["slope"])} for s in lc.segment_slopes
+        ],
+    }
+
     attach = int(max(np.ceil(typical_days * 1.25), 1))
-    per_day = round(lc.baseline_margin * 0.55, -2) or 5000.0
+    per_day = round(max(lc.baseline_margin, 1000.0) * 0.55, -2) or 5000.0
 
     quotes = []
     for yr in TARGET_YEARS:
@@ -348,7 +360,7 @@ def build_location(loc, verbose: bool = True) -> dict:
 
     # --- hedge frontier --------------------------------------------------------
     sim_h = model.simulate(TARGET_YEARS[0], window, BASE, n_paths=N_PATHS, rng=np.random.default_rng(99))
-    loss = lc.loss_at(sim_h.precip_mm).sum(axis=1)
+    loss = lc.loss_at(sim_h.get(primary.variable)).sum(axis=1)
     contract0 = Contract(
         id="hedge", location_id=loc.id, peril_id=primary.id, year=TARGET_YEARS[0],
         doy_start=int(window[0]), doy_end=int(window[-1]), structure="aggregate",
