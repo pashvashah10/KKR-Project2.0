@@ -29,7 +29,11 @@ from downside.tails import fit_gpd  # noqa: E402
 
 BASE = SCENARIOS_BY_ID["ssp245"]
 TARGET_YEARS = [2027, 2040, 2055, 2075, 2100, 2125]
-N_PATHS = 3000
+N_PATHS = 2500
+#: Paths per cell of the peril grid (8 perils x 4 scenarios x 6 years). This
+#: dominates runtime, and the quantity being estimated is a mean day count over
+#: a season, which converges far faster than a tail statistic.
+N_PATHS_GRID = 500
 
 
 def season_window(lo_month: int, hi_month: int) -> np.ndarray:
@@ -139,14 +143,34 @@ def build_location(loc, verbose: bool = True) -> dict:
     perils = perils_for(loc)
     peril_rows: list[dict] = []
     ambient: dict = {}
+
+    # Simulate each (scenario, year) cell once and evaluate every peril against
+    # it, rather than re-simulating per peril. The perils read different
+    # variables off the same weather, so the old loop was paying for eight
+    # identical simulations to answer eight questions about one.
+    grid: dict = {}
+    for sc in SCENARIOS:
+        for yr in TARGET_YEARS:
+            grid[(sc.id, yr)] = model.simulate(
+                yr, window, sc, n_paths=N_PATHS_GRID,
+                rng=np.random.default_rng(yr * 31 + (hash(sc.id) % 977)),
+            )
+
     for peril in perils:
-        series = {}
-        for sc in SCENARIOS:
-            counts = []
-            for yr in TARGET_YEARS:
-                sim = model.simulate(yr, window, sc, n_paths=1000, rng=np.random.default_rng(yr + hash(sc.id) % 1000))
-                counts.append(r3(peril.triggered(sim.get(peril.variable)).sum(axis=1).mean()))
-            series[sc.id] = counts
+        # A `consecutive` peril (a heat wave, a run of shutdown days) already
+        # reduces to one value per path --- did a long enough run occur --- so its
+        # series is the *probability* of a qualifying spell, not a day count.
+        # Every other statistic is evaluated per day and summed over the season.
+        spell = peril.statistic == "consecutive"
+
+        def measure(sim, p=peril, spell=spell):
+            hit = p.triggered(sim.get(p.variable))
+            return r3(hit.mean() if spell else hit.sum(axis=1).mean())
+
+        series = {
+            sc.id: [measure(grid[(sc.id, yr)]) for yr in TARGET_YEARS]
+            for sc in SCENARIOS
+        }
         peril_rows.append(
             {
                 "id": peril.id,
@@ -157,6 +181,7 @@ def build_location(loc, verbose: bool = True) -> dict:
                 "description": peril.description,
                 "window_days": peril.window_days,
                 "series": series,
+                "measure": "probability" if spell else "days",
                 "usable": record.usable(peril.variable),
             }
         )
@@ -171,7 +196,7 @@ def build_location(loc, verbose: bool = True) -> dict:
     for sc in SCENARIOS:
         rows = []
         for yr in TARGET_YEARS:
-            sim = model.simulate(yr, window, sc, n_paths=600, rng=np.random.default_rng(yr * 7 + 3))
+            sim = grid[(sc.id, yr)]
             wet = sim.precip_mm >= 0.254
             rows.append(
                 {
@@ -310,6 +335,14 @@ def build_location(loc, verbose: bool = True) -> dict:
     return out
 
 
+def _safe_build(loc):
+    try:
+        return build_location(loc)
+    except Exception as exc:  # noqa: BLE001
+        print(f"  {loc.id:14s} FAILED: {type(exc).__name__}: {exc}", flush=True)
+        return None
+
+
 def main() -> None:
     payload = {
         "generated": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
@@ -319,11 +352,19 @@ def main() -> None:
         ],
         "locations": [],
     }
-    for loc in LOCATIONS:
-        try:
-            payload["locations"].append(build_location(loc))
-        except Exception as exc:  # noqa: BLE001
-            print(f"  {loc.id:14s} FAILED: {type(exc).__name__}: {exc}")
+
+    # Sites are independent, so fan them across cores. Each worker does its own
+    # network fetch, which is cached on disk after the first run.
+    import multiprocessing as mp
+
+    workers = min(4, len(LOCATIONS))
+    with mp.Pool(workers) as pool:
+        results = pool.map(_safe_build, list(LOCATIONS))
+
+    order = {loc.id: i for i, loc in enumerate(LOCATIONS)}
+    payload["locations"] = sorted(
+        [r for r in results if r], key=lambda r: order.get(r["id"], 99)
+    )
 
     dest = Path(__file__).resolve().parents[2] / "web" / "data" / "dashboard.json"
     dest.parent.mkdir(parents=True, exist_ok=True)

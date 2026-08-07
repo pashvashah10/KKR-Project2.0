@@ -743,12 +743,14 @@ function drawUncertainty(host,L,W,H,leg){
 function drawPeril(host,L,p,W,H){
   const M={t:12,r:14,b:26,l:38};
   const s=SVG(W,H), yrs=L.target_years;
+  const isProb=p.measure==='probability';
   const all=D.scenarios.flatMap(x=>p.series[x.id]);
-  const hi=Math.max(...all,1)*1.15;
+  const hi=isProb?Math.min(Math.max(...all,0.05)*1.3,1):Math.max(...all,1)*1.15;
   const x=sc(0,yrs.length-1,M.l,W-M.r), y=sc(0,hi,H-M.b,M.t);
   ticks(0,hi,3).forEach(t=>{
     E('line',{x1:M.l,x2:W-M.r,y1:y(t),y2:y(t),class:'gridline'},s);
-    E('text',{x:M.l-7,y:y(t)+4,class:'axis','text-anchor':'end'},s).textContent=f(t,0);
+    E('text',{x:M.l-7,y:y(t)+4,class:'axis','text-anchor':'end'},s)
+      .textContent=isProb?pct(t):f(t,0);
   });
   yrs.forEach((yr,i)=>E('text',{x:x(i),y:H-M.b+16,class:'axis','text-anchor':'middle'},s).textContent=yr);
   E('line',{x1:M.l,x2:W-M.r,y1:H-M.b,y2:H-M.b,class:'axisline'},s);
@@ -763,7 +765,8 @@ function drawPeril(host,L,p,W,H){
   });
   E('circle',{cx:x(state.yearIdx),cy:y(p.series[state.scenario][state.yearIdx]),r:6,
     fill:'none',stroke:'var(--ink)','stroke-width':1.6},s);
-  E('text',{x:M.l,y:H-6,class:'axis'},s).textContent='days per season';
+  E('text',{x:M.l,y:H-6,class:'axis'},s).textContent=
+    isProb?`chance of a ${p.window_days}-day spell per season`:'days per season';
   drawIn(host,s);
 }
 
