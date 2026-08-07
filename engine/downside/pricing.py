@@ -40,7 +40,7 @@ two screens describe the two sides of the same trade.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, fields
 
 import numpy as np
 
@@ -216,9 +216,15 @@ class Quote:
     scenario_theos: dict = field(default_factory=dict)
 
     def to_dict(self) -> dict:
+        # `slots=True` means there is no __dict__; iterate the declared fields.
         return {
-            k: (float(v) if isinstance(v, (int, float, np.floating)) else v)
-            for k, v in self.__dict__.items()
+            f.name: (
+                float(getattr(self, f.name))
+                if isinstance(getattr(self, f.name), (int, float, np.floating))
+                and not isinstance(getattr(self, f.name), bool)
+                else getattr(self, f.name)
+            )
+            for f in fields(self)
         }
 
 
