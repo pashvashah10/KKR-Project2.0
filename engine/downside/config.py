@@ -30,17 +30,16 @@ def in_to_mm(inches: float) -> float:
     return inches * 25.4
 
 
-#: Daily *maximum* sustained wind runs well above the daily *mean*. The engine
-#: models the maximum, because that is what stops a lift or a rigging crew, but
-#: published normals quote the mean --- so the mean is scaled by this ratio.
-WIND_MAX_TO_MEAN = 1.78
-
-
 @dataclass(frozen=True, slots=True)
 class ClimateNormals:
     """Monthly 1991-2020 normals, metric. Twelve entries each, January first.
 
-    `wind_ms` is the monthly mean 10-m wind speed in m/s (not the daily maximum);
+    `wind_ms` is the monthly mean 10-m wind speed in m/s. Daily mean wind is the
+    canonical definition across the engine because it is what GHCN-Daily AWND
+    reports and therefore what a contract settles on. Daily *maximum* wind runs
+    roughly 1.8x higher; mixing the two would make a site's wind price depend on
+    which data adapter happened to answer.
+
     `wet_days` counts days at or above 0.01 in / 0.254 mm.
     """
 
@@ -49,10 +48,6 @@ class ClimateNormals:
     precip_mm: tuple[float, ...]
     wet_days: tuple[float, ...]
     wind_ms: tuple[float, ...]
-
-    @property
-    def wind_max_ms(self) -> tuple[float, ...]:
-        return tuple(v * WIND_MAX_TO_MEAN for v in self.wind_ms)
 
     @staticmethod
     def from_imperial(
@@ -519,9 +514,14 @@ PERILS: tuple[Peril, ...] = (
         variable="wind_ms",
         statistic="daily",
         comparator="ge",
-        threshold=13.4,
+        threshold=10.3,
         unit="m/s",
-        description="Sustained wind at or above 30 mph. Lifts, rigging and marine ops all stop.",
+        description=(
+            "Daily mean wind at or above 10.3 m/s (23 mph). Gusts on such a day run "
+            "well past 40 mph, which is where lifts, rigging and marine ops stop. "
+            "Set on daily mean because that is the quantity GHCN-Daily reports and "
+            "therefore the one a contract can settle on."
+        ),
         applies_to=("Ski resort", "Waterfront venue", "Festival grounds"),
     ),
     Peril(

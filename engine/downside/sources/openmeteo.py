@@ -32,7 +32,11 @@ FIELDS = {
     "temperature_2m_min": "tmin_c",
     "precipitation_sum": "precip_mm",
     "snowfall_sum": "snow_mm",
-    "wind_speed_10m_max": "wind_ms",
+    # Daily *mean*, to match GHCN-Daily AWND. Requesting the daily maximum here
+    # instead would silently make ERA5-sourced sites ~1.8x windier than
+    # station-sourced ones, and every wind price would depend on which adapter
+    # happened to answer.
+    "wind_speed_10m_mean": "wind_ms",
 }
 
 

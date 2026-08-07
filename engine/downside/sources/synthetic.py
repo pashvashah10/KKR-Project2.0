@@ -155,7 +155,7 @@ class SyntheticSource:
         # -- seasonal climatology from published normals -----------------
         seas_tmax = _daily_from_monthly(location.normals.tmax_c, doy, link="identity")
         seas_tmin = _daily_from_monthly(location.normals.tmin_c, doy, link="identity")
-        seas_wind = np.clip(_daily_from_monthly(location.normals.wind_max_ms, doy, link="log"), 0.6, None)
+        seas_wind = np.clip(_daily_from_monthly(location.normals.wind_ms, doy, link="log"), 0.4, None)
 
         # -- forcing-driven warming --------------------------------------
         # Normals describe 1991-2020, so the warming signal is expressed relative

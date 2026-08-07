@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Protocol
 
 import numpy as np
@@ -34,6 +34,13 @@ class DailyRecord:
     precip_mm: np.ndarray
     snow_mm: np.ndarray
     wind_ms: np.ndarray
+    #: Fraction of days actually observed, per variable, before gap filling.
+    #: Carried on the record because a variable the station never measured must
+    #: not be mistaken for a variable that measured zero --- see `usable`.
+    coverage: dict = field(default_factory=dict)
+    #: Per-variable origin, e.g. {"wind_ms": "surrogate"} when a field was
+    #: substituted because the primary source did not carry it.
+    variable_source: dict = field(default_factory=dict)
 
     def __len__(self) -> int:
         return len(self.dates)
@@ -48,10 +55,26 @@ class DailyRecord:
         length = np.where(_is_leap(self.year), 366.0, 365.0)
         return self.year + (self.doy - 1) / length
 
+    #: Below this share of observed days a variable is treated as not measured.
+    MIN_COVERAGE = 0.20
+
     def get(self, variable: str) -> np.ndarray:
         if variable not in VARIABLES:
             raise KeyError(f"unknown variable {variable!r}; expected one of {VARIABLES}")
         return getattr(self, variable)
+
+    def usable(self, variable: str) -> bool:
+        """Whether this variable was actually measured often enough to model.
+
+        Many GHCN stations record temperature and precipitation for a century but
+        never record wind. Gap filling turns those absent days into numbers, and
+        for a variable that is absent *everywhere* the filled series collapses to
+        a constant --- Jackson Hole came back as exactly 0.00 m/s for all 36,525
+        days. Left unchecked that prices a wind contract at zero premium with no
+        warning, so anything that consumes a variable is expected to check here
+        first.
+        """
+        return self.coverage.get(variable, 1.0) >= self.MIN_COVERAGE
 
     def subset_years(self, lo: int, hi: int) -> "DailyRecord":
         mask = (self.year >= lo) & (self.year <= hi)

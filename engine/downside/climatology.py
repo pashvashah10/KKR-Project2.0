@@ -94,9 +94,16 @@ class DesignSpec:
     #: --- urban heat island growth, a move from grass to tarmac --- get
     #: attributed to climate and extrapolated for a century. Instead the drift
     #: coefficient carries a `N(0, tau^2)` prior: real siting artefacts are
-    #: typically a couple of tenths of a degree per century, so that is the scale
+    #: typically well under a tenth of a degree per century, so that is the scale
     #: allowed. The amplification coefficient stays unpenalised.
-    drift_prior_sd: float = 0.20
+    #:
+    #: Set from the walk-forward backtest rather than by taste. At a loose 0.20
+    #: the drift term absorbs genuine warming from the training window and then
+    #: gets frozen at projection time, leaving a 0.55 degC out-of-sample cold bias
+    #: at Boston. Tightening to 0.05 halves that bias and improves RMSE at both
+    #: test sites. Dropping the term entirely scores about the same but gives up
+    #: any defence against real siting artefacts, so the tight prior wins.
+    drift_prior_sd: float = 0.05
 
 
 @dataclass(slots=True)

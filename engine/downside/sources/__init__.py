@@ -42,7 +42,23 @@ def resolve_source(prefer: str = "auto") -> list[WeatherSource]:
     return [NoaaSource(), OpenMeteoSource(), SyntheticSource()]
 
 
-def load_record(location: Location, start_year: int, end_year: int, prefer: str = "auto") -> DailyRecord:
+def load_record(
+    location: Location,
+    start_year: int,
+    end_year: int,
+    prefer: str = "auto",
+    patch_missing: bool = True,
+) -> DailyRecord:
+    """Fetch the best available record, falling back through the source chain.
+
+    With `patch_missing`, any variable the winning source did not actually
+    measure is refilled from the surrogate rather than left as gap-filled
+    constants. Jackson Hole's station, for instance, carries a century of
+    temperature and precipitation and no wind at all; without this the wind
+    series is 36,525 identical zeros and a wind contract prices at zero premium.
+    Every patched field is recorded in `variable_source` so the substitution
+    travels with the data.
+    """
     errors: list[str] = []
     for source in resolve_source(prefer):
         try:
@@ -53,5 +69,22 @@ def load_record(location: Location, start_year: int, end_year: int, prefer: str 
             continue
         if errors:
             log.info("using %s for %s after %d fallback(s)", source.name, location.id, len(errors))
+        if patch_missing and source.name != SyntheticSource.name:
+            record = _patch_unmeasured(location, record, start_year, end_year)
         return record
     raise RuntimeError(f"no source could supply {location.id}: " + "; ".join(errors))
+
+
+def _patch_unmeasured(
+    location: Location, record: DailyRecord, start_year: int, end_year: int
+) -> DailyRecord:
+    missing = [v for v in VARIABLES if not record.usable(v)]
+    if not missing:
+        return record
+
+    log.info("patching unmeasured variables for %s: %s", location.id, ", ".join(missing))
+    donor = SyntheticSource().fetch(location, start_year, end_year)
+    for var in missing:
+        setattr(record, var, donor.get(var))
+        record.variable_source[var] = f"{SyntheticSource.name} (not measured at station)"
+    return record

@@ -63,6 +63,10 @@ def assemble_daily(
         interp_ok = var in ("tmax_c", "tmin_c", "wind_ms")
         filled[var] = fill_series(raw, doy, interpolate=interp_ok, rng=rng)
 
+    # Temperature and precipitation are the load-bearing variables --- without
+    # them there is no model. Wind and snow are allowed to be missing: plenty of
+    # century-long stations never measured wind, and `DailyRecord.usable` is how
+    # downstream code finds out rather than trusting a fabricated series.
     if coverage["tmax_c"] < 0.5 and coverage["precip_mm"] < 0.5:
         raise ValueError(
             f"{location.id}: coverage too thin to model "
@@ -83,6 +87,8 @@ def assemble_daily(
         precip_mm=filled["precip_mm"],
         snow_mm=filled["snow_mm"],
         wind_ms=filled["wind_ms"],
+        coverage=coverage,
+        variable_source={v: provenance for v in filled},
     )
 
 

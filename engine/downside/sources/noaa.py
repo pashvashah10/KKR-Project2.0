@@ -117,8 +117,12 @@ class NoaaSource:
             "tmin_c": {d: v["TMIN"] for d, v in by_date.items() if "TMIN" in v},
             "precip_mm": {d: v["PRCP"] for d, v in by_date.items() if "PRCP" in v},
             "snow_mm": {d: v["SNOW"] for d, v in by_date.items() if "SNOW" in v},
-            # AWND arrives in tenths of m/s on this dataset.
-            "wind_ms": {d: v["AWND"] / 10.0 for d, v in by_date.items() if "AWND" in v},
+            # With units=metric the service returns AWND already in m/s (verified
+            # against the raw payload: Boston mid-January reads 4.5-9.8, which is
+            # daily *mean* wind, not tenths). This is the canonical definition of
+            # `wind_ms` across the engine --- GHCN-Daily AWND is what a contract
+            # would actually settle on.
+            "wind_ms": {d: v["AWND"] for d, v in by_date.items() if "AWND" in v},
         }
         return assemble_daily(
             location=location,

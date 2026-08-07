@@ -1,0 +1,1004 @@
+<title>Downside — Weather Risk Terminal</title>
+<style>
+:root{
+  color-scheme:light;
+  --ground:#F4F6F7; --panel:#FFFFFF; --panel-2:#EDF0F2; --panel-3:#E3E8EB;
+  --ink:#0F171D; --ink-2:#41525F; --muted:#6B7C8A;
+  --rule:rgba(15,23,29,.14); --rule-soft:rgba(15,23,29,.07);
+  --accent:#B4531F; --accent-soft:rgba(180,83,31,.10);
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100;
+  --grid:rgba(15,23,29,.09);
+  --good:#0ca30c; --warn:#fab219; --serious:#ec835a; --crit:#d03b3b;
+  --shadow:0 1px 2px rgba(15,23,29,.06),0 10px 30px -16px rgba(15,23,29,.28);
+  --canvas-alpha:.34;
+}
+@media (prefers-color-scheme:dark){:root:where(:not([data-theme="light"])){
+  color-scheme:dark;
+  --ground:#080D12; --panel:#0F161D; --panel-2:#16202A; --panel-3:#1E2A35;
+  --ink:#E6EDF3; --ink-2:#9FB0BE; --muted:#6B7C8A;
+  --rule:rgba(230,237,243,.14); --rule-soft:rgba(230,237,243,.07);
+  --accent:#E8974A; --accent-soft:rgba(232,151,74,.13);
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500;
+  --grid:rgba(230,237,243,.10);
+  --shadow:0 1px 2px rgba(0,0,0,.5),0 14px 40px -18px rgba(0,0,0,.85);
+  --canvas-alpha:.5;
+}}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --ground:#080D12; --panel:#0F161D; --panel-2:#16202A; --panel-3:#1E2A35;
+  --ink:#E6EDF3; --ink-2:#9FB0BE; --muted:#6B7C8A;
+  --rule:rgba(230,237,243,.14); --rule-soft:rgba(230,237,243,.07);
+  --accent:#E8974A; --accent-soft:rgba(232,151,74,.13);
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500;
+  --grid:rgba(230,237,243,.10);
+  --shadow:0 1px 2px rgba(0,0,0,.5),0 14px 40px -18px rgba(0,0,0,.85);
+  --canvas-alpha:.5;
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;background:var(--ground);color:var(--ink);
+  font-family:system-ui,-apple-system,"Segoe UI",sans-serif;
+  font-size:14.5px;line-height:1.5;-webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+#sky{
+  position:fixed;inset:0;width:100%;height:100%;z-index:0;
+  opacity:var(--canvas-alpha);pointer-events:none;
+  transition:opacity .6s ease;
+}
+#app{position:relative;z-index:1;min-height:100%;display:flex;flex-direction:column}
+
+/* ---------- header ---------- */
+header{
+  display:flex;align-items:center;gap:20px;flex-wrap:wrap;
+  padding:14px 22px;border-bottom:1px solid var(--rule);
+  background:color-mix(in srgb,var(--panel) 82%,transparent);
+  backdrop-filter:blur(14px);position:sticky;top:0;z-index:20;
+}
+.brand{display:flex;align-items:baseline;gap:10px;margin-right:auto}
+.brand b{font-size:17px;font-weight:740;letter-spacing:-.02em}
+.brand span{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:640}
+.ctl{display:flex;align-items:center;gap:8px}
+.ctl label{font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);font-weight:640}
+select,button{
+  font:inherit;font-size:13px;color:var(--ink);background:var(--panel-2);
+  border:1px solid var(--rule);border-radius:3px;padding:6px 10px;cursor:pointer;
+}
+select:hover,button:hover{background:var(--panel-3)}
+button:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible,.tab:focus-visible,.loc:focus-visible
+{outline:2px solid var(--accent);outline-offset:2px}
+
+/* ---------- shell ---------- */
+.shell{display:grid;grid-template-columns:212px 1fr;flex:1;min-height:0}
+@media (max-width:900px){.shell{grid-template-columns:1fr}}
+.rail{
+  border-right:1px solid var(--rule);padding:14px 0;
+  background:color-mix(in srgb,var(--panel) 60%,transparent);
+}
+@media (max-width:900px){.rail{
+  border-right:none;border-bottom:1px solid var(--rule);
+  display:flex;overflow-x:auto;padding:10px;gap:8px;
+}}
+.rail h3{
+  font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);
+  margin:0 0 8px;padding:0 16px;font-weight:660;
+}
+@media (max-width:900px){.rail h3{display:none}}
+.loc{
+  display:block;width:100%;text-align:left;border:none;border-left:2px solid transparent;
+  background:none;border-radius:0;padding:8px 16px;cursor:pointer;
+}
+@media (max-width:900px){.loc{
+  flex:0 0 auto;border:1px solid var(--rule);border-radius:3px;padding:7px 12px;
+}}
+.loc:hover{background:var(--panel-2)}
+.loc[aria-pressed="true"]{border-left-color:var(--accent);background:var(--accent-soft)}
+@media (max-width:900px){.loc[aria-pressed="true"]{border-color:var(--accent)}}
+.loc .n{display:block;font-size:13px;font-weight:600;letter-spacing:-.01em}
+.loc .v{display:block;font-size:11px;color:var(--muted);margin-top:1px}
+@media (max-width:900px){.loc .v{display:none}}
+
+main{padding:20px 24px 40px;min-width:0}
+.tabs{display:flex;gap:2px;flex-wrap:wrap;border-bottom:1px solid var(--rule);margin-bottom:20px}
+.tab{
+  border:none;background:none;border-radius:0;padding:9px 14px;
+  border-bottom:2px solid transparent;color:var(--ink-2);font-size:13.5px;font-weight:560;
+}
+.tab:hover{color:var(--ink);background:var(--panel-2)}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent);font-weight:660}
+
+/* ---------- view head ---------- */
+.vhead{margin-bottom:18px}
+h1{font-size:clamp(21px,3vw,29px);font-weight:730;letter-spacing:-.026em;margin:0;text-wrap:balance}
+.vhead p{margin:7px 0 0;color:var(--ink-2);max-width:74ch}
+.vhead p strong{color:var(--ink);font-weight:640}
+
+/* ---------- cards ---------- */
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(340px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
+.g4{grid-template-columns:repeat(auto-fit,minmax(168px,1fr))}
+.card{
+  background:color-mix(in srgb,var(--panel) 88%,transparent);
+  border:1px solid var(--rule);border-radius:4px;padding:15px 16px;box-shadow:var(--shadow);
+}
+.card h4{
+  font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);
+  margin:0 0 10px;font-weight:660;
+}
+.card .big{font-size:27px;font-weight:720;letter-spacing:-.028em;font-variant-numeric:tabular-nums;line-height:1.05}
+.card .big .u{font-size:14px;font-weight:600;color:var(--ink-2);letter-spacing:0}
+.card .sub{font-size:12px;color:var(--muted);margin-top:5px;line-height:1.42}
+.card figcaption{font-size:12px;color:var(--muted);margin-top:10px;line-height:1.45}
+
+.pill{
+  display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:640;
+  padding:2px 8px;border-radius:999px;border:1px solid currentColor;letter-spacing:.01em;
+}
+.pill.ok{color:var(--good)} .pill.warn{color:var(--serious)} .pill.bad{color:var(--crit)}
+.pill.info{color:var(--muted)}
+
+svg{display:block;width:100%;height:auto;overflow:visible}
+.axis{font-size:10.5px;fill:var(--muted);font-variant-numeric:tabular-nums}
+.gridline{stroke:var(--grid);stroke-width:1}
+.axisline{stroke:var(--rule);stroke-width:1}
+.slab{font-size:11px;font-weight:660;font-variant-numeric:tabular-nums}
+
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;margin:10px 0 0;padding:0;list-style:none}
+.legend li{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink-2)}
+.sw{width:10px;height:10px;border-radius:2px;flex:0 0 auto}
+
+.tablewrap{overflow-x:auto;border:1px solid var(--rule);border-radius:3px}
+table{border-collapse:collapse;width:100%;min-width:520px;font-size:13px}
+th,td{padding:8px 12px;text-align:right;border-bottom:1px solid var(--rule-soft);white-space:nowrap}
+th{font-size:10px;letter-spacing:.11em;text-transform:uppercase;color:var(--muted);font-weight:650;background:var(--panel-2)}
+td{font-variant-numeric:tabular-nums}
+th:first-child,td:first-child{text-align:left;font-variant-numeric:normal}
+tbody tr:hover{background:var(--panel-2)}
+
+/* ---------- scrubber ---------- */
+.scrub{
+  position:sticky;bottom:0;z-index:15;margin-top:24px;
+  border-top:1px solid var(--rule);padding:11px 22px;
+  background:color-mix(in srgb,var(--panel) 88%,transparent);backdrop-filter:blur(14px);
+  display:flex;align-items:center;gap:18px;flex-wrap:wrap;
+}
+.scrub .lab{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:640}
+.scrub .yr{font-size:22px;font-weight:730;font-variant-numeric:tabular-nums;letter-spacing:-.02em;min-width:3.4ch}
+input[type=range]{
+  flex:1;min-width:180px;accent-color:var(--accent);height:22px;cursor:pointer;background:transparent;
+}
+.readout{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--ink-2)}
+.readout b{color:var(--ink);font-variant-numeric:tabular-nums;font-weight:660}
+
+.note{
+  border-left:2px solid var(--accent);background:color-mix(in srgb,var(--panel) 88%,transparent);
+  padding:12px 15px;font-size:13px;color:var(--ink-2);border-radius:0 3px 3px 0;
+}
+.note b{color:var(--ink)}
+.prov{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:10px}
+
+.fade-in{animation:fi .45s ease}
+@keyframes fi{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.fade-in{animation:none}}
+</style>
+
+<canvas id="sky" aria-hidden="true"></canvas>
+
+<div id="app">
+  <header>
+    <div class="brand"><b>Downside</b><span>Weather Risk Terminal</span></div>
+    <div class="ctl">
+      <label for="scenario">Pathway</label>
+      <select id="scenario"></select>
+    </div>
+    <div class="ctl">
+      <label for="theme">Theme</label>
+      <button id="theme" type="button">Auto</button>
+    </div>
+  </header>
+
+  <div class="shell">
+    <nav class="rail" id="rail"><h3>Portfolio</h3></nav>
+    <main>
+      <div class="tabs" id="tabs" role="tablist"></div>
+      <div id="view"></div>
+    </main>
+  </div>
+
+  <div class="scrub">
+    <span class="lab">Target year</span>
+    <span class="yr" id="yearOut">2027</span>
+    <input type="range" id="year" min="0" max="5" step="1" value="0" aria-label="Target year">
+    <div class="readout" id="readout"></div>
+  </div>
+</div>
+
+<script id="payload" type="application/json">__DATA__</script>
+<script type="module">
+__CANVAS__
+
+const D = JSON.parse(document.getElementById('payload').textContent);
+const NS='http://www.w3.org/2000/svg';
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const SC_COL = {ssp126:'var(--s3)',ssp245:'var(--s1)',ssp370:'var(--s4)',ssp585:'var(--s2)'};
+
+const state = {
+  loc: D.locations[0],
+  scenario: 'ssp245',
+  yearIdx: 0,
+  tab: 'overview',
+};
+
+const money = n => {
+  const a = Math.abs(n);
+  if (a >= 1e6) return '$'+(n/1e6).toFixed(2)+'M';
+  if (a >= 1e3) return '$'+(n/1e3).toFixed(0)+'k';
+  return '$'+n.toFixed(0);
+};
+const pct = (n,d=0) => (n*100).toFixed(d)+'%';
+const f = (n,d=1) => Number(n).toFixed(d);
+
+/* ---------- svg helpers ---------- */
+function E(tag,attrs={},parent){
+  const e=document.createElementNS(NS,tag);
+  for(const k in attrs) e.setAttribute(k,attrs[k]);
+  if(parent) parent.appendChild(e);
+  return e;
+}
+function SVG(w,h){
+  const s=document.createElementNS(NS,'svg');
+  s.setAttribute('viewBox',`0 0 ${w} ${h}`); s.setAttribute('role','img');
+  return s;
+}
+const sc=(d0,d1,r0,r1)=>{const k=(r1-r0)/((d1-d0)||1);return v=>r0+(v-d0)*k;};
+const P=pts=>pts.map((p,i)=>(i?'L':'M')+p[0].toFixed(2)+' '+p[1].toFixed(2)).join(' ');
+function drawIn(node,el){node.innerHTML='';node.appendChild(el);}
+function animPath(p){
+  if(reduce) return;
+  const L=p.getTotalLength();
+  p.style.strokeDasharray=L; p.style.strokeDashoffset=L;
+  p.animate([{strokeDashoffset:L},{strokeDashoffset:0}],
+    {duration:1100,easing:'cubic-bezier(.4,.1,.2,1)',fill:'forwards'});
+}
+
+/* ---------- weather canvas ---------- */
+const sky = new WeatherCanvas(document.getElementById('sky'));
+sky.start();
+function pushWeather(){
+  const rows = state.loc.ambient?.[state.scenario];
+  if(!rows) return;
+  const a = rows[Math.min(state.yearIdx, rows.length-1)];
+  sky.set({
+    wet:a.wet_frac, heavy:a.heavy_frac, snow:a.snow_frac,
+    windy:a.windy_frac, hot:a.hot_frac, tmax:a.tmax, wind:a.wind,
+  });
+  const r=document.getElementById('readout');
+  r.innerHTML =
+    `<span>Mean high <b>${f(a.tmax,1)}°C</b></span>`+
+    `<span>Wet days <b>${pct(a.wet_frac)}</b></span>`+
+    (a.snow_frac>0.01?`<span>Snow days <b>${pct(a.snow_frac)}</b></span>`:'')+
+    `<span>Days &gt;32°C <b>${pct(a.hot_frac)}</b></span>`+
+    `<span>Windy <b>${pct(a.windy_frac)}</b></span>`;
+}
+
+/* ---------- chrome ---------- */
+(function chrome(){
+  const sel=document.getElementById('scenario');
+  D.scenarios.forEach(s=>{
+    const o=document.createElement('option');
+    o.value=s.id; o.textContent=s.short; o.selected=s.id===state.scenario;
+    sel.appendChild(o);
+  });
+  sel.onchange=e=>{state.scenario=e.target.value;pushWeather();render();};
+
+  const rail=document.getElementById('rail');
+  D.locations.forEach(l=>{
+    const b=document.createElement('button');
+    b.className='loc'; b.type='button';
+    b.setAttribute('aria-pressed', l.id===state.loc.id);
+    b.innerHTML=`<span class="n">${l.name.split(',')[0]}</span><span class="v">${l.vertical}</span>`;
+    b.onclick=()=>{
+      state.loc=l;
+      rail.querySelectorAll('.loc').forEach(x=>x.setAttribute('aria-pressed','false'));
+      b.setAttribute('aria-pressed','true');
+      pushWeather(); render();
+    };
+    rail.appendChild(b);
+  });
+
+  const TABS=[['overview','Overview'],['climate','Climate'],['outlook','Outlook'],
+              ['perils','Perils'],['pricing','Pricing'],['hedge','Hedging'],['model','Model']];
+  const tabs=document.getElementById('tabs');
+  TABS.forEach(([id,label])=>{
+    const b=document.createElement('button');
+    b.className='tab'; b.type='button'; b.role='tab'; b.textContent=label;
+    b.setAttribute('aria-selected', id===state.tab);
+    b.onclick=()=>{
+      state.tab=id;
+      tabs.querySelectorAll('.tab').forEach(x=>x.setAttribute('aria-selected','false'));
+      b.setAttribute('aria-selected','true'); render();
+    };
+    tabs.appendChild(b);
+  });
+
+  const yr=document.getElementById('year');
+  yr.max=D.locations[0].target_years.length-1;
+  yr.oninput=e=>{
+    state.yearIdx=+e.target.value;
+    document.getElementById('yearOut').textContent=state.loc.target_years[state.yearIdx];
+    pushWeather(); render();
+  };
+
+  const tb=document.getElementById('theme');
+  const cycle=['Auto','Light','Dark'];
+  let ti=0;
+  tb.onclick=()=>{
+    ti=(ti+1)%3; tb.textContent=cycle[ti];
+    const root=document.documentElement;
+    if(ti===0) root.removeAttribute('data-theme');
+    else root.setAttribute('data-theme',cycle[ti].toLowerCase());
+  };
+})();
+
+/* ================= VIEWS ================= */
+
+function view_overview(L){
+  const yr=L.target_years[state.yearIdx];
+  const amb=L.ambient[state.scenario][state.yearIdx];
+  const amb0=L.ambient[state.scenario][0];
+  const q=L.contract.quotes[state.yearIdx];
+  const d=L.diagnostics;
+  const el=document.createElement('div'); el.className='fade-in';
+
+  el.innerHTML=`
+   <div class="vhead">
+     <h1>${L.name}</h1>
+     <p>${L.vertical} · operating window ${monthName(L.season[0])}–${monthName(L.season[1])} ·
+        settles on station ${L.station}, <strong>${f(L.station_km,1)} km</strong> from site.</p>
+     <div class="prov">${provBadge(L)}</div>
+   </div>
+   <div class="grid g4" id="ov-stats"></div>
+   <div class="grid g2" style="margin-top:14px">
+     <div class="card"><h4>Century of observed season means</h4><div id="ov-hist"></div>
+       <figcaption>Thin: observed. Heavy: fitted response to global forcing.</figcaption></div>
+     <div class="card"><h4>Premium as the climate moves</h4><div id="ov-price"></div>
+       <figcaption>Same contract, repriced for each target year. The gap against a
+       history-based price is what a static rate card misses.</figcaption></div>
+   </div>`;
+
+  setTimeout(()=>{
+    const stats=[
+      ['Mean high, target year', f(amb.tmax,1), '°C',
+       `${amb.tmax>amb0.tmax?'+':''}${f(amb.tmax-amb0.tmax,2)}°C vs ${L.target_years[0]}`],
+      ['Wet days in window', pct(amb.wet_frac), '',
+       `${f(amb.wet_frac*seasonLen(L),0)} of ${seasonLen(L)} days`],
+      ['Contract mid', money(q.mid), '',
+       `Rate on line ${pct(q.rate_on_line,1)} · loading ×${f(q.loading,2)}`],
+      ['Model skill', d.backtest.calibrated?'Calibrated':'Biased', '',
+       `Out-of-sample bias ${f(d.backtest.bias,2)}°C on ${d.backtest.test[0]}–${d.backtest.test[1]}`],
+    ];
+    const host=el.querySelector('#ov-stats');
+    stats.forEach(([k,v,u,s])=>{
+      const c=document.createElement('div'); c.className='card';
+      c.innerHTML=`<h4>${k}</h4><div class="big">${v}${u?` <span class="u">${u}</span>`:''}</div><div class="sub">${s}</div>`;
+      host.appendChild(c);
+    });
+    drawHistory(el.querySelector('#ov-hist'), L, 520, 250);
+    drawPriceCurve(el.querySelector('#ov-price'), L, 520, 250);
+  });
+  return el;
+}
+
+function view_climate(L){
+  const el=document.createElement('div'); el.className='fade-in';
+  el.innerHTML=`
+   <div class="vhead"><h1>A century of observations</h1>
+   <p>Daily record ${L.history[0].year}–${L.history[L.history.length-1].year} at station ${L.station}.
+      The fitted line regresses on <strong>modelled global temperature</strong>, not on calendar time,
+      so it reproduces the mid-century plateau and volcanic dips without being told they exist.</p>
+   <div class="prov">${provBadge(L)}</div></div>
+   <div class="card"><h4>Season mean daily maximum</h4><div id="c-hist"></div></div>
+   <div class="grid g2" style="margin-top:14px">
+     <div class="card"><h4>Warming stripes — season mean by year</h4><div id="c-stripes"></div>
+       <figcaption>Each stripe is one year, coloured by its anomaly against the ${L.history[0].year}–${L.history[0].year+29} baseline.</figcaption></div>
+     <div class="card"><h4>Annual precipitation</h4><div id="c-precip"></div>
+       <figcaption>Totals move far less than temperature; the change concentrates in intensity, not accumulation.</figcaption></div>
+   </div>`;
+  setTimeout(()=>{
+    drawHistory(el.querySelector('#c-hist'),L,1080,300);
+    drawStripes(el.querySelector('#c-stripes'),L,520,150);
+    drawPrecip(el.querySelector('#c-precip'),L,520,220);
+  });
+  return el;
+}
+
+function view_outlook(L){
+  const el=document.createElement('div'); el.className='fade-in';
+  el.innerHTML=`
+   <div class="vhead"><h1>The next hundred years</h1>
+   <p>Each pathway's forcing driven through a two-box energy balance model, then through this
+      station's own fitted amplification. <strong>The band widens because the far future genuinely is
+      less knowable</strong> — the decomposition below says exactly why.</p></div>
+   <div class="card"><h4>Projected season mean daily maximum</h4><div id="o-fan"></div>
+     <ul class="legend" id="o-leg"></ul></div>
+   <div class="card" style="margin-top:14px"><h4>Where the uncertainty comes from</h4><div id="o-unc"></div>
+     <ul class="legend" id="o-uleg"></ul>
+     <figcaption>Near-dated risk is weather noise, so history is nearly sufficient. Past the crossover the
+     dominant unknown is which emissions path the world takes, and no amount of historical data resolves it.</figcaption></div>`;
+  setTimeout(()=>{drawFan(el.querySelector('#o-fan'),L,1080,340,el.querySelector('#o-leg'));
+                  drawUncertainty(el.querySelector('#o-unc'),L,1080,260,el.querySelector('#o-uleg'));});
+  return el;
+}
+
+function view_perils(L){
+  const el=document.createElement('div'); el.className='fade-in';
+  const usable=L.perils.filter(p=>p.usable);
+  el.innerHTML=`
+   <div class="vhead"><h1>Trigger frequency</h1>
+   <p>Expected triggering days per season, simulated forward under each pathway. These are the
+      quantities a parametric contract settles on.</p></div>
+   <div class="grid g2" id="p-grid"></div>
+   ${L.perils.length>usable.length?`<div class="note" style="margin-top:14px"><b>Omitted.</b>
+     ${L.perils.filter(p=>!p.usable).map(p=>p.label).join(', ')} — the settlement variable is not measured
+     at this station often enough to model, so no frequency is shown rather than a fabricated one.</div>`:''}
+   <div class="card" style="margin-top:14px"><h4>Daily rainfall return levels</h4><div id="p-ret"></div>
+     <figcaption>Generalised Pareto fit to exceedances. Shape ξ = ${f(L.tail.shape,3)}
+     ${L.tail.shape>0?'— heavy-tailed and unbounded':'— bounded above'}.
+     Observed maximum in the record: ${f(L.tail.observed_max,0)} mm.</figcaption></div>`;
+  setTimeout(()=>{
+    const host=el.querySelector('#p-grid');
+    usable.forEach(p=>{
+      const c=document.createElement('div'); c.className='card';
+      c.innerHTML=`<h4>${p.label} — ${p.description.split('.')[0]}</h4><div class="ph"></div>
+        <figcaption>${p.description}</figcaption>`;
+      host.appendChild(c);
+      drawPeril(c.querySelector('.ph'),L,p,520,190);
+    });
+    drawReturn(el.querySelector('#p-ret'),L,1080,250);
+  });
+  return el;
+}
+
+function view_pricing(L){
+  const el=document.createElement('div'); el.className='fade-in';
+  const c=L.contract, q=c.quotes[state.yearIdx];
+  el.innerHTML=`
+   <div class="vhead"><h1>Pricing desk</h1>
+   <p><strong>${c.peril}</strong>, aggregate cover: pays ${money(c.payout_per_day)} per triggering day
+      beyond the first ${c.attachment_days}, capped at ${money(c.limit)}. Attachment is set above the
+      typical season so the contract covers a genuinely bad year, not the ordinary friction the
+      business already absorbs.</p></div>
+   <div class="grid g4" id="pr-stats"></div>
+   <div class="grid g2" style="margin-top:14px">
+     <div class="card"><h4>From fair value to quoted price</h4><div id="pr-fall"></div>
+       <figcaption>Each load is charged for a named reason, so a quote can be defended line by line.</figcaption></div>
+     <div class="card"><h4>Two-sided market</h4><div id="pr-mkt"></div>
+       <figcaption>Width scales with model uncertainty — the Quant Bible's rule that an uncertain
+       quantity gets a wider market, made measurable.</figcaption></div>
+   </div>
+   <div class="note" style="margin-top:14px"><b>Why the forward price differs.</b>
+     Priced off the ${L.target_years[state.yearIdx]} distribution this contract is worth
+     <b>${money(q.theo)}</b>. Priced off 2010 climate it is <b>${money(q.theo_hist)}</b> —
+     a ${q.theo>q.theo_hist?'shortfall':'surplus'} of
+     <b>${pct(Math.abs(q.theo/Math.max(q.theo_hist,1)-1),1)}</b>. That gap is the whole reason to
+     model the forward distribution instead of quoting a historical frequency.</div>`;
+  setTimeout(()=>{
+    const stats=[
+      ['Fair value', money(q.theo),'',`P(pays) ${pct(q.prob,1)} · E[days] ${f(q.expected_days,1)}`],
+      ['Quoted mid', money(q.mid),'',`Rate on line ${pct(q.rate_on_line,1)}`],
+      ['Bid / Ask', money(q.bid)+' / '+money(q.ask),'','Width set by scenario spread'],
+      ['Tail (CVaR 99)', money(q.cvar99),'',`Limit ${money(q.max_payout)}`],
+    ];
+    const host=el.querySelector('#pr-stats');
+    stats.forEach(([k,v,u,s])=>{
+      const d=document.createElement('div'); d.className='card';
+      d.innerHTML=`<h4>${k}</h4><div class="big" style="font-size:22px">${v}</div><div class="sub">${s}</div>`;
+      host.appendChild(d);
+    });
+    drawWaterfall(el.querySelector('#pr-fall'),q,520,250);
+    drawMarket(el.querySelector('#pr-mkt'),L,520,250);
+  });
+  return el;
+}
+
+function view_hedge(L){
+  const h=L.hedge, lc=L.loss_curve;
+  const el=document.createElement('div'); el.className='fade-in';
+  el.innerHTML=`
+   <div class="vhead"><h1>How much to hedge</h1>
+   <p>Every hedge loses money in expected dollars — the premium contains the seller's risk load.
+      Judged on expected value the right hedge is always zero. <strong>Businesses maximise survival,
+      not expected value</strong>, so this sizes against ruin probability instead.</p></div>
+   <div class="grid g4" id="h-stats"></div>
+   <div class="grid g2" style="margin-top:14px">
+     <div class="card"><h4>Loss curve — regressed, not asked</h4><div id="h-loss"></div>
+       <figcaption>Contribution margin lost per day vs rainfall, from a piecewise-linear fit.
+       The curve is flat then falls off a cliff at <b>${f(lc.breakpoint,1)} mm</b>. Ask an operator
+       and you get "rain hurts us". <b>Revenue here is placeholder</b> — real daily revenue is the
+       single most valuable input this platform takes.</figcaption></div>
+     <div class="card"><h4>Ruin probability vs hedge size</h4><div id="h-frontier"></div>
+       <figcaption>Hedging past the marked point buys risk premium, not survival.</figcaption></div>
+   </div>`;
+  setTimeout(()=>{
+    const stats=[
+      ['Correlation ρ', f(h.correlation,2),'',`Basis risk ${pct(h.basis_risk)} of loss variance is unreachable`],
+      ['Min-variance h*', f(h.h_star,2),'','ρ · (σ_loss / σ_payout)'],
+      ['Recommended size', f(h.recommended,2)+'×','',`Log-optimal ${f(h.kelly,2)}×`],
+      ['Ruin probability', pct(h.ruin_unhedged,1)+' → '+pct(h.ruin_hedged,1),'',
+       `Against ${money(h.reserves)} reserves`],
+    ];
+    const host=el.querySelector('#h-stats');
+    stats.forEach(([k,v,u,s])=>{
+      const d=document.createElement('div'); d.className='card';
+      d.innerHTML=`<h4>${k}</h4><div class="big" style="font-size:22px">${v}</div><div class="sub">${s}</div>`;
+      host.appendChild(d);
+    });
+    drawLoss(el.querySelector('#h-loss'),L,520,240);
+    drawFrontier(el.querySelector('#h-frontier'),L,520,240);
+  });
+  return el;
+}
+
+function view_model(L){
+  const d=L.diagnostics, b=d.backtest;
+  const el=document.createElement('div'); el.className='fade-in';
+  el.innerHTML=`
+   <div class="vhead"><h1>Model diagnostics</h1>
+   <p>Fit on ${b.train[0]}–${b.train[1]}, scored on ${b.test[0]}–${b.test[1]} which the model never saw.</p></div>
+   <div class="grid g4" id="m-stats"></div>
+   <div class="grid g2" style="margin-top:14px">
+     <div class="card"><h4>PIT histogram — is the spread honest?</h4><div id="m-pit"></div>
+       <figcaption>Where each out-of-sample day fell in its own predicted distribution. Flat = honest.
+       U-shaped = overconfident, which underprices every tail sold.</figcaption></div>
+     <div class="card"><h4>Reliability — do stated odds hold?</h4><div id="m-rel"></div>
+       <figcaption>Of days given an x% chance of exceeding 32°C, what share exceeded it. On the diagonal is correct.</figcaption></div>
+   </div>
+   <div class="card" style="margin-top:14px"><h4>Fitted mean model</h4>
+     <div class="tablewrap"><table id="m-tab">
+       <thead><tr><th>Term</th><th>β</th><th>SE</th><th>z</th><th>Significant</th></tr></thead>
+       <tbody></tbody></table></div>
+     <figcaption><b>The standard errors are the finding.</b> Classical OLS treats
+     ${d.n_obs.toLocaleString()} autocorrelated days (lag-1 ρ = ${f(d.ar1,2)}) as independent evidence.
+     A year-block bootstrap says the warming coefficient is <b>${f(d.se_inflation,1)}× less precise</b>
+     than that — ±${f(d.amp_se,2)} rather than ±${f(d.amp_se_classical,2)}. Every long-dated price widens accordingly.</figcaption>
+   </div>`;
+  setTimeout(()=>{
+    const stats=[
+      ['In-sample R²', f(d.r2,3),'','Seasonal + forcing mean model'],
+      ['Out-of-sample bias', f(b.bias,2)+'°C','',`RMSE ${f(b.rmse,2)}°C over 30 held-out years`],
+      ['CRPS skill vs climatology', (b.crps_skill>=0?'+':'')+pct(b.crps_skill,1),'',
+       'Daily temperature 30 years out — climatology is a strong baseline'],
+      ['Interval coverage', pct(b.coverage_90)+' / '+pct(b.coverage_50),'','Nominal 90% / 50%'],
+    ];
+    const host=el.querySelector('#m-stats');
+    stats.forEach(([k,v,u,s])=>{
+      const c=document.createElement('div'); c.className='card';
+      c.innerHTML=`<h4>${k}</h4><div class="big" style="font-size:22px">${v}</div><div class="sub">${s}</div>`;
+      host.appendChild(c);
+    });
+    drawPIT(el.querySelector('#m-pit'),L,520,210);
+    drawRel(el.querySelector('#m-rel'),L,520,210);
+    const tb=el.querySelector('#m-tab tbody');
+    d.regression.forEach(r=>{
+      const amp=r.name==='global';
+      const se=amp?d.amp_se:r.se, z=amp?r.beta/se:r.z;
+      const tr=document.createElement('tr');
+      tr.innerHTML=`<td>${prettyTerm(r.name)}${amp?' <span style="color:var(--accent);font-size:10.5px">bootstrap SE</span>':''}</td>`+
+        `<td>${f(r.beta,3)}</td><td>${f(se,3)}</td><td>${f(z,1)}</td>`+
+        `<td><span class="pill ${Math.abs(z)>=2?'ok':'info'}">${Math.abs(z)>=2?'yes':'no'}</span></td>`;
+      tb.appendChild(tr);
+    });
+  });
+  return el;
+}
+
+/* ================= CHARTS ================= */
+
+function drawHistory(host,L,W,H){
+  const M={t:12,r:52,b:26,l:38};
+  const s=SVG(W,H);
+  const hist=L.history, fit=L.fitted;
+  const vals=hist.map(d=>d.tmax).concat(fit.map(d=>d.tmax));
+  const x=sc(hist[0].year,hist[hist.length-1].year,M.l,W-M.r);
+  const lo=Math.min(...vals)-.4, hi=Math.max(...vals)+.4;
+  const y=sc(lo,hi,H-M.b,M.t);
+  ticks(lo,hi,4).forEach(t=>{
+    E('line',{x1:M.l,x2:W-M.r,y1:y(t),y2:y(t),class:'gridline'},s);
+    E('text',{x:M.l-7,y:y(t)+4,class:'axis','text-anchor':'end'},s).textContent=f(t,0);
+  });
+  [1940,1970,2000].forEach(yr=>E('text',{x:x(yr),y:H-M.b+16,class:'axis','text-anchor':'middle'},s).textContent=yr);
+  E('line',{x1:M.l,x2:W-M.r,y1:H-M.b,y2:H-M.b,class:'axisline'},s);
+  E('path',{d:P(hist.map(d=>[x(d.year),y(d.tmax)])),fill:'none',stroke:'var(--s1)',
+    'stroke-width':1,'stroke-opacity':.5},s);
+  const p=E('path',{d:P(fit.map(d=>[x(d.year),y(d.tmax)])),fill:'none',stroke:'var(--accent)',
+    'stroke-width':2.3,'stroke-linecap':'round'},s);
+  animPath(p);
+  let yf=y(fit[fit.length-1].tmax), yo=y(hist[hist.length-1].tmax);
+  if(Math.abs(yf-yo)<14){const m=(yf+yo)/2; yf=m-7; yo=m+7;}
+  E('text',{x:W-M.r+6,y:yf+4,class:'slab',fill:'var(--accent)'},s).textContent='fitted';
+  E('text',{x:W-M.r+6,y:yo+4,class:'slab',fill:'var(--s1)'},s).textContent='observed';
+  drawIn(host,s);
+}
+
+function drawStripes(host,L,W,H){
+  const s=SVG(W,H);
+  const h=L.history, base=h.slice(0,30).reduce((a,d)=>a+d.tmax,0)/30;
+  const an=h.map(d=>d.tmax-base);
+  const mx=Math.max(...an.map(Math.abs))||1;
+  const bw=(W)/h.length;
+  h.forEach((d,i)=>{
+    const t=(d.tmax-base)/mx;
+    const col=t>=0?`rgba(217,89,38,${.18+.82*Math.min(t,1)})`
+                  :`rgba(57,135,229,${.18+.82*Math.min(-t,1)})`;
+    const r=E('rect',{x:i*bw,y:0,width:Math.ceil(bw)+.5,height:H-18,fill:col},s);
+    if(!reduce) r.animate([{opacity:0},{opacity:1}],{duration:500,delay:i*5,fill:'backwards'});
+  });
+  E('text',{x:0,y:H-4,class:'axis'},s).textContent=h[0].year;
+  E('text',{x:W,y:H-4,class:'axis','text-anchor':'end'},s).textContent=h[h.length-1].year;
+  drawIn(host,s);
+}
+
+function drawPrecip(host,L,W,H){
+  const M={t:12,r:14,b:26,l:46};
+  const s=SVG(W,H), h=L.history;
+  const x=sc(h[0].year,h[h.length-1].year,M.l,W-M.r);
+  const hi=Math.max(...h.map(d=>d.precip))*1.05;
+  const y=sc(0,hi,H-M.b,M.t);
+  ticks(0,hi,4).forEach(t=>{
+    E('line',{x1:M.l,x2:W-M.r,y1:y(t),y2:y(t),class:'gridline'},s);
+    E('text',{x:M.l-7,y:y(t)+4,class:'axis','text-anchor':'end'},s).textContent=f(t,0);
+  });
+  const bw=Math.max((W-M.l-M.r)/h.length-0.6,0.8);
+  h.forEach((d,i)=>E('rect',{x:x(d.year)-bw/2,y:y(d.precip),width:bw,
+    height:(H-M.b)-y(d.precip),fill:'var(--s1)','fill-opacity':.55},s));
+  // 10-year moving average
+  const ma=h.map((d,i)=>{const w=h.slice(Math.max(0,i-9),i+1);
+    return [x(d.year), y(w.reduce((a,b)=>a+b.precip,0)/w.length)];});
+  E('path',{d:P(ma.slice(9)),fill:'none',stroke:'var(--accent)','stroke-width':2},s);
+  E('line',{x1:M.l,x2:W-M.r,y1:H-M.b,y2:H-M.b,class:'axisline'},s);
+  E('text',{x:M.l,y:H-6,class:'axis'},s).textContent='mm/yr · line = 10-yr mean';
+  drawIn(host,s);
+}
+
+function drawFan(host,L,W,H,leg){
+  const M={t:14,r:92,b:26,l:40};
+  const s=SVG(W,H);
+  let lo=1e9,hi=-1e9;
+  D.scenarios.forEach(x=>L.projection[x.id].forEach(d=>{lo=Math.min(lo,d.lo);hi=Math.max(hi,d.hi);}));
+  const rows=L.projection.ssp245;
+  const x=sc(rows[0].year,rows[rows.length-1].year,M.l,W-M.r);
+  const y=sc(lo-.3,hi+.3,H-M.b,M.t);
+  ticks(lo,hi,5).forEach(t=>{
+    E('line',{x1:M.l,x2:W-M.r,y1:y(t),y2:y(t),class:'gridline'},s);
+    E('text',{x:M.l-7,y:y(t)+4,class:'axis','text-anchor':'end'},s).textContent=f(t,0);
+  });
+  [2050,2075,2100,2125].forEach(yr=>E('text',{x:x(yr),y:H-M.b+16,class:'axis','text-anchor':'middle'},s).textContent=yr);
+  E('line',{x1:M.l,x2:W-M.r,y1:H-M.b,y2:H-M.b,class:'axisline'},s);
+
+  const band=L.projection[state.scenario];
+  E('path',{d:P(band.map(d=>[x(d.year),y(d.hi)]).concat(
+      band.slice().reverse().map(d=>[x(d.year),y(d.lo)])))+'Z',
+    fill:SC_COL[state.scenario],'fill-opacity':.13},s);
+
+  D.scenarios.forEach((s2,i)=>{
+    const r=L.projection[s2.id];
+    const p=E('path',{d:P(r.map(d=>[x(d.year),y(d.mean)])),fill:'none',stroke:SC_COL[s2.id],
+      'stroke-width':s2.id===state.scenario?2.6:1.6,
+      'stroke-opacity':s2.id===state.scenario?1:.75,'stroke-linecap':'round'},s);
+    animPath(p);
+    E('text',{x:W-M.r+6,y:y(r[r.length-1].mean)+4,class:'slab',fill:SC_COL[s2.id]},s)
+      .textContent=s2.short;
+  });
+  // marker for the selected target year
+  const ty=L.target_years[state.yearIdx];
+  if(ty>=rows[0].year){
+    E('line',{x1:x(ty),x2:x(ty),y1:M.t,y2:H-M.b,stroke:'var(--ink)','stroke-width':1.2,
+      'stroke-dasharray':'3 3','stroke-opacity':.55},s);
+    E('text',{x:x(ty)+5,y:M.t+11,class:'axis',fill:'var(--ink)'},s).textContent=ty;
+  }
+  drawIn(host,s);
+  if(leg){leg.innerHTML='';D.scenarios.forEach(x2=>{
+    const li=document.createElement('li');
+    li.innerHTML=`<span class="sw" style="background:${SC_COL[x2.id]}"></span>${x2.short} — ${x2.description}`;
+    leg.appendChild(li);});}
+}
+
+function drawUncertainty(host,L,W,H,leg){
+  const M={t:12,r:14,b:26,l:40};
+  const s=SVG(W,H), U=L.uncertainty;
+  const x=sc(U[0].year,U[U.length-1].year,M.l,W-M.r), y=sc(0,1,H-M.b,M.t);
+  const layers=[['internal','var(--s1)','Internal variability — weather noise'],
+                ['parameter','var(--s3)','Parameter — what 100 years can pin down'],
+                ['scenario','var(--s2)','Scenario — which path the world takes']];
+  [0,.5,1].forEach(t=>{
+    E('line',{x1:M.l,x2:W-M.r,y1:y(t),y2:y(t),class:'gridline'},s);
+    E('text',{x:M.l-7,y:y(t)+4,class:'axis','text-anchor':'end'},s).textContent=(t*100)+'%';
+  });
+  [2050,2075,2100,2125].forEach(yr=>E('text',{x:x(yr),y:H-M.b+16,class:'axis','text-anchor':'middle'},s).textContent=yr);
+  let base=U.map(()=>0);
+  layers.forEach(([k,col],i)=>{
+    const top=U.map((d,j)=>base[j]+d[k]);
+    const pts=U.map((d,j)=>[x(d.year),y(top[j])]).concat(
+      U.slice().reverse().map((d,j)=>[x(d.year),y(base[U.length-1-j])]));
+    const p=E('path',{d:P(pts)+'Z',fill:col,'fill-opacity':.85,stroke:'var(--panel)','stroke-width':1.2},s);
+    if(!reduce) p.animate([{opacity:0},{opacity:1}],{duration:600,delay:i*130,fill:'backwards'});
+    base=top;
+  });
+  const cross=U.find(d=>d.scenario>d.internal);
+  if(cross){
+    E('line',{x1:x(cross.year),x2:x(cross.year),y1:M.t,y2:H-M.b,stroke:'var(--ink)',
+      'stroke-width':1.3,'stroke-dasharray':'3 3','stroke-opacity':.7},s);
+    E('text',{x:x(cross.year)+6,y:M.t+12,class:'axis',fill:'var(--ink)','font-weight':'660'},s)
+      .textContent=`${cross.year} — scenario overtakes noise`;
+  }
+  drawIn(host,s);
+  if(leg){leg.innerHTML='';layers.forEach(([k,c,lab])=>{
+    const li=document.createElement('li');
+    li.innerHTML=`<span class="sw" style="background:${c}"></span>${lab}`;leg.appendChild(li);});}
+}
+
+function drawPeril(host,L,p,W,H){
+  const M={t:12,r:14,b:26,l:38};
+  const s=SVG(W,H), yrs=L.target_years;
+  const all=D.scenarios.flatMap(x=>p.series[x.id]);
+  const hi=Math.max(...all,1)*1.15;
+  const x=sc(0,yrs.length-1,M.l,W-M.r), y=sc(0,hi,H-M.b,M.t);
+  ticks(0,hi,3).forEach(t=>{
+    E('line',{x1:M.l,x2:W-M.r,y1:y(t),y2:y(t),class:'gridline'},s);
+    E('text',{x:M.l-7,y:y(t)+4,class:'axis','text-anchor':'end'},s).textContent=f(t,0);
+  });
+  yrs.forEach((yr,i)=>E('text',{x:x(i),y:H-M.b+16,class:'axis','text-anchor':'middle'},s).textContent=yr);
+  E('line',{x1:M.l,x2:W-M.r,y1:H-M.b,y2:H-M.b,class:'axisline'},s);
+  D.scenarios.forEach(s2=>{
+    const pts=p.series[s2.id].map((v,i)=>[x(i),y(v)]);
+    const path=E('path',{d:P(pts),fill:'none',stroke:SC_COL[s2.id],
+      'stroke-width':s2.id===state.scenario?2.4:1.4,
+      'stroke-opacity':s2.id===state.scenario?1:.6},s);
+    animPath(path);
+    if(s2.id===state.scenario) pts.forEach(pt=>
+      E('circle',{cx:pt[0],cy:pt[1],r:3.4,fill:SC_COL[s2.id],stroke:'var(--panel)','stroke-width':1.6},s));
+  });
+  E('circle',{cx:x(state.yearIdx),cy:y(p.series[state.scenario][state.yearIdx]),r:6,
+    fill:'none',stroke:'var(--ink)','stroke-width':1.6},s);
+  E('text',{x:M.l,y:H-6,class:'axis'},s).textContent='days per season';
+  drawIn(host,s);
+}
+
+function drawReturn(host,L,W,H){
+  const M={t:12,r:20,b:32,l:46};
+  const s=SVG(W,H), R=L.tail.levels, lg=v=>Math.log10(v);
+  const x=sc(lg(2),lg(250),M.l,W-M.r);
+  const hi=Math.max(...R.map(d=>d.level))*1.08;
+  const y=sc(0,hi,H-M.b,M.t);
+  ticks(0,hi,4).forEach(t=>{
+    E('line',{x1:M.l,x2:W-M.r,y1:y(t),y2:y(t),class:'gridline'},s);
+    E('text',{x:M.l-7,y:y(t)+4,class:'axis','text-anchor':'end'},s).textContent=f(t,0);
+  });
+  [2,5,10,25,50,100,250].forEach(p=>E('text',{x:x(lg(p)),y:H-M.b+16,class:'axis','text-anchor':'middle'},s).textContent=p);
+  E('line',{x1:M.l,x2:W-M.r,y1:H-M.b,y2:H-M.b,class:'axisline'},s);
+  const p=E('path',{d:P(R.map(d=>[x(lg(d.period)),y(d.level)])),fill:'none',
+    stroke:'var(--s2)','stroke-width':2.3,'stroke-linecap':'round'},s);
+  animPath(p);
+  R.forEach(d=>E('circle',{cx:x(lg(d.period)),cy:y(d.level),r:3.6,fill:'var(--s2)',
+    stroke:'var(--panel)','stroke-width':1.6},s));
+  E('line',{x1:M.l,x2:W-M.r,y1:y(L.tail.observed_max),y2:y(L.tail.observed_max),
+    stroke:'var(--ink)','stroke-width':1,'stroke-dasharray':'4 3','stroke-opacity':.6},s);
+  E('text',{x:W-M.r,y:y(L.tail.observed_max)-6,class:'axis','text-anchor':'end',fill:'var(--ink)'},s)
+    .textContent='observed max '+f(L.tail.observed_max,0)+' mm';
+  E('text',{x:(M.l+W-M.r)/2,y:H-4,class:'axis','text-anchor':'middle'},s).textContent='return period (years)';
+  drawIn(host,s);
+}
+
+function drawPriceCurve(host,L,W,H){
+  const M={t:12,r:16,b:26,l:52};
+  const s=SVG(W,H), Q=L.contract.quotes;
+  const hi=Math.max(...Q.map(q=>Math.max(q.ask,q.theo_hist)))*1.1;
+  const x=sc(0,Q.length-1,M.l,W-M.r), y=sc(0,hi,H-M.b,M.t);
+  ticks(0,hi,4).forEach(t=>{
+    E('line',{x1:M.l,x2:W-M.r,y1:y(t),y2:y(t),class:'gridline'},s);
+    E('text',{x:M.l-7,y:y(t)+4,class:'axis','text-anchor':'end'},s).textContent=money(t);
+  });
+  Q.forEach((q,i)=>E('text',{x:x(i),y:H-M.b+16,class:'axis','text-anchor':'middle'},s).textContent=q.year);
+  E('line',{x1:M.l,x2:W-M.r,y1:H-M.b,y2:H-M.b,class:'axisline'},s);
+  E('path',{d:P(Q.map((q,i)=>[x(i),y(q.ask)]).concat(Q.slice().reverse().map((q,i)=>
+    [x(Q.length-1-i),y(q.bid)])))+'Z',fill:'var(--s1)','fill-opacity':.15},s);
+  const pm=E('path',{d:P(Q.map((q,i)=>[x(i),y(q.mid)])),fill:'none',stroke:'var(--s1)','stroke-width':2.4},s);
+  animPath(pm);
+  const ph=E('path',{d:P(Q.map((q,i)=>[x(i),y(q.theo_hist)])),fill:'none',stroke:'var(--muted)',
+    'stroke-width':1.6,'stroke-dasharray':'4 3'},s);
+  E('circle',{cx:x(state.yearIdx),cy:y(Q[state.yearIdx].mid),r:5.5,fill:'var(--s1)',
+    stroke:'var(--panel)','stroke-width':2},s);
+  E('text',{x:M.l,y:H-6,class:'axis'},s).textContent='solid = forward price · dashed = priced off 2010 climate';
+  drawIn(host,s);
+}
+
+function drawWaterfall(host,q,W,H){
+  const M={t:14,r:16,b:44,l:52};
+  const s=SVG(W,H);
+  const steps=[['Fair value',q.theo,'var(--s1)'],['Capital',q.loads.capital,'var(--s2)'],
+    ['Model',q.loads.parameter,'var(--s4)'],['Basis',q.loads.basis,'var(--s3)'],
+    ['Expense',q.loads.expense,'var(--muted)']];
+  const total=steps.reduce((a,b)=>a+b[1],0);
+  const y=sc(0,total*1.1,H-M.b,M.t);
+  const bw=(W-M.l-M.r)/(steps.length+1)-8;
+  let cum=0;
+  ticks(0,total*1.1,4).forEach(t=>{
+    E('line',{x1:M.l,x2:W-M.r,y1:y(t),y2:y(t),class:'gridline'},s);
+    E('text',{x:M.l-7,y:y(t)+4,class:'axis','text-anchor':'end'},s).textContent=money(t);
+  });
+  steps.forEach(([lab,val,col],i)=>{
+    const bx=M.l+i*((W-M.l-M.r)/(steps.length+1))+4;
+    const y0=y(cum), y1=y(cum+val);
+    const r=E('rect',{x:bx,y:y1,width:bw,height:Math.max(y0-y1,1),fill:col,rx:2},s);
+    if(!reduce) r.animate([{transform:'scaleY(0)'},{transform:'scaleY(1)'}],
+      {duration:520,delay:i*80,easing:'cubic-bezier(.2,.7,.2,1)',fill:'backwards'});
+    r.style.transformOrigin=`${bx}px ${y0}px`;
+    E('text',{x:bx+bw/2,y:H-M.b+15,class:'axis','text-anchor':'middle'},s).textContent=lab;
+    E('text',{x:bx+bw/2,y:H-M.b+28,class:'axis','text-anchor':'middle'},s).textContent=money(val);
+    cum+=val;
+  });
+  const bx=M.l+steps.length*((W-M.l-M.r)/(steps.length+1))+4;
+  E('rect',{x:bx,y:y(cum),width:bw,height:(H-M.b)-y(cum),fill:'var(--accent)',rx:2},s);
+  E('text',{x:bx+bw/2,y:H-M.b+15,class:'axis','text-anchor':'middle','font-weight':'660'},s).textContent='Mid';
+  E('text',{x:bx+bw/2,y:H-M.b+28,class:'axis','text-anchor':'middle'},s).textContent=money(cum);
+  drawIn(host,s);
+}
+
+function drawMarket(host,L,W,H){
+  const M={t:16,r:16,b:30,l:52};
+  const s=SVG(W,H), Q=L.contract.quotes;
+  const hi=Math.max(...Q.map(q=>q.ask))*1.1;
+  const x=sc(0,Q.length-1,M.l,W-M.r), y=sc(0,hi,H-M.b,M.t);
+  ticks(0,hi,4).forEach(t=>{
+    E('line',{x1:M.l,x2:W-M.r,y1:y(t),y2:y(t),class:'gridline'},s);
+    E('text',{x:M.l-7,y:y(t)+4,class:'axis','text-anchor':'end'},s).textContent=money(t);
+  });
+  Q.forEach((q,i)=>{
+    const cx=x(i);
+    E('line',{x1:cx,x2:cx,y1:y(q.bid),y2:y(q.ask),stroke:'var(--s1)','stroke-width':7,
+      'stroke-opacity':i===state.yearIdx?.9:.35,'stroke-linecap':'round'},s);
+    E('circle',{cx,cy:y(q.theo),r:3.2,fill:'var(--accent)'},s);
+    E('text',{x:cx,y:H-M.b+16,class:'axis','text-anchor':'middle'},s).textContent=q.year;
+  });
+  E('line',{x1:M.l,x2:W-M.r,y1:H-M.b,y2:H-M.b,class:'axisline'},s);
+  E('text',{x:M.l,y:H-4,class:'axis'},s).textContent='bar = bid→ask · dot = fair value';
+  drawIn(host,s);
+}
+
+function drawLoss(host,L,W,H){
+  const M={t:12,r:16,b:32,l:56};
+  const s=SVG(W,H), R=L.loss_curve.rows;
+  const xs=R.map(d=>d.x), hi=Math.max(...R.map(d=>d.loss))*1.12||1;
+  const x=sc(0,Math.max(...xs),M.l,W-M.r), y=sc(0,hi,H-M.b,M.t);
+  ticks(0,hi,4).forEach(t=>{
+    E('line',{x1:M.l,x2:W-M.r,y1:y(t),y2:y(t),class:'gridline'},s);
+    E('text',{x:M.l-7,y:y(t)+4,class:'axis','text-anchor':'end'},s).textContent=money(t);
+  });
+  [0,10,20,30,40,50].forEach(v=>E('text',{x:x(v),y:H-M.b+16,class:'axis','text-anchor':'middle'},s).textContent=v);
+  E('path',{d:P(R.map(d=>[x(d.x),y(d.loss)]).concat([[x(Math.max(...xs)),y(0)],[x(0),y(0)]]))+'Z',
+    fill:'var(--s4)','fill-opacity':.16},s);
+  const p=E('path',{d:P(R.map(d=>[x(d.x),y(d.loss)])),fill:'none',stroke:'var(--s4)','stroke-width':2.3},s);
+  animPath(p);
+  const bp=L.loss_curve.breakpoint;
+  E('line',{x1:x(bp),x2:x(bp),y1:M.t,y2:H-M.b,stroke:'var(--accent)','stroke-width':1.5,'stroke-dasharray':'4 3'},s);
+  E('text',{x:x(bp)+5,y:M.t+11,class:'slab',fill:'var(--accent)'},s).textContent=f(bp,1)+' mm — the cliff';
+  E('line',{x1:M.l,x2:W-M.r,y1:H-M.b,y2:H-M.b,class:'axisline'},s);
+  E('text',{x:(M.l+W-M.r)/2,y:H-4,class:'axis','text-anchor':'middle'},s).textContent='daily rainfall (mm)';
+  drawIn(host,s);
+}
+
+function drawFrontier(host,L,W,H){
+  const M={t:12,r:16,b:32,l:46};
+  const s=SVG(W,H), F=L.hedge.frontier;
+  const hi=Math.max(...F.map(d=>d.ruin))*1.15||0.01;
+  const x=sc(0,Math.max(...F.map(d=>d.fraction)),M.l,W-M.r), y=sc(0,hi,H-M.b,M.t);
+  ticks(0,hi,4).forEach(t=>{
+    E('line',{x1:M.l,x2:W-M.r,y1:y(t),y2:y(t),class:'gridline'},s);
+    E('text',{x:M.l-7,y:y(t)+4,class:'axis','text-anchor':'end'},s).textContent=pct(t,1);
+  });
+  [0,0.5,1,1.5,2].forEach(v=>E('text',{x:x(v),y:H-M.b+16,class:'axis','text-anchor':'middle'},s).textContent=v+'×');
+  const p=E('path',{d:P(F.map(d=>[x(d.fraction),y(d.ruin)])),fill:'none',stroke:'var(--s3)','stroke-width':2.3},s);
+  animPath(p);
+  const rec=L.hedge.recommended;
+  E('line',{x1:x(rec),x2:x(rec),y1:M.t,y2:H-M.b,stroke:'var(--accent)','stroke-width':1.5,'stroke-dasharray':'4 3'},s);
+  E('text',{x:x(rec)+5,y:M.t+11,class:'slab',fill:'var(--accent)'},s).textContent='recommended '+f(rec,2)+'×';
+  E('line',{x1:M.l,x2:W-M.r,y1:H-M.b,y2:H-M.b,class:'axisline'},s);
+  E('text',{x:(M.l+W-M.r)/2,y:H-4,class:'axis','text-anchor':'middle'},s).textContent='hedge size (multiples of h*)';
+  drawIn(host,s);
+}
+
+function drawPIT(host,L,W,H){
+  const M={t:12,r:16,b:28,l:40};
+  const s=SVG(W,H), pit=L.diagnostics.backtest.pit;
+  const hi=Math.max(...pit.map(d=>d.count),pit[0].expected)*1.2;
+  const y=sc(0,hi,H-M.b,M.t);
+  const bw=(W-M.l-M.r)/pit.length-3;
+  pit.forEach((d,i)=>{
+    const bx=M.l+i*((W-M.l-M.r)/pit.length);
+    const off=Math.abs(d.count-d.expected)/d.expected;
+    const col=off>0.25?'var(--serious)':'var(--s1)';
+    const r=E('rect',{x:bx,y:y(d.count),width:bw,height:(H-M.b)-y(d.count),fill:col,rx:2},s);
+    if(!reduce) r.animate([{opacity:0},{opacity:1}],{duration:420,delay:i*35,fill:'backwards'});
+  });
+  E('line',{x1:M.l,x2:W-M.r,y1:y(pit[0].expected),y2:y(pit[0].expected),
+    stroke:'var(--ink)','stroke-width':1.4,'stroke-dasharray':'4 3'},s);
+  E('text',{x:W-M.r,y:y(pit[0].expected)-6,class:'axis','text-anchor':'end',fill:'var(--ink)'},s)
+    .textContent='uniform';
+  E('line',{x1:M.l,x2:W-M.r,y1:H-M.b,y2:H-M.b,class:'axisline'},s);
+  E('text',{x:M.l,y:H-4,class:'axis'},s).textContent='0 — predicted quantile — 1';
+  drawIn(host,s);
+}
+
+function drawRel(host,L,W,H){
+  const M={t:12,r:16,b:30,l:40};
+  const s=SVG(W,H), R=L.diagnostics.backtest.reliability;
+  const x=sc(0,1,M.l,W-M.r), y=sc(0,1,H-M.b,M.t);
+  [0,.5,1].forEach(t=>{
+    E('line',{x1:M.l,x2:W-M.r,y1:y(t),y2:y(t),class:'gridline'},s);
+    E('text',{x:M.l-7,y:y(t)+4,class:'axis','text-anchor':'end'},s).textContent=pct(t);
+    E('text',{x:x(t),y:H-M.b+16,class:'axis','text-anchor':'middle'},s).textContent=pct(t);
+  });
+  E('line',{x1:x(0),x2:x(1),y1:y(0),y2:y(1),stroke:'var(--ink)','stroke-width':1.2,
+    'stroke-dasharray':'4 3','stroke-opacity':.6},s);
+  if(R.length){
+    const p=E('path',{d:P(R.map(d=>[x(d.forecast),y(d.observed)])),fill:'none',
+      stroke:'var(--s3)','stroke-width':2.3},s);
+    animPath(p);
+    R.forEach(d=>E('circle',{cx:x(d.forecast),cy:y(d.observed),r:3.6,fill:'var(--s3)',
+      stroke:'var(--panel)','stroke-width':1.6},s));
+  }
+  E('text',{x:(M.l+W-M.r)/2,y:H-4,class:'axis','text-anchor':'middle'},s).textContent='forecast probability';
+  drawIn(host,s);
+}
+
+/* ---------- utils ---------- */
+function ticks(lo,hi,n){
+  const span=hi-lo; if(!(span>0)) return [lo];
+  const raw=span/n, mag=Math.pow(10,Math.floor(Math.log10(raw)));
+  const step=[1,2,2.5,5,10].map(m=>m*mag).find(v=>v>=raw)||mag*10;
+  const out=[];
+  for(let t=Math.ceil(lo/step)*step;t<=hi;t+=step) out.push(t);
+  return out;
+}
+function monthName(m){return ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m-1];}
+function seasonLen(L){
+  const [a,b]=L.season, len=[31,28,31,30,31,30,31,31,30,31,30,31];
+  let n=0,m=a;
+  for(;;){n+=len[m-1]; if(m===b) break; m=m%12+1;}
+  return n;
+}
+function prettyTerm(n){
+  const map={intercept:'Intercept',global:'Global temperature (amplification)',
+    drift_per_century:'Station drift (frozen, not projected)'};
+  return map[n]||n.replace(/^cos(\d)$/,'Seasonal cos $1').replace(/^sin(\d)$/,'Seasonal sin $1')
+    .replace(/^global_cos(\d)$/,'Seasonal amplification cos $1')
+    .replace(/^global_sin(\d)$/,'Seasonal amplification sin $1');
+}
+function provBadge(L){
+  const real=L.provenance==='noaa-ghcnd'||L.provenance==='era5-openmeteo';
+  const cls=real?'ok':'warn';
+  const label=L.provenance==='noaa-ghcnd'?'NOAA GHCN-Daily observations'
+    :L.provenance==='era5-openmeteo'?'ERA5 reanalysis':'Calibrated surrogate — not observations';
+  let out=`<span class="pill ${cls}">${label}</span>`;
+  if(L.coverage&&L.coverage.tmax_c!=null)
+    out+=`<span class="pill info">temperature coverage ${pct(L.coverage.tmax_c)}</span>`;
+  if(L.patched&&L.patched.length)
+    out+=`<span class="pill warn">${L.patched.join(', ')} not measured at station — substituted</span>`;
+  return out;
+}
+
+/* ---------- render ---------- */
+const VIEWS={overview:view_overview,climate:view_climate,outlook:view_outlook,
+  perils:view_perils,pricing:view_pricing,hedge:view_hedge,model:view_model};
+function render(){
+  const host=document.getElementById('view');
+  host.innerHTML='';
+  host.appendChild(VIEWS[state.tab](state.loc));
+}
+document.getElementById('yearOut').textContent=state.loc.target_years[0];
+pushWeather();
+render();
+</script>
