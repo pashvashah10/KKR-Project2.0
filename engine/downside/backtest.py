@@ -36,7 +36,15 @@ from .climatology import BASE_HI, BASE_LO, DesignSpec, fit_climatology
 from .forcing import TwoBoxResponse
 from .sources.base import DailyRecord
 
-__all__ = ["BacktestResult", "walk_forward", "crps_gaussian", "pit_values", "reliability_curve"]
+__all__ = [
+    "BacktestResult",
+    "walk_forward",
+    "crps_gaussian",
+    "pit_values",
+    "reliability_curve",
+    "detect_inhomogeneity",
+    "assess_quality",
+]
 
 
 @dataclass(slots=True)
@@ -57,12 +65,30 @@ class BacktestResult:
     coverage_50: float = 0.0
 
     @property
+    def pit_max_deviation(self) -> float:
+        """Largest bin's departure from uniform, as a share of expected count."""
+        if not self.pit_histogram:
+            return 0.0
+        exp = self.pit_histogram[0]["expected"]
+        if exp <= 0:
+            return 0.0
+        return max(abs(b["count"] - exp) / exp for b in self.pit_histogram)
+
+    @property
     def calibrated(self) -> bool:
-        """Intervals within 5 points of nominal and PIT not rejected at 1%."""
+        """Are the predicted distributions honest enough to price off?
+
+        Judged on **effect size, not a p-value**. With ~11,000 out-of-sample days
+        a chi-square test on the PIT histogram rejects uniformity for deviations
+        far too small to matter --- it returned p < 1e-6 at every site, which made
+        the flag useless rather than informative. What matters for pricing is
+        whether the stated intervals hold and whether any PIT bin is badly
+        over-populated, so those are the thresholds.
+        """
         return (
-            abs(self.coverage_90 - 0.90) < 0.05
-            and abs(self.coverage_50 - 0.50) < 0.05
-            and self.pit_uniformity_p > 0.01
+            abs(self.coverage_90 - 0.90) <= 0.04
+            and abs(self.coverage_50 - 0.50) <= 0.06
+            and self.pit_max_deviation <= 0.35
         )
 
 
@@ -182,3 +208,125 @@ def walk_forward(
         coverage_90=cov90,
         coverage_50=cov50,
     )
+
+
+# ----------------------------------------------------------------------
+# Record quality
+# ----------------------------------------------------------------------
+
+
+def detect_inhomogeneity(record: DailyRecord, fit, variable: str = "tmax_c") -> dict:
+    """Look for a step change in the record that climate cannot explain.
+
+    Long station records are rarely homogeneous. Instruments get replaced, sites
+    get moved, observation times shift. Each leaves a *step* in the series, and a
+    trend model has no way to represent one: it absorbs the step into the warming
+    coefficient and reports whatever falls out.
+
+    Jackson Hole is the live example --- its 2010s decade mean sits 1.8 degC below
+    its 1990s, which is not a climate signal. Fitted naively it produced an
+    amplification of -0.35, meaning the model believed the site *cools* as the
+    globe warms, and would have projected cooling to 2125.
+
+    The test runs on annual means of the model residuals rather than on the raw
+    series, so a genuine forced response --- which the fit already captures --- does
+    not register. What remains is a standard two-sample split scan (a Pettitt-style
+    change point): for every candidate split year, the standardised difference of
+    residual means either side. A large statistic means a discontinuity the
+    climate model cannot account for.
+
+    Thresholds are calibrated, not guessed. Across clean records the statistic
+    tops out at 2.5 with shifts under 0.3 degC; a planted 2 degC step scores 4.2,
+    and the real Jackson Hole record scores 3.2 with a -0.74 degC shift. Hence
+    `t > 3.0` and `|shift| > 0.4`.
+
+    **This test alone is a weak detector, by construction.** The fit partially
+    absorbs any step before the residuals are formed --- a planted 2 degC step
+    pushed the fitted amplification to 3.97 degC per degC and left only 0.62 degC
+    in the residuals. So a step shows up mainly as a *non-physical amplification*,
+    and `assess_quality` checks that separately. The two together catch what
+    neither catches alone; a step around 1 degC evades this one on its own.
+
+    Operational climatology solves this with pairwise homogenisation against
+    neighbouring stations. That is the right fix and it is not implemented here,
+    so the honest alternative is to detect the problem and refuse to quote
+    confidently on that site.
+    """
+    years = np.unique(record.year)
+    y = record.get(variable)
+    resid_annual = []
+    for yr in years:
+        m = record.year == yr
+        if m.sum() < 200:
+            continue
+        g = fit.response.baseline_shift(record.decimal_year[m], BASE_LO, BASE_HI)
+        pred = fit.predict_mean(record.doy[m], g, np.full(m.sum(), float(yr)))
+        resid_annual.append(float((y[m] - pred).mean()))
+
+    r = np.asarray(resid_annual, dtype=float)
+    n = len(r)
+    if n < 30:
+        return {"detected": False, "statistic": 0.0, "year": None, "shift": 0.0, "n_years": n}
+
+    sd = float(r.std(ddof=1))
+    if sd <= 0:
+        return {"detected": False, "statistic": 0.0, "year": None, "shift": 0.0, "n_years": n}
+
+    best_t, best_i = 0.0, None
+    for i in range(10, n - 10):
+        a, b = r[:i], r[i:]
+        pooled = np.sqrt(a.var(ddof=1) / len(a) + b.var(ddof=1) / len(b))
+        if pooled <= 0:
+            continue
+        t = abs(float(b.mean() - a.mean()) / pooled)
+        if t > best_t:
+            best_t, best_i = t, i
+
+    if best_i is None:
+        return {"detected": False, "statistic": 0.0, "year": None, "shift": 0.0, "n_years": n}
+
+    valid = np.unique(record.year)[: len(r)] if len(r) == len(years) else years[: len(r)]
+    shift = float(r[best_i:].mean() - r[:best_i].mean())
+    return {
+        "detected": bool(best_t > 3.0 and abs(shift) > 0.4),
+        "statistic": round(best_t, 2),
+        "year": int(valid[best_i]) if best_i < len(valid) else None,
+        "shift": round(shift, 3),
+        "n_years": n,
+    }
+
+
+def assess_quality(amplification: float, backtest: BacktestResult, inhomogeneity: dict) -> dict:
+    """Gate a site before its numbers are quoted.
+
+    A model can fit, project and price without ever raising, so the failure mode
+    here is a confident wrong number rather than a crash. These checks are what
+    stand between a bad record and a bad quote.
+    """
+    problems: list[str] = []
+
+    if not 0.2 <= amplification <= 3.0:
+        problems.append(
+            f"Amplification of {amplification:.2f} degC per degC is not physical for a "
+            "continental site; the warming coefficient is not identified here."
+        )
+    if abs(backtest.bias) > 0.8:
+        problems.append(
+            f"Out-of-sample bias of {backtest.bias:+.2f} degC over 30 held-out years."
+        )
+    if backtest.crps_skill < -0.05:
+        problems.append(
+            f"Forecast scores {abs(backtest.crps_skill):.0%} worse than plain climatology."
+        )
+    if inhomogeneity.get("detected"):
+        problems.append(
+            f"Step change of {inhomogeneity['shift']:+.2f} degC around "
+            f"{inhomogeneity['year']} that the climate model cannot explain — "
+            "most likely a station move or instrument change, not weather."
+        )
+
+    return {
+        "usable": not problems,
+        "problems": problems,
+        "verdict": "ok" if not problems else ("caution" if len(problems) == 1 else "unreliable"),
+    }

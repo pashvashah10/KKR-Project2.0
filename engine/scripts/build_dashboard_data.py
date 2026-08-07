@@ -11,7 +11,7 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from downside.backtest import walk_forward  # noqa: E402
+from downside.backtest import assess_quality, detect_inhomogeneity, walk_forward  # noqa: E402
 from downside.climatology import BASE_HI, BASE_LO  # noqa: E402
 from downside.config import (  # noqa: E402
     LOCATIONS,
@@ -94,6 +94,9 @@ def build_location(loc, verbose: bool = True) -> dict:
 
     # --- diagnostics --------------------------------------------------------
     bt = walk_forward(record, model.response, "tmax_c", split_year=1995, trigger_threshold=32.0)
+    inhom = detect_inhomogeneity(record, model.tmax)
+    out["quality"] = assess_quality(model.tmax.amplification, bt, inhom)
+    out["quality"]["inhomogeneity"] = inhom
     out["diagnostics"] = {
         "r2": r3(model.tmax.r_squared),
         "n_obs": int(model.tmax.mean_fit.n_obs),
@@ -116,6 +119,7 @@ def build_location(loc, verbose: bool = True) -> dict:
             "coverage_90": r3(bt.coverage_90),
             "coverage_50": r3(bt.coverage_50),
             "calibrated": bt.calibrated,
+            "pit_max_deviation": r3(bt.pit_max_deviation),
             "pit": bt.pit_histogram,
             "reliability": bt.reliability,
         },
@@ -331,7 +335,8 @@ def build_location(loc, verbose: bool = True) -> dict:
     }
 
     if verbose:
-        print(f"  {loc.id:14s} {record.provenance:12s} {time.time() - t0:5.1f}s")
+        flag = "" if out["quality"]["usable"] else f"  [{out['quality']['verdict'].upper()}]"
+        print(f"  {loc.id:14s} {record.provenance:16s} {time.time() - t0:5.1f}s{flag}", flush=True)
     return out
 
 

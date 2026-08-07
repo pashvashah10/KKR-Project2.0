@@ -397,3 +397,95 @@ def test_surrogate_is_deterministic():
     b = SyntheticSource(seed=42).fetch(loc, 1990, 2000)
     assert np.array_equal(a.tmax_c, b.tmax_c)
     assert np.array_equal(a.precip_mm, b.precip_mm)
+
+
+# ----------------------------------------------------------------------
+# record quality
+# ----------------------------------------------------------------------
+
+
+class _StubBacktest:
+    """Minimal stand-in carrying only what `assess_quality` reads."""
+
+    def __init__(self, bias=0.0, skill=0.02):
+        self.bias = bias
+        self.crps_skill = skill
+
+
+def test_quality_gate_passes_a_healthy_site():
+    from downside.backtest import assess_quality
+
+    q = assess_quality(1.3, _StubBacktest(bias=0.2, skill=0.02), {"detected": False})
+    assert q["usable"]
+    assert q["verdict"] == "ok"
+
+
+def test_quality_gate_rejects_negative_amplification():
+    """A site the model believes cools as the globe warms must not be quoted."""
+    from downside.backtest import assess_quality
+
+    q = assess_quality(-0.35, _StubBacktest(bias=-1.81, skill=-0.16), {"detected": False})
+    assert not q["usable"]
+    assert q["verdict"] == "unreliable"
+    assert any("not physical" in p for p in q["problems"])
+
+
+def test_quality_gate_flags_a_detected_step_change():
+    from downside.backtest import assess_quality
+
+    q = assess_quality(
+        1.2, _StubBacktest(), {"detected": True, "shift": -1.8, "year": 2009}
+    )
+    assert not q["usable"]
+    assert any("station move" in p for p in q["problems"])
+
+
+def test_inhomogeneity_detector_finds_a_planted_step():
+    """Plant an artificial jump in a clean record; the detector must catch it."""
+    import numpy as np
+
+    from downside.backtest import detect_inhomogeneity
+    from downside.climatology import fit_climatology
+    from downside.config import LOCATIONS_BY_ID, SCENARIOS_BY_ID
+    from downside.forcing import global_temperature_path
+
+    loc = LOCATIONS_BY_ID["boston-ma"]
+    rec = SyntheticSource().fetch(loc, 1940, 2020)
+    resp = global_temperature_path(SCENARIOS_BY_ID["ssp245"], 1850, 2130)
+
+    clean = fit_climatology(rec, resp, "tmax_c", n_boot=0)
+    assert not detect_inhomogeneity(rec, clean)["detected"]
+
+    # A 2 degC instrument step from 1990 onward.
+    rec.tmax_c = rec.tmax_c + np.where(rec.year >= 1990, 2.0, 0.0)
+    broken = fit_climatology(rec, resp, "tmax_c", n_boot=0)
+    found = detect_inhomogeneity(rec, broken)
+    assert found["detected"]
+    assert abs(found["year"] - 1990) <= 3
+
+
+def test_a_step_corrupts_the_amplification_so_the_gate_catches_it():
+    """The step's loudest symptom is a non-physical warming coefficient.
+
+    The fit absorbs a discontinuity before the residuals are formed, so the
+    residual test is muted. What it cannot hide is the amplification: a planted
+    2 degC step drives it far outside anything physical, which is why
+    `assess_quality` checks the coefficient as well as the residuals.
+    """
+    import numpy as np
+
+    from downside.backtest import assess_quality
+    from downside.climatology import fit_climatology
+    from downside.config import LOCATIONS_BY_ID, SCENARIOS_BY_ID
+    from downside.forcing import global_temperature_path
+
+    rec = SyntheticSource().fetch(LOCATIONS_BY_ID["boston-ma"], 1940, 2020)
+    resp = global_temperature_path(SCENARIOS_BY_ID["ssp245"], 1850, 2130)
+
+    clean_amp = fit_climatology(rec, resp, "tmax_c", n_boot=0).amplification
+    assert 0.2 <= clean_amp <= 3.0
+
+    rec.tmax_c = rec.tmax_c + np.where(rec.year >= 1990, 2.0, 0.0)
+    broken_amp = fit_climatology(rec, resp, "tmax_c", n_boot=0).amplification
+    assert broken_amp > 3.0
+    assert not assess_quality(broken_amp, _StubBacktest(), {"detected": False})["usable"]
