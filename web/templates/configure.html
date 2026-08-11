@@ -130,11 +130,20 @@
             </div>
 
             <label class="field">
-              <span>Email me when it is ready (optional)</span>
+              <span>
+                {% if mail_configured %}Email me when it is ready (optional)
+                {% else %}Your email (optional){% endif %}
+              </span>
               <input name="notify_email" type="email" placeholder="you@company.com">
               <span class="field-hint">
-                Fitting takes one to three minutes. Leave an address and you can close
-                this tab — we will send a link straight back to the finished quote.
+                {% if mail_configured %}
+                  Fitting takes one to three minutes. Leave an address and you can close
+                  this tab — we will send a link straight back to the finished quote.
+                {% else %}
+                  Fitting takes one to three minutes. Email delivery is not configured on
+                  this deployment, so nothing will be sent — instead you will get a link
+                  on screen that you can bookmark and come back to from any device.
+                {% endif %}
               </span>
             </label>
 
@@ -159,12 +168,52 @@
             </p>
           </div>
 
+          {# Filled by site.js as soon as the POST returns, so the link exists
+             before the fit does --- otherwise "you can close this tab" is a
+             promise made to someone who has nothing to come back with. #}
+          <div class="panel" data-resume hidden style="margin-top:var(--sp-3)"></div>
+
           <div data-station-result hidden style="margin-top:var(--sp-3)"></div>
         </div>
       </div>
 
       {# ------------------------------------------------------------- sidebar #}
       <aside class="stack sticky">
+
+        {% if resume_link %}
+        {# The link is signed and scoped to this venue, so it works from a phone
+           that has never seen this session. Shown rather than only emailed,
+           because delivery is not configured here and silently doing nothing is
+           the failure this whole feature exists to avoid. #}
+        <div class="panel">
+          <p class="eyebrow">Come back to this venue</p>
+          {% if mail_configured and selected.notified_at %}
+          <p class="small">
+            We sent this link to <strong>{{ selected.contact_email }}</strong>. It also
+            works from here:
+          </p>
+          {% else %}
+          <p class="small">
+            {% if selected.contact_email and not mail_configured %}
+              Email delivery is not configured on this deployment, so nothing was sent.
+              Bookmark this instead — it opens straight back to this venue from any
+              device, no sign-in:
+            {% else %}
+              Bookmark this. It opens straight back to this venue from any device, with
+              no sign-in:
+            {% endif %}
+          </p>
+          {% endif %}
+          <p class="num small" style="margin-top:var(--sp-3);word-break:break-all;
+                    background:var(--panel-2);padding:var(--sp-3);border-radius:3px">
+            <a href="{{ resume_link }}">{{ resume_link }}</a>
+          </p>
+          <p class="tiny" style="margin-top:var(--sp-2)">
+            Anyone with this link can see this venue's analysis, so treat it like a
+            password. It expires on its own.
+          </p>
+        </div>
+        {% endif %}
 
         {% if station %}
         <div class="panel">

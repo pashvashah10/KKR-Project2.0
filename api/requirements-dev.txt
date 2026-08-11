@@ -1,0 +1,8 @@
+# Test-only. Not needed to run the service.
+-r requirements.txt
+
+pytest>=8.0
+# Starlette's TestClient transport. The route tests in api/tests/ do not import
+# without it, and its absence shows up as a RuntimeError at collection rather
+# than a missing-module error, which is confusing the first time.
+httpx2>=2.0

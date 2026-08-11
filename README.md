@@ -20,6 +20,7 @@ DESIGN.md   The storefront's design specification
 
 ```bash
 pip install -r api/requirements.txt -r engine/requirements.txt
+export DOWNSIDE_SECRET=$(python3 -c 'import secrets;print(secrets.token_urlsafe(32))')
 python3 -m api.scripts.build_station_cache   # once, needs network
 python3 -m api.seed                          # eight example venues, ~15 min
 python3 web/build.py all
@@ -274,9 +275,17 @@ rebuilt deliberately, never silently at runtime, because a re-download that
 changes which gauge a live contract settles on is not a thing that should happen
 on its own.
 
-**Email is not wired up.** `/configure` offers to send a link when a fit
-finishes; `web.ConsoleSender` logs it and the UI says delivery is not
-configured. Swapping in a real sender is one binding.
+**Mail delivery is not wired up, but the link is real.** A venue gets a signed
+resume link the moment its fit starts. The link authenticates on its own, so it
+opens the finished venue from a phone that has never seen the session — which is
+what makes "you can close this tab" true. `web.SmtpSender` is a documented stub
+that refuses rather than degrading silently, so `ConsoleSender` logs the link
+and the page shows it on screen to bookmark. No page claims an email was sent.
+
+Set **`DOWNSIDE_SECRET`** in any real deployment. Without it the signing key is
+generated per process, so sessions and resume links do not survive a restart;
+the server warns at startup and shortens the link's advertised lifetime to a day
+rather than promising a week it cannot keep.
 
 ---
 
@@ -299,6 +308,7 @@ configured. Swapping in a real sender is one binding.
 | API module | Contents |
 |---|---|
 | `stations.py` | GHCN index, terrain-aware nearest-station matching |
+| `security.py` | The app signing key, and the signed resume links minted from it |
 | `catalog.py` | The four products, as code |
 | `checkout.py` | Cart, orders, mock payment, Stripe seam |
 | `web.py` | Storefront routes, async fit jobs, session cart |

@@ -36,13 +36,13 @@ import logging
 import secrets
 import time
 from pathlib import Path
-from typing import Any
+from typing import Any, Protocol
 
 from fastapi import APIRouter, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
-from . import catalog, checkout, service, stations, store
+from . import catalog, checkout, security, service, stations, store
 
 log = logging.getLogger(__name__)
 
@@ -108,6 +108,21 @@ def guest_account(request: Request, email: str | None = None, name: str | None =
     )
     request.session["account_id"] = account["id"]
     return account
+
+
+def adopt_resume_token(request: Request, token: str | None, site_id: str | None) -> bool:
+    """Log this browser in as the token's owner. Returns whether it did.
+
+    This is the whole magic-link mechanism, and it is deliberately three lines:
+    a valid token writes `account_id` into the session and then **every existing
+    ownership check applies unchanged**. Nothing downstream learns about tokens,
+    and no authorisation path is duplicated or relaxed to accommodate them.
+    """
+    payload = security.read_resume_token(token, site_id=site_id)
+    if payload is None:
+        return False
+    request.session["account_id"] = payload["account_id"]
+    return True
 
 
 def current_account(request: Request) -> dict | None:
@@ -192,10 +207,20 @@ def _weather_for(slug: str) -> str:
 
 
 @router.get("/configure/{slug}", response_class=HTMLResponse)
-def configure(request: Request, slug: str, site: str | None = None, job_id: str | None = None):
+def configure(
+    request: Request,
+    slug: str,
+    site: str | None = None,
+    job_id: str | None = None,
+    t: str | None = None,
+):
     product = catalog.get(slug)
     if product is None:
         raise HTTPException(404, "No such service.")
+
+    # Before reading the account, so a visitor arriving from a resume link on a
+    # device with no cookie is already the owner by the time ownership is checked.
+    adopt_resume_token(request, t, site)
 
     examples = store.list_example_sites()
     account = current_account(request)
@@ -224,6 +249,12 @@ def configure(request: Request, slug: str, site: str | None = None, job_id: str 
         quote=quote,
         resume_job=job_id,
         verticals=VERTICALS,
+        resume_link=(
+            absolute(request, magic_link(selected, slug))
+            if selected and selected.get("resume_token") and not selected.get("is_example")
+            else None
+        ),
+        mail_configured=SENDER.configured,
         weather=_weather_for(slug),
     )
 
@@ -375,8 +406,14 @@ async def start_fit(
         reserves=None, monthly_burn=None,
         is_example=0,
     )
-    if notify_email:
-        store.update_site(site["id"], contact_email=notify_email.strip()[:200])
+    # Minted here, where the slug is known, and stored so the link in the
+    # notification and the one rendered on screen are the same string.
+    token = security.issue_resume_token(site["id"], account["id"], slug)
+    store.update_site(
+        site["id"],
+        resume_token=token,
+        contact_email=notify_email.strip()[:200] if notify_email else None,
+    )
 
     match = stations.nearest_station(lat, lon, elevation_m)
     if match is not None:
@@ -390,10 +427,14 @@ async def start_fit(
         {
             "job_id": job["id"],
             "site_id": site["id"],
-            "status_url": f"/api/v1/jobs/{job['id']}",
-            "configure_url": f"/configure/{slug}?site={site['id']}",
+            # Both carry the token, so the tab that started the fit and any
+            # other device work from the same URL.
+            "status_url": f"/api/v1/jobs/{job['id']}?t={token}",
+            "configure_url": magic_link(fresh, slug, token),
+            "resume_link": absolute(request, magic_link(fresh, slug, token)),
             "station": _station_view(fresh),
             "notify": bool(notify_email),
+            "mail_configured": SENDER.configured,
         },
         status_code=202,
     )
@@ -404,9 +445,22 @@ _submit_fit = None
 
 
 def submit_fit(site_id: str, job_id: str) -> None:
+    """Start a fit, and arrange for the resume link to go out when it lands.
+
+    The `Future` was previously discarded. Keeping it is what makes "you can
+    close this tab" true: the notification fires from the worker's completion
+    callback rather than from a poller, so nobody has to be watching.
+
+    `add_done_callback` runs even when `fit_site` raised, which is correct ---
+    `notify_if_requested` checks the site reached `ready` and declines to send
+    otherwise.
+    """
     if _submit_fit is None:  # pragma: no cover - wiring error
         raise RuntimeError("fit executor not configured; call web.configure_executor()")
-    _submit_fit(site_id, job_id)
+
+    future = _submit_fit(site_id, job_id)
+    if future is not None and hasattr(future, "add_done_callback"):
+        future.add_done_callback(lambda _f: notify_if_requested(site_id))
 
 
 def configure_executor(fn) -> None:
@@ -415,7 +469,7 @@ def configure_executor(fn) -> None:
 
 
 @router.get("/api/v1/jobs/{job_id}")
-def job_status(request: Request, job_id: str) -> JSONResponse:
+def job_status(request: Request, job_id: str, t: str | None = None) -> JSONResponse:
     """Progress for the configure page's poller.
 
     Session-scoped rather than bearer-authenticated: the browser polling this
@@ -427,6 +481,7 @@ def job_status(request: Request, job_id: str) -> JSONResponse:
         raise HTTPException(404, "No such job.")
 
     site = store.get_site(job["site_id"])
+    adopt_resume_token(request, t, job["site_id"])
     account = current_account(request)
     if site and not site.get("is_example"):
         if not account or site["account_id"] != account["id"]:
@@ -444,16 +499,21 @@ def job_status(request: Request, job_id: str) -> JSONResponse:
         payload["station"] = _station_view(site)
         payload["site_name"] = site["name"]
         payload["quality"] = json.loads(site["quality"]) if site.get("quality") else None
-        if site.get("contact_email"):
-            payload["magic_link"] = magic_link(site)
+        if site.get("resume_token"):
+            token_payload = security.read_resume_token(site["resume_token"], site_id=site["id"])
+            slug = (token_payload or {}).get("slug") or "exposure-report"
+            payload["magic_link"] = absolute(request, magic_link(site, slug))
+            payload["mail_configured"] = SENDER.configured
+            payload["notified"] = bool(site.get("notified_at"))
     return JSONResponse(payload)
 
 
 @router.get("/api/v1/sites/{site_id}/indicative")
-def indicative(request: Request, site_id: str) -> JSONResponse:
+def indicative(request: Request, site_id: str, t: str | None = None) -> JSONResponse:
     site = store.get_site(site_id)
     if site is None:
         raise HTTPException(404, "No such venue.")
+    adopt_resume_token(request, t, site_id)
     account = current_account(request)
     if not site.get("is_example") and (not account or site["account_id"] != account["id"]):
         raise HTTPException(404, "No such venue.")
@@ -469,27 +529,133 @@ def indicative(request: Request, site_id: str) -> JSONResponse:
 # ----------------------------------------------------------------------
 # Magic links
 #
-# There is no SMTP in this environment and pretending otherwise would be the
-# same failure this whole rebuild is correcting. `send_magic_link` therefore
-# logs the link and the UI shows it on screen, saying plainly that delivery is
-# not configured. Swapping `ConsoleSender` for a real one is a single binding.
+# The form on /configure says "leave an address and you can close this tab".
+# Making that true needs three things that are easy to get subtly wrong:
+#
+#   1. the link must authenticate on its own, because the phone that opens it
+#      has no cookie from the laptop that started the fit (`api/security.py`);
+#   2. it must be sent when the *fit* finishes, not when someone polls --- a
+#      poller only exists while the tab is open, which is the case the feature
+#      exists to avoid;
+#   3. it must point at the service the visitor was actually configuring.
+#
+# There is no SMTP here, and pretending otherwise would be the same failure this
+# rebuild keeps correcting. `ConsoleSender` logs the link and reports itself
+# unconfigured, and the configure page then shows the link on screen as
+# something to bookmark. Nothing anywhere claims an email was sent.
 # ----------------------------------------------------------------------
 
 
-def magic_link(site: dict) -> str:
-    return f"/configure/parametric-cover?site={site['id']}"
+def magic_link(site: dict, slug: str, token: str | None = None) -> str:
+    """The path back to a finished venue.
+
+    Takes the slug explicitly. It used to be hardcoded to `parametric-cover`,
+    so a visitor who asked to be emailed about an Exposure Report was sent to a
+    different product entirely.
+    """
+    token = token or site.get("resume_token")
+    url = f"/configure/{slug}?site={site['id']}"
+    return f"{url}&t={token}" if token else url
+
+
+def absolute(request: Request, path: str) -> str:
+    return str(request.base_url).rstrip("/") + path
+
+
+class MagicLinkSender(Protocol):
+    """Everything the notifier needs from a delivery channel.
+
+    `configured` is part of the contract, not an implementation detail: the UI
+    reads it to decide whether to promise an email or offer a link to bookmark.
+    """
+
+    configured: bool
+
+    def send(self, to: str, subject: str, link: str) -> None: ...
 
 
 class ConsoleSender:
-    """Logs the link instead of sending it. Honest about it in the UI."""
+    """Logs the link instead of sending it, and says so.
+
+    The default, because this environment has no mail transport. `configured`
+    is `False`, which is what stops the UI claiming a message went out.
+    """
 
     configured = False
+    name = "console"
 
     def send(self, to: str, subject: str, link: str) -> None:
-        log.info("MAGIC LINK for %s | %s | %s", to, subject, link)
+        log.info("MAGIC LINK  to=%s  subject=%r  link=%s", to, subject, link)
 
 
-SENDER = ConsoleSender()
+class SmtpSender:
+    """Where a real mail transport plugs in. Not wired, and not pretending to be.
+
+    Same shape as `checkout.StripeProvider`, and refusing for the same reason:
+    a channel that silently falls back to logging would let a deployment believe
+    it was sending mail when it was not.
+
+    To finish it: read `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`
+    and `MAIL_FROM` from the environment --- never from the database --- build a
+    `MIMEText` alternative with the link in both parts, and send over
+    `smtplib.SMTP` with STARTTLS. Set `configured = True` only once a real host
+    is present, since the UI branches on it. Delivery must stay off the fitting
+    thread: `notify_if_requested` already runs in a completion callback, so a
+    slow relay delays nothing a customer is watching, but a hung socket would
+    hold a pool thread --- give the connection an explicit timeout.
+    """
+
+    configured = False
+    name = "smtp"
+
+    def __init__(self, host: str | None = None) -> None:
+        self.host = host
+
+    def send(self, to: str, subject: str, link: str) -> None:
+        raise NotImplementedError(
+            "SMTP is not configured. See the class docstring for what a real "
+            "implementation needs; this deliberately refuses rather than "
+            "quietly degrading to a log line."
+        )
+
+
+SENDER: MagicLinkSender = ConsoleSender()
+
+
+def notify_if_requested(site_id: str) -> bool:
+    """Send the resume link once, if one was asked for. Returns whether it sent.
+
+    Called from the fit's completion callback, so every guard here is about not
+    sending: the fit may have failed, no address may have been given, and a
+    retry must not send twice. `notified_at` is the idempotency record.
+    """
+    site = store.get_site(site_id)
+    if site is None:
+        return False
+    if site.get("status") != "ready":
+        return False  # nothing worth linking to yet
+    if not site.get("contact_email") or site.get("notified_at"):
+        return False
+
+    token = site.get("resume_token")
+    payload = security.read_resume_token(token, site_id=site_id)
+    slug = (payload or {}).get("slug") or "exposure-report"
+    link = magic_link(site, slug, token)
+
+    try:
+        SENDER.send(
+            site["contact_email"],
+            f"Your {site['name']} analysis is ready",
+            link,
+        )
+    except Exception:  # noqa: BLE001
+        # A notifier fault must never turn a good fit into a failed one. Left
+        # unmarked so a later attempt can still deliver.
+        log.exception("could not send the resume link for %s", site_id)
+        return False
+
+    store.update_site(site_id, notified_at=time.time())
+    return True
 
 
 # ----------------------------------------------------------------------

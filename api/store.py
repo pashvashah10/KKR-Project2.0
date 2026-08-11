@@ -60,6 +60,11 @@ CREATE TABLE IF NOT EXISTS sites (
     station_elevation_warning INTEGER NOT NULL DEFAULT 0,
     is_example         INTEGER NOT NULL DEFAULT 0,
     contact_email      TEXT,
+    -- Signed link back to this venue, minted when the fit starts. Stored rather
+    -- than regenerated so the address in the notification and the one on screen
+    -- are the same string.
+    resume_token       TEXT,
+    notified_at        REAL,
     quality            TEXT,
     created_at         REAL NOT NULL,
     fitted_at          REAL
@@ -185,6 +190,8 @@ MIGRATIONS = [
     ("sites", "station_elevation_warning", "INTEGER NOT NULL DEFAULT 0"),
     ("sites", "is_example", "INTEGER NOT NULL DEFAULT 0"),
     ("sites", "contact_email", "TEXT"),
+    ("sites", "resume_token", "TEXT"),
+    ("sites", "notified_at", "REAL"),
 ]
 
 

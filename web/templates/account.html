@@ -159,11 +159,14 @@
         </div>
       </div>
 
-      <div style="max-width:70ch">
-        {% include "components/disclaimer.html" %}
-      </div>
     </div>
     {% endif %}
+
+    {# Outside the branch: the disclaimer is a property of the route, not of
+       whether this browser happens to have an account yet. #}
+    <div style="margin-top:var(--sp-6);max-width:70ch">
+      {% include "components/disclaimer.html" %}
+    </div>
   </div>
 </section>
 {% endblock %}

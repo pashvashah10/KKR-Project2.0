@@ -31,9 +31,6 @@ import threading
 from concurrent.futures import ThreadPoolExecutor
 from typing import Annotated
 
-import os
-import secrets
-
 from fastapi import Depends, FastAPI, Header, HTTPException, Response, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
@@ -41,7 +38,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, EmailStr, Field, field_validator
 from starlette.middleware.sessions import SessionMiddleware
 
-from . import service, stations, store
+from . import security, service, stations, store
 from . import web as storefront
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
@@ -59,12 +56,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# The storefront cart lives in this cookie. A random per-process key is fine for
-# a demo --- it logs everyone out on restart and nothing more --- but a real
-# deployment must set DOWNSIDE_SECRET so sessions survive a redeploy.
+# The storefront cart lives in this cookie, and magic links are signed with the
+# same key --- resolved once in `security` so the two cannot drift apart. Set
+# DOWNSIDE_SECRET in any deployment where a session or a resume link should
+# survive a restart.
 app.add_middleware(
     SessionMiddleware,
-    secret_key=os.environ.get("DOWNSIDE_SECRET") or secrets.token_urlsafe(32),
+    secret_key=security.app_secret(),
     session_cookie="downside_session",
     same_site="lax",
     max_age=60 * 60 * 24 * 30,
@@ -85,6 +83,7 @@ app.include_router(storefront.router)
 def _startup() -> None:
     store.init()
     log.info("database ready at %s", store.DB_PATH)
+    security.warn_if_ephemeral()
     # Load the GHCN bundle off the request path. Failure is logged, not fatal:
     # without it, venues fall back to reanalysis and say so, but the storefront
     # still boots.

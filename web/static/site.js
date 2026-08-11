@@ -291,11 +291,15 @@ function initConfigure() {
   const show = (el) => el && el.removeAttribute('hidden');
   const hide = (el) => el && el.setAttribute('hidden', '');
 
+  // Captured from the POST so the "come back later" link is on screen while the
+  // fit runs, not only after it lands.
+  let resumeUrl = null;
+
   const finish = (data) => {
     // Re-render server-side rather than assembling the quote in JavaScript:
     // the price must come from the engine, and the page already knows how to
-    // display it.
-    location.href = `/configure/${slug}?site=${data.site_id}`;
+    // display it. Prefer the signed link so the resulting URL is shareable.
+    location.href = data.magic_link || resumeUrl || `/configure/${slug}?site=${data.site_id}`;
   };
 
   const fail = (data) => {
@@ -343,6 +347,28 @@ function initConfigure() {
     if (stationBox && data.station) {
       stationBox.innerHTML = renderStation(data.station);
       show(stationBox);
+    }
+
+    resumeUrl = data.resume_link || null;
+    const resumeBox = root.querySelector('[data-resume]');
+    if (resumeBox && resumeUrl) {
+      // Rendered now rather than on completion: the whole point is that the
+      // visitor can leave, and they cannot leave with a link they have not
+      // been given yet.
+      resumeBox.innerHTML = `
+        <p class="eyebrow">Leaving? Come back to this</p>
+        <p class="small">${
+          data.notify && !data.mail_configured
+            ? 'Email delivery is not configured on this deployment, so nothing will be sent. Bookmark this — it reopens this venue from any device.'
+            : data.notify
+              ? 'We will email this link when the fit lands. It also works right now:'
+              : 'Bookmark this — it reopens this venue from any device, with no sign-in.'
+        }</p>
+        <p class="num small" style="margin-top:var(--sp-3);word-break:break-all;
+                  background:var(--panel-2);padding:var(--sp-3);border-radius:3px">
+          <a href="${esc(resumeUrl)}">${esc(resumeUrl)}</a>
+        </p>`;
+      show(resumeBox);
     }
 
     form.setAttribute('hidden', '');
