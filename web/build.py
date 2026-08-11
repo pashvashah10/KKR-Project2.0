@@ -1,8 +1,20 @@
-"""Inline the data bundle and canvas module into a single self-contained page.
+"""Compile the analytics terminal into a single self-contained page.
 
-The dashboard is served as one file so it works from `file://`, from a static
-host, and as a published artifact under a strict CSP that blocks every external
-request.
+Only the terminal is built this way, and the reason is worth stating because it
+looks inconsistent next to the storefront.
+
+The storefront (`web/templates`, `web/static`) is served normally: Jinja
+templates, a linked stylesheet, a linked module, fonts fetched once and cached
+by the browser. Inlining 225 KB of base64 woff2 into every page view, as this
+build does, would be indefensible there.
+
+The terminal is different. It is also published as a standalone artifact under a
+strict CSP that blocks every external request --- no CDN, no linked stylesheet,
+no separate font file --- so it has to arrive as one file with everything inside
+it. That constraint is real, and it is the only place it applies.
+
+    python3 web/build.py            # the terminal
+    python3 web/build.py fonts      # regenerate web/static/fonts.css
 """
 
 from __future__ import annotations
@@ -20,7 +32,7 @@ def build(template: str, data: str | None, out: str) -> Path:
 
     from fonts import font_css
 
-    canvas = (HERE / "weather-canvas.js").read_text()
+    canvas = (HERE / "static" / "weather-canvas.js").read_text()
     # Strip the module's export keywords: it is being inlined into the page's
     # own module scope rather than imported.
     canvas = re.sub(r"^export\s+", "", canvas, flags=re.M)
@@ -35,18 +47,22 @@ def build(template: str, data: str | None, out: str) -> Path:
     return dest
 
 
+def build_fonts() -> Path:
+    """Emit the storefront's font stylesheet. Run when the font list changes."""
+    from fonts import font_css
+
+    dest = HERE / "static" / "fonts.css"
+    dest.write_text(font_css())
+    return dest
+
+
 if __name__ == "__main__":
     which = sys.argv[1] if len(sys.argv) > 1 else "dashboard"
-    if which == "preview":
-        p = build("preview.html", "preview.json", "dist-preview.html")
-    elif which == "app":
-        # The customer-facing app talks to the live API, so it has no data bundle.
-        p = build("app.html", None, "dist-app.html")
+    if which == "fonts":
+        p = build_fonts()
     elif which == "all":
-        for t, d, o in (("app.html", None, "dist-app.html"),
-                        ("dashboard.html", "dashboard.json", "dist-dashboard.html")):
-            q = build(t, d, o)
-            print(f"wrote {q} ({q.stat().st_size / 1024:.0f} KB)")
+        for p in (build_fonts(), build("dashboard.html", "dashboard.json", "dist-dashboard.html")):
+            print(f"wrote {p} ({p.stat().st_size / 1024:.0f} KB)")
         raise SystemExit
     else:
         p = build("dashboard.html", "dashboard.json", "dist-dashboard.html")

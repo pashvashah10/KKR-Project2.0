@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}Checkout — Downside{% endblock %}
+
+{% block content %}
+<section>
+  <div class="container">
+    <p class="crumbs"><a href="/">Home</a> / <a href="/cart">Cart</a> / Checkout</p>
+    <h1 class="h-section fade-up">Checkout</h1>
+
+    <div class="notice notice-accent fade-up" style="--d:80ms;margin-top:var(--sp-4);max-width:70ch">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+        <circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/>
+      </svg>
+      <span>
+        <strong>No payment is taken.</strong> This checkout records a real order against
+        your account and runs the full fulfilment workflow, but there are no card fields
+        on this page and no money moves. A payment processor is not wired in, and a form
+        asking for a card number without one behind it would be worse than saying so.
+      </span>
+    </div>
+
+    <div class="split" style="margin-top:var(--sp-6)">
+      <form method="post" action="/checkout" class="panel stack">
+        <p class="eyebrow">Billing details</p>
+
+        <label class="field">
+          <span>Full name</span>
+          <input name="billing_name" required maxlength="200" autocomplete="name">
+        </label>
+
+        <label class="field">
+          <span>Email</span>
+          <input name="billing_email" type="email" required maxlength="200" autocomplete="email">
+          <span class="field-hint">
+            Where the report and the invoice go. Also becomes your account login.
+          </span>
+        </label>
+
+        <label class="field">
+          <span>Company (optional)</span>
+          <input name="billing_company" maxlength="200" autocomplete="organization">
+        </label>
+
+        <label class="field">
+          <span>Billing address (optional)</span>
+          <textarea name="billing_address" maxlength="500" autocomplete="street-address"></textarea>
+        </label>
+
+        <button class="btn" type="submit" style="width:100%" data-magnetic>
+          Place order — {{ cart.total }}
+        </button>
+        <p class="tiny" style="text-align:center">
+          Placing this order records it and starts fulfilment. No card is charged.
+        </p>
+      </form>
+
+      <aside class="stack sticky">
+        <div class="panel">
+          <p class="eyebrow">Order summary</p>
+          <table class="rows">
+            {% for line in cart.lines %}
+            <tr>
+              <td>
+                {{ line.product.name }}
+                {% if line.site_name %}<br><span class="tiny">{{ line.site_name }}</span>{% endif %}
+                {% if line.quantity > 1 %}<br><span class="tiny">{{ line.quantity }} × {{ line.unit_price }}</span>{% endif %}
+              </td>
+              <td class="num">{{ line.line_total }}</td>
+            </tr>
+            {% endfor %}
+            <tfoot>
+              <tr><td>Subtotal</td><td class="num">{{ cart.subtotal }}</td></tr>
+              <tr><td>Tax</td><td class="num">{{ cart.tax }}</td></tr>
+              <tr><td><strong>Total</strong></td>
+                  <td class="num" style="color:var(--ember)"><strong>{{ cart.total }}</strong></td></tr>
+            </tfoot>
+          </table>
+        </div>
+
+        {% include "components/disclaimer.html" %}
+      </aside>
+    </div>
+  </div>
+</section>
+{% endblock %}

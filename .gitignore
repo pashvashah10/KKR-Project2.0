@@ -4,3 +4,23 @@ __pycache__/
 .venv/
 node_modules/
 *.egg-info/
+
+# Runtime state, not source. The database is recreated by `store.init()` and
+# repopulated by `python -m api.seed`; the pickled models are 49 MB of cache
+# that `service.fit_site` rebuilds on demand. Committing either means a stale
+# fit ships with the code and a schema change becomes a merge conflict.
+api/data/downside.db
+api/data/downside.db-shm
+api/data/downside.db-wal
+api/data/models/
+
+# Raw GHCN source text (46 MB), deleted after parsing. The parsed bundle
+# `api/data/ghcn/stations_parsed.npz` IS committed --- at 889 KB it is what
+# lets the server boot and match stations with no network at all.
+api/data/ghcn/*.txt
+api/data/ghcn/*.part
+
+# Locally installed skills, fetched by `npx skills add`. skills-lock.json is
+# committed so the install is reproducible.
+.agents/
+.claude/

@@ -92,6 +92,13 @@ class Location:
     #: observed daily-extreme scaling clusters near that, mean totals lower.
     precip_intensity_scaling: float = 0.062
     season: tuple[int, int] = (1, 12)
+    #: Station elevation minus venue elevation, metres. Negative means the gauge
+    #: sits below the venue. Basis risk is not purely horizontal: a gauge 9 km
+    #: away but 800 m lower is separated by ~5 degC of lapse rate and sits on the
+    #: other side of the rain/snow line for much of the season, which is a bigger
+    #: settlement difference than the 9 km implies. `pricing.effective_basis_km`
+    #: converts this to a horizontal equivalent before loading it.
+    station_elevation_delta_m: float = 0.0
 
 
 def _n(tmax_f, tmin_f, precip_in, wet_days, wind_ms) -> ClimateNormals:

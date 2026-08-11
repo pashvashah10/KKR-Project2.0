@@ -249,7 +249,26 @@ EXPENSE_RATIO = 0.12     # margin on the risk premium carried
 #: Basis load per km of gauge-to-venue distance, as a share of theo. A venue 20 km
 #: from its settlement gauge carries roughly a 9% load on this scale.
 BASIS_PER_KM = 0.0045
+#: Metres of vertical separation per kilometre of horizontal equivalent. Vertical
+#: separation is worth far more than horizontal: 100 m of elevation is ~0.65 degC
+#: of lapse rate before any other effect, which no amount of walking sideways on
+#: the flat will reproduce. Same constant the station matcher scores on, so the
+#: gauge chosen and the gauge charged for are separated by the same metric.
+BASIS_KM_PER_ELEVATION_M = 0.05
 MIN_HALF_WIDTH_FRAC = 0.035
+
+
+def effective_basis_km(location: Location) -> float:
+    """Gauge-to-venue separation in horizontal-kilometre equivalents.
+
+    Charging basis on horizontal distance alone underprices exactly the venues
+    where basis is worst --- mountain sites, where the nearest long-record gauge
+    is usually in the valley. Vail's gauge is 29 km away and 300 m up; Mammoth's
+    nearest by distance is 1,150 m down. Those are not 29 km and 62 km of basis.
+    """
+    return abs(location.station_distance_km) + BASIS_KM_PER_ELEVATION_M * abs(
+        location.station_elevation_delta_m
+    )
 
 
 def price_contract(
@@ -309,7 +328,7 @@ def price_contract(
     # --- loads ------------------------------------------------------------
     load_capital = LAMBDA_CVAR * max(dist.cvar(0.99) - theo, 0.0) + LAMBDA_SD * dist.sd
     load_parameter = LAMBDA_PARAM * sigma_model
-    load_basis = BASIS_PER_KM * location.station_distance_km * theo
+    load_basis = BASIS_PER_KM * effective_basis_km(location) * theo
     load_expense = EXPENSE_FIXED * _duration_factor(contract) + EXPENSE_RATIO * (
         theo + load_capital + load_parameter + load_basis
     )

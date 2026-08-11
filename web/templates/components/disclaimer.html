@@ -1,0 +1,10 @@
+{# Shown on every surface where a price appears: /configure, /cart, /checkout,
+   /orders/{id}. The wording is fixed in api/web.py so it cannot drift between
+   pages --- a disclaimer that says something slightly different in four places
+   is worth less than one that says the same thing in all of them. #}
+<div class="notice" role="note">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+    <circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/>
+  </svg>
+  <span><strong>Notice:</strong> {{ DISCLAIMER }}</span>
+</div>

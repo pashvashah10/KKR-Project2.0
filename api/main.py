@@ -31,12 +31,18 @@ import threading
 from concurrent.futures import ThreadPoolExecutor
 from typing import Annotated
 
+import os
+import secrets
+
 from fastapi import Depends, FastAPI, Header, HTTPException, Response, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, EmailStr, Field, field_validator
+from starlette.middleware.sessions import SessionMiddleware
 
-from . import service, store
+from . import service, stations, store
+from . import web as storefront
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
 log = logging.getLogger("downside.api")
@@ -53,15 +59,36 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# The storefront cart lives in this cookie. A random per-process key is fine for
+# a demo --- it logs everyone out on restart and nothing more --- but a real
+# deployment must set DOWNSIDE_SECRET so sessions survive a redeploy.
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=os.environ.get("DOWNSIDE_SECRET") or secrets.token_urlsafe(32),
+    session_cookie="downside_session",
+    same_site="lax",
+    max_age=60 * 60 * 24 * 30,
+)
+
+WEB = service.Path(__file__).resolve().parents[1] / "web"
+app.mount("/static", StaticFiles(directory=str(WEB / "static")), name="static")
+
 # One fit at a time per worker keeps memory predictable; each fit is already
 # internally vectorised and the container has four cores.
 FITTERS = ThreadPoolExecutor(max_workers=2, thread_name_prefix="fit")
+
+storefront.configure_executor(lambda site_id, job_id: FITTERS.submit(service.fit_site, site_id, job_id))
+app.include_router(storefront.router)
 
 
 @app.on_event("startup")
 def _startup() -> None:
     store.init()
     log.info("database ready at %s", store.DB_PATH)
+    # Load the GHCN bundle off the request path. Failure is logged, not fatal:
+    # without it, venues fall back to reanalysis and say so, but the storefront
+    # still boots.
+    stations.warm_index()
 
 
 # ----------------------------------------------------------------------
@@ -395,23 +422,22 @@ def hedge(site_id: str, body: HedgeIn, account: Account) -> dict:
 
 
 # ----------------------------------------------------------------------
-# static app
+# The analytics terminal
+#
+# `/` and every storefront page now come from `web.router`. The terminal stays a
+# prebuilt single file because it is also published as a standalone artifact
+# under a CSP that blocks external requests, so its fonts and canvas have to be
+# inlined --- which is exactly what the storefront should *not* do on every page
+# view, and why the two build paths differ.
 # ----------------------------------------------------------------------
 
-WEB = service.Path(__file__).resolve().parents[1] / "web"
 
-
-@app.get("/")
-def index() -> Response:
-    page = WEB / "dist-app.html"
-    if page.exists():
-        return FileResponse(page)
-    return Response("Run web/build.py to compile the app.", media_type="text/plain")
-
-
-@app.get("/dashboard")
+@app.get("/dashboard", include_in_schema=False)
 def dashboard() -> Response:
     page = WEB / "dist-dashboard.html"
     if page.exists():
         return FileResponse(page)
-    return Response("Run web/build.py first.", media_type="text/plain")
+    return Response(
+        "Run `python3 web/build.py dashboard` to compile the terminal.",
+        media_type="text/plain",
+    )

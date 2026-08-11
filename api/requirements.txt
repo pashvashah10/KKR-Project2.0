@@ -2,3 +2,9 @@ fastapi>=0.115
 uvicorn[standard]>=0.30
 pydantic[email]>=2.7
 python-multipart>=0.0.9
+# Server-rendered storefront. A cart needs real URLs and a working back button
+# far more than it needs a client router, so the pages are templates.
+jinja2>=3.1
+# Signs the session cookie the cart lives in. SessionMiddleware will not import
+# without it, which is a confusing failure if it is missing.
+itsdangerous>=2.1

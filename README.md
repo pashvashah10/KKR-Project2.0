@@ -7,10 +7,11 @@ projected forward under four emissions pathways; and a price on the contracts
 that sit on top.
 
 ```
-api/        FastAPI service --- what a customer actually talks to
+api/        FastAPI service --- the JSON API and the storefront
 engine/     Python analytics engine --- the models and the math
-web/        Customer app and the internal terminal
+web/        Templates, static assets, and the internal terminal
 docs/       Methodology
+DESIGN.md   The storefront's design specification
 ```
 
 ---
@@ -19,15 +20,45 @@ docs/       Methodology
 
 ```bash
 pip install -r api/requirements.txt -r engine/requirements.txt
+python3 -m api.scripts.build_station_cache   # once, needs network
+python3 -m api.seed                          # eight example venues, ~15 min
 python3 web/build.py all
-python3 -m uvicorn api.main:app --port 8000    # then open localhost:8000
+python3 -m uvicorn api.main:app --port 8000  # then open localhost:8000
 ```
 
-The landing page takes coordinates, fits a century of weather at that point,
-and returns an exposure, suggested terms and a price. Nothing is precomputed.
+### The storefront
 
-Everything it does is a public endpoint --- see `api/README.md`, or `/docs` for
-the interactive reference:
+A multi-page shop with real URLs, a cart and a checkout.
+
+| Route | |
+|---|---|
+| `/` | The wedge, the four services, the honest limits |
+| `/services`, `/services/{slug}` | Catalogue and detail |
+| `/configure/{slug}` | Pick a venue, see the station match, get a price |
+| `/cart`, `/checkout`, `/orders/{id}` | Order and invoice |
+| `/account` | Venues, orders, subscriptions, API key |
+| `/dashboard` | The analytics terminal |
+
+Four things are for sale. Three are fixed-price and fit the venue *after*
+purchase, as fulfilment. The fourth --- Parametric Cover --- needs the fit before
+a price exists, so `/configure` starts an asynchronous job and polls it, showing
+the staged progress the fitter emits, with already-fitted example venues offered
+as the instant path.
+
+**Checkout takes no payment and collects no card details.** It records a real
+order, opens real subscriptions, starts real fulfilment, and says plainly on
+screen that no money moved. `checkout.StripeProvider` documents the three
+integration points and refuses rather than silently falling back to the mock.
+
+**We are not an insurer, a broker or an MGA.** Parametric pricing is indicative
+and subject to underwriting; every page that shows a price says so, and the
+invoice is headed *"Indicative Parametric Risk Estimate — Not a Binding Policy
+Contract"*.
+
+### The API
+
+Everything the storefront does is also a public endpoint --- see `api/README.md`,
+or `/docs` for the interactive reference:
 
 | | |
 |---|---|
@@ -118,6 +149,35 @@ body understates trigger frequency badly. Peaks-over-threshold GPD fits give a
 shape parameter that comes out positive for rainfall (heavy, unbounded) and
 negative for temperature (bounded, as the physics requires).
 
+### The settlement station is chosen on record length, not on proximity
+
+`api/stations.py`
+
+Until this existed, a customer venue was fitted with `station_id=""`, fell
+through to ERA5 reanalysis, and carried `station_distance_km = 0` — so
+`pricing.load_basis`, which is `BASIS_PER_KM × station_distance_km × theo`,
+charged **exactly nothing for basis risk on every contract sold**.
+
+Matching is not `min(distance)`. A complete 1900–2025 record 40 km away is worth
+more to a century fit than a patchy 20-year record 5 km away, and the near one
+cannot settle a 2050 contract at all if it stopped reporting in 2003. Record
+length is a hard gate; distance is the tiebreak.
+
+Elevation is the half everyone forgets. A gauge 9 km away but 800 m below the
+venue is separated by ~5 °C of lapse rate and sits on the wrong side of the
+rain/snow line for much of the season — it is measuring a different climate, not
+a nearby one. Vertical metres therefore enter both the match and the price at
+0.05 km-equivalent each, and a gap past 300 m raises a microclimate warning on
+the configure page instead of being quietly averaged away.
+
+The effect is not theoretical: matching Mammoth Lakes on distance alone selects
+Bishop Airport, 1,150 m below the resort. With elevation, it selects Bodie,
+151 m off.
+
+The index is a committed 889 KB numpy bundle covering 38,412 stations, built by
+`python -m api.scripts.build_station_cache`. The server boots and matches with no
+network at all; NOAA being down cannot take the storefront with it.
+
 ### The trigger is regressed, never asked
 
 `hedging.py`
@@ -197,6 +257,27 @@ model diagnostics say so.
 prices, backtested settlement and basis against traded instruments are the next
 step.
 
+**No payment is taken and no cover is bound.** Checkout is a mock provider with a
+documented Stripe seam; no card fields exist anywhere in the application.
+Parametric Cover produces an indicative quote — issuing a policy needs a
+licensed carrier or MGA on the paper, and we are not one.
+
+**Aggregate contracts only cover per-day triggers.** A rolling-window peril such
+as snow drought does not produce independent triggering days, so it cannot be
+expressed in the aggregate structure priced here. Where that empties a venue's
+peril list, `/configure` says which filter did it rather than reporting
+"nothing triggers often enough" — those are different facts and only one of them
+is about the weather.
+
+**The station index is a snapshot.** Stations open and close; the bundle is
+rebuilt deliberately, never silently at runtime, because a re-download that
+changes which gauge a live contract settles on is not a thing that should happen
+on its own.
+
+**Email is not wired up.** `/configure` offers to send a link when a fit
+finishes; `web.ConsoleSender` logs it and the UI says delivery is not
+configured. Swapping in a real sender is one binding.
+
 ---
 
 ## Layout
@@ -214,6 +295,16 @@ step.
 | `pricing.py` | Theoretical value, risk loads, two-sided quotes |
 | `hedging.py` | Loss curves, min-variance ratio, ruin-adjusted sizing |
 | `backtest.py` | Walk-forward validation, CRPS, PIT, reliability |
+
+| API module | Contents |
+|---|---|
+| `stations.py` | GHCN index, terrain-aware nearest-station matching |
+| `catalog.py` | The four products, as code |
+| `checkout.py` | Cart, orders, mock payment, Stripe seam |
+| `web.py` | Storefront routes, async fit jobs, session cart |
+| `service.py` | Fitting, exposure, pricing, hedging for one site |
+| `store.py` | SQLite persistence and additive migrations |
+| `seed.py` | The eight example venues |
 
 Reference for the statistical toolkit: MIT Sloan Business Club *Quant Bible*,
 §4.3 (regression), §4.6 (econometrics), §6.2 (market making).

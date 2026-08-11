@@ -1,0 +1,35 @@
+<nav class="nav">
+  <div class="container nav-in">
+    <a class="brand" href="/"><b>Downside</b> <span>Weather Risk</span></a>
+
+    <div class="nav-links">
+      <a href="/services" {% if request.url.path.startswith('/services') %}aria-current="page"{% endif %}>Services</a>
+      <a href="/configure/exposure-report" {% if request.url.path.startswith('/configure') %}aria-current="page"{% endif %}>Price a venue</a>
+      <a href="/dashboard">Terminal</a>
+      <a href="/docs">API</a>
+      <a href="/account" {% if request.url.path.startswith('/account') %}aria-current="page"{% endif %}>Account</a>
+    </div>
+
+    <div class="nav-tools">
+      <a class="cart-pill" href="/cart" aria-label="Cart, {{ cart_count }} item{{ '' if cart_count == 1 else 's' }}">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+          <path d="M3 4h2l2.4 11.2a2 2 0 0 0 2 1.6h7.5a2 2 0 0 0 2-1.55L20.5 8H6"/>
+          <circle cx="10" cy="20" r="1.2"/><circle cx="17.5" cy="20" r="1.2"/>
+        </svg>
+        Cart{% if cart_count %} <b>{{ cart_count }}</b>{% endif %}
+      </a>
+
+      <button class="icon-btn" data-theme-toggle type="button" aria-label="Switch between light and dark">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+          <path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z"/>
+        </svg>
+      </button>
+
+      <button class="icon-btn nav-toggle" data-nav-toggle type="button" aria-expanded="false" aria-label="Open menu">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+          <path d="M4 7h16M4 12h16M4 17h16"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+</nav>

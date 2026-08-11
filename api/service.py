@@ -27,7 +27,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from . import store
+from . import stations, store
 
 log = logging.getLogger(__name__)
 
@@ -100,8 +100,64 @@ def amplification_prior_for(lat: float, lon: float, elevation_m: float) -> float
     return float(np.clip(base, 0.6, 1.9))
 
 
+def match_station(site: dict) -> stations.StationMatch | None:
+    """The settlement station for a site, resolved once and remembered.
+
+    Cached on the `sites` row because the answer never changes for fixed
+    coordinates and the lookup costs a download on a cold index.
+    """
+    if site.get("station_id"):
+        return stations.StationMatch(
+            station_id=site["station_id"],
+            name=site.get("station_name") or "",
+            lat=float(site["lat"]),
+            lon=float(site["lon"]),
+            elevation_m=float(site.get("station_elevation_m") or 0.0),
+            distance_km=float(site.get("station_km") or 0.0),
+            first_year=int(site.get("station_first_year") or 0),
+            last_year=int(site.get("station_last_year") or 0),
+            elements=(),
+            score=0.0,
+            elevation_delta_m=(
+                float(site["station_elevation_delta_m"])
+                if site.get("station_elevation_delta_m") is not None
+                else None
+            ),
+            elevation_warning=bool(site.get("station_elevation_warning") or 0),
+        )
+    # Elevation is passed wherever known: without it the match is made on
+    # horizontal distance alone, which is how a ski venue ends up settling on
+    # the valley airport a kilometre below it.
+    elev = site.get("elevation_m")
+    return stations.nearest_station(
+        float(site["lat"]),
+        float(site["lon"]),
+        float(elev) if elev is not None else None,
+    )
+
+
+def station_columns(match: stations.StationMatch) -> dict:
+    """The `sites` columns a match populates. One place, so they cannot drift."""
+    return {
+        "station_id": match.station_id,
+        "station_name": match.name,
+        "station_km": match.distance_km,
+        "station_elevation_m": match.elevation_m,
+        "station_elevation_delta_m": match.elevation_delta_m,
+        "station_elevation_warning": int(match.elevation_warning),
+        "station_first_year": match.first_year,
+        "station_last_year": match.last_year,
+    }
+
+
 def build_location(site: dict) -> Location:
     """A `Location` for the engine, from a customer's site record.
+
+    The station fields are not decoration. `station_id` decides whether the
+    record comes from a NOAA gauge or from ERA5 reanalysis, and
+    `station_distance_km` is what `pricing.load_basis` charges for --- leaving
+    them empty, as this did until the matcher existed, quoted every customer
+    contract with zero basis load.
 
     `normals` is only used by the surrogate generator, which is the last-resort
     source. When NOAA or ERA5 answers --- the normal case --- these values are
@@ -109,6 +165,7 @@ def build_location(site: dict) -> Location:
     """
     lat, lon = float(site["lat"]), float(site["lon"])
     elev = float(site.get("elevation_m") or 0.0)
+    match = match_station(site)
     return Location(
         id=site["id"],
         name=site["name"],
@@ -116,8 +173,11 @@ def build_location(site: dict) -> Location:
         lat=lat,
         lon=lon,
         elevation_m=elev,
-        station_id=site.get("station_id") or "",
-        station_distance_km=float(site.get("station_km") or 0.0),
+        station_id=match.station_id if match else "",
+        station_distance_km=match.distance_km if match else 0.0,
+        station_elevation_delta_m=(
+            match.elevation_delta_m if match and match.elevation_delta_m is not None else 0.0
+        ),
         vertical=site["vertical"],
         amplification_prior=amplification_prior_for(lat, lon, elev),
         observed_trend_c_per_century=1.3,
@@ -202,14 +262,20 @@ def fit_site(site_id: str, job_id: str) -> None:
             raise ValueError(f"site {site_id} not found")
 
         tick(0.05, "Locating the nearest long-record weather station")
+        match = match_station(site)
+        if match is not None:
+            # Persist before fetching: if the pull fails, the match is still
+            # known and the customer can be told what would have settled it.
+            store.update_site(site_id, **station_columns(match))
+            site = store.get_site(site_id) or site
+
         location = build_location(site)
         record = load_record(location, HISTORY_START, HISTORY_END)
 
-        store.update_site(
-            site_id,
-            provenance=record.provenance,
-            station_id=getattr(record, "location_id", "") or location.station_id,
-        )
+        # `record.location_id` is the *site* id, not a station --- writing it to
+        # `station_id` (as this used to) overwrote a real GHCN identifier with
+        # meaningless data. The station comes from the matcher above.
+        store.update_site(site_id, provenance=record.provenance)
 
         tick(0.25, f"Fitting {record.n_years} years of daily observations")
         model = SiteModel.fit(location, record, BASE_SCENARIO, n_boot=160)
@@ -463,7 +529,11 @@ MAX_TRIGGER_SHARE = 0.45
 
 
 def _primary_peril(model, record, window, location) -> Peril | None:
-    """The peril most worth underwriting at this site.
+    return _rank_perils(model, record, window, location)[0]
+
+
+def _rank_perils(model, record, window, location) -> tuple[Peril | None, str]:
+    """The peril most worth underwriting at this site, and why not if none is.
 
     Three filters, and every one of them exists because leaving it out produced
     a wrong answer:
@@ -474,22 +544,81 @@ def _primary_peril(model, record, window, location) -> Peril | None:
       which a rolling-window peril does not produce;
     * **not ubiquitous** --- something that fires most days is the climate, and
       cover against it is a transfer with a premium attached.
+
+    When nothing survives, *which* filter emptied the list matters, and a single
+    catch-all message gets it wrong. A ski resort whose only daily trigger is
+    warm snowline may fail on ubiquity (at altitude in a shoulder month it fires
+    most days --- that is the climate, not a risk); a coastal venue may fail
+    because its perils are all rolling-window and the aggregate structure cannot
+    express them; a venue may fail because its gauge never measured the
+    settlement variable. Those are three different conversations, and telling all
+    three customers "nothing triggers often enough" tells two of them something
+    false about their own site. So the reason travels back with the answer.
     """
     from downside.config import perils_for
 
     sim = model.simulate(TARGET_YEARS[0], window, BASE_SCENARIO, n_paths=800,
                          rng=np.random.default_rng(3))
     season_days = len(window)
+
+    applicable = list(perils_for(location))
+    windowed = [p for p in applicable if p.statistic != "daily"]
+    unmeasured = [p for p in applicable if p.statistic == "daily" and not record.usable(p.variable)]
+
     best, best_days = None, 0.0
-    for p in perils_for(location):
+    ubiquitous = []
+    for p in applicable:
         if p.statistic != "daily" or not record.usable(p.variable):
             continue
         days = float(p.triggered(sim.get(p.variable)).sum(axis=1).mean())
         if days > season_days * MAX_TRIGGER_SHARE:
+            ubiquitous.append(p)
             continue
         if days > best_days:
             best, best_days = p, days
-    return best if best_days >= 0.5 else None
+
+    if best is not None and best_days >= 0.5:
+        return best, ""
+
+    if not applicable:
+        return None, (
+            f"No peril in the library applies to a {location.vertical.lower()}. "
+            "Exposure analysis is still available for this venue."
+        )
+
+    daily = [p for p in applicable if p.statistic == "daily"]
+    if not daily:
+        names = ", ".join(p.label.lower() for p in windowed)
+        return None, (
+            f"Every peril that applies to a {location.vertical.lower()} "
+            f"({names}) is defined over a rolling window rather than on single "
+            "days. The aggregate structure priced here counts independent "
+            "triggering days, so it cannot express those triggers — this is a "
+            "limitation of the contract form, not a statement about your venue's "
+            "weather. Exposure analysis and monitoring both cover these perils in "
+            "full; a rolling-window contract structure is on the roadmap."
+        )
+
+    if unmeasured and not any(p for p in daily if record.usable(p.variable)):
+        names = ", ".join(sorted({p.variable for p in unmeasured}))
+        return None, (
+            f"The settlement station never measured {names}, so the triggers that "
+            "apply here cannot be settled on it. Nothing is fabricated to fill the "
+            "gap. A different venue coordinate may match a station that does."
+        )
+
+    if ubiquitous:
+        return None, (
+            "Every applicable trigger fires in most of the season at this site. "
+            "That is the local climate rather than a risk, and cover against it "
+            "would be a financing arrangement with a premium attached."
+        )
+
+    return None, (
+        "No applicable peril triggers often enough at this site to underwrite. "
+        "That is usually good news — it means the season is not exposed to the "
+        "perils in the library."
+    )
 
 
 def quote(site_id: str, peril_id: str, year: int, payout_per_day: float,
@@ -625,12 +754,9 @@ def suggest_contract(site_id: str, year: int = TARGET_YEARS[0]) -> dict:
     window = season_window(int(site["season_start_month"]), int(site["season_end_month"]))
     location = build_location(site)
     record = model.record
-    primary = _primary_peril(model, record, window, location)
+    primary, reason = _rank_perils(model, record, window, location)
     if primary is None:
-        return {
-            "available": False,
-            "reason": "No peril at this site triggers often enough to underwrite.",
-        }
+        return {"available": False, "reason": reason}
 
     sim = model.simulate(year, window, BASE_SCENARIO, n_paths=2000,
                          rng=np.random.default_rng(5))

@@ -52,6 +52,14 @@ CREATE TABLE IF NOT EXISTS sites (
     provenance         TEXT,
     station_id         TEXT,
     station_km         REAL,
+    station_name       TEXT,
+    station_first_year INTEGER,
+    station_last_year  INTEGER,
+    station_elevation_m       REAL,
+    station_elevation_delta_m REAL,
+    station_elevation_warning INTEGER NOT NULL DEFAULT 0,
+    is_example         INTEGER NOT NULL DEFAULT 0,
+    contact_email      TEXT,
     quality            TEXT,
     created_at         REAL NOT NULL,
     fitted_at          REAL
@@ -97,7 +105,87 @@ CREATE TABLE IF NOT EXISTS quotes (
     created_at  REAL NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_quotes_site ON quotes(site_id);
+
+-- ----------------------------------------------------------------------
+-- Commerce
+--
+-- Money is stored in integer cents everywhere below. Floats do not belong in
+-- an order total: 0.1 + 0.2 is not 0.3, and a storefront that rounds
+-- differently on the cart page and the invoice is a support ticket waiting to
+-- happen. Conversion to display currency happens once, at the template.
+-- ----------------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS orders (
+    id               TEXT PRIMARY KEY,
+    account_id       TEXT NOT NULL REFERENCES accounts(id),
+    status           TEXT NOT NULL,          -- pending | paid | cancelled
+    currency         TEXT NOT NULL DEFAULT 'USD',
+    subtotal_cents   INTEGER NOT NULL,
+    tax_cents        INTEGER NOT NULL DEFAULT 0,
+    total_cents      INTEGER NOT NULL,
+    invoice_number   TEXT NOT NULL UNIQUE,
+    billing_name     TEXT,
+    billing_email    TEXT,
+    billing_company  TEXT,
+    billing_address  TEXT,
+    payment_provider TEXT NOT NULL DEFAULT 'mock',
+    payment_reference TEXT,
+    created_at       REAL NOT NULL,
+    paid_at          REAL
+);
+CREATE INDEX IF NOT EXISTS idx_orders_account ON orders(account_id);
+
+-- `product_name` and `unit_price_cents` are snapshotted from the catalogue at
+-- purchase, never joined back to it. A price change next quarter must not
+-- silently rewrite what a customer was charged last quarter.
+CREATE TABLE IF NOT EXISTS order_items (
+    id                TEXT PRIMARY KEY,
+    order_id          TEXT NOT NULL REFERENCES orders(id),
+    product_slug      TEXT NOT NULL,
+    product_name      TEXT NOT NULL,
+    site_id           TEXT REFERENCES sites(id),
+    config            TEXT NOT NULL DEFAULT '{}',
+    unit_price_cents  INTEGER NOT NULL,
+    quantity          INTEGER NOT NULL DEFAULT 1,
+    line_total_cents  INTEGER NOT NULL,
+    fulfilment_status TEXT NOT NULL DEFAULT 'pending'
+);
+CREATE INDEX IF NOT EXISTS idx_items_order ON order_items(order_id);
+
+CREATE TABLE IF NOT EXISTS subscriptions (
+    id                 TEXT PRIMARY KEY,
+    account_id         TEXT NOT NULL REFERENCES accounts(id),
+    site_id            TEXT REFERENCES sites(id),
+    order_id           TEXT REFERENCES orders(id),
+    product_slug       TEXT NOT NULL,
+    status             TEXT NOT NULL,        -- active | cancelled
+    period             TEXT NOT NULL,        -- month | year
+    price_cents        INTEGER NOT NULL,
+    started_at         REAL NOT NULL,
+    current_period_end REAL NOT NULL,
+    cancelled_at       REAL
+);
+CREATE INDEX IF NOT EXISTS idx_subs_account ON subscriptions(account_id);
+
+CREATE TABLE IF NOT EXISTS counters (
+    name  TEXT PRIMARY KEY,
+    value INTEGER NOT NULL
+);
 """
+
+#: Columns added after the first release. `CREATE TABLE IF NOT EXISTS` is a
+#: no-op on an existing table, so new columns need an explicit additive step.
+#: Additive only, and idempotent --- there is no down-migration and no rewrite.
+MIGRATIONS = [
+    ("sites", "station_name", "TEXT"),
+    ("sites", "station_first_year", "INTEGER"),
+    ("sites", "station_last_year", "INTEGER"),
+    ("sites", "station_elevation_m", "REAL"),
+    ("sites", "station_elevation_delta_m", "REAL"),
+    ("sites", "station_elevation_warning", "INTEGER NOT NULL DEFAULT 0"),
+    ("sites", "is_example", "INTEGER NOT NULL DEFAULT 0"),
+    ("sites", "contact_email", "TEXT"),
+]
 
 
 def connect() -> sqlite3.Connection:
@@ -114,6 +202,10 @@ def connect() -> sqlite3.Connection:
 def init() -> None:
     with connect() as conn:
         conn.executescript(SCHEMA)
+        for table, column, decl in MIGRATIONS:
+            have = {r["name"] for r in conn.execute(f"PRAGMA table_info({table})")}
+            if column not in have:
+                conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {decl}")
 
 
 def new_id(prefix: str) -> str:
@@ -171,7 +263,7 @@ def create_site(account_id: str, **fields: Any) -> dict:
     cols = [
         "id", "account_id", "name", "lat", "lon", "elevation_m", "vertical",
         "season_start_month", "season_end_month", "variable_cost_ratio",
-        "reserves", "monthly_burn", "status", "created_at",
+        "reserves", "monthly_burn", "status", "created_at", "is_example",
     ]
     with connect() as conn:
         conn.execute(
@@ -196,6 +288,22 @@ def list_sites(account_id: str) -> list[dict]:
     with connect() as conn:
         rows = conn.execute(
             "SELECT * FROM sites WHERE account_id = ? ORDER BY created_at DESC", (account_id,)
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def list_example_sites() -> list[dict]:
+    """Venues seeded and fitted at build time, offered to visitors as examples.
+
+    A fit takes 80-140 seconds. Without these, the first thing a visitor to the
+    storefront would experience is a two-minute wait before seeing any number at
+    all --- so the configure page offers real, already-fitted venues that price
+    in milliseconds, and adding your own coordinates is the second option rather
+    than the only one.
+    """
+    with connect() as conn:
+        rows = conn.execute(
+            "SELECT * FROM sites WHERE is_example = 1 AND status = 'ready' ORDER BY name"
         ).fetchall()
     return [dict(r) for r in rows]
 
@@ -334,3 +442,177 @@ def list_quotes(site_id: str, limit: int = 50) -> list[dict]:
         {**dict(r), "request": json.loads(r["request"]), "response": json.loads(r["response"])}
         for r in rows
     ]
+
+
+# ----------------------------------------------------------------------
+# orders
+# ----------------------------------------------------------------------
+
+
+def next_invoice_number(conn: sqlite3.Connection) -> str:
+    """Sequential, gapless invoice numbers.
+
+    Deliberately not `max(id) + 1` and not a random token. Invoice numbers are
+    an accounting artefact: they must be unique, ordered, and not reused, and a
+    concurrent checkout must not be able to mint the same one twice. The
+    `UPDATE ... RETURNING` is atomic inside the caller's transaction, and the
+    UNIQUE constraint on `orders.invoice_number` is the backstop if it ever
+    were not.
+    """
+    conn.execute(
+        "INSERT INTO counters (name, value) VALUES ('invoice', 1000) "
+        "ON CONFLICT(name) DO NOTHING"
+    )
+    row = conn.execute(
+        "UPDATE counters SET value = value + 1 WHERE name = 'invoice' RETURNING value"
+    ).fetchone()
+    return f"DW-{row['value']}"
+
+
+def create_order(account_id: str, items: list[dict], billing: dict, tax_cents: int = 0) -> dict:
+    """Write an order and its lines in one transaction.
+
+    Each `item` carries its own `unit_price_cents` and `product_name` --- taken
+    from the catalogue by the caller and frozen here. Nothing downstream reads
+    a price back out of the catalogue.
+    """
+    order_id = new_id("ord")
+    subtotal = sum(int(i["unit_price_cents"]) * int(i.get("quantity", 1)) for i in items)
+    total = subtotal + int(tax_cents)
+    now = time.time()
+
+    with connect() as conn:
+        invoice = next_invoice_number(conn)
+        conn.execute(
+            "INSERT INTO orders (id,account_id,status,currency,subtotal_cents,tax_cents,"
+            "total_cents,invoice_number,billing_name,billing_email,billing_company,"
+            "billing_address,payment_provider,payment_reference,created_at) "
+            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            (
+                order_id, account_id, "pending", "USD", subtotal, int(tax_cents), total,
+                invoice, billing.get("name"), billing.get("email"), billing.get("company"),
+                billing.get("address"), billing.get("provider", "mock"), None, now,
+            ),
+        )
+        for item in items:
+            qty = int(item.get("quantity", 1))
+            unit = int(item["unit_price_cents"])
+            conn.execute(
+                "INSERT INTO order_items (id,order_id,product_slug,product_name,site_id,"
+                "config,unit_price_cents,quantity,line_total_cents,fulfilment_status) "
+                "VALUES (?,?,?,?,?,?,?,?,?,?)",
+                (
+                    new_id("oi"), order_id, item["product_slug"], item["product_name"],
+                    item.get("site_id"), json.dumps(item.get("config") or {}),
+                    unit, qty, unit * qty, "pending",
+                ),
+            )
+
+    return get_order(order_id)  # type: ignore[return-value]
+
+
+def get_order(order_id: str, account_id: str | None = None) -> dict | None:
+    q = "SELECT * FROM orders WHERE id = ?"
+    args: tuple = (order_id,)
+    if account_id:
+        q += " AND account_id = ?"
+        args += (account_id,)
+    with connect() as conn:
+        row = conn.execute(q, args).fetchone()
+        if row is None:
+            return None
+        items = conn.execute(
+            "SELECT * FROM order_items WHERE order_id = ? ORDER BY rowid", (order_id,)
+        ).fetchall()
+    order = dict(row)
+    order["items"] = [{**dict(i), "config": json.loads(i["config"])} for i in items]
+    return order
+
+
+def list_orders(account_id: str) -> list[dict]:
+    with connect() as conn:
+        rows = conn.execute(
+            "SELECT * FROM orders WHERE account_id = ? ORDER BY created_at DESC", (account_id,)
+        ).fetchall()
+        out = []
+        for r in rows:
+            items = conn.execute(
+                "SELECT * FROM order_items WHERE order_id = ? ORDER BY rowid", (r["id"],)
+            ).fetchall()
+            o = dict(r)
+            o["items"] = [{**dict(i), "config": json.loads(i["config"])} for i in items]
+            out.append(o)
+    return out
+
+
+def mark_order_paid(order_id: str, reference: str, provider: str = "mock") -> None:
+    with connect() as conn:
+        conn.execute(
+            "UPDATE orders SET status='paid', paid_at=?, payment_reference=?, "
+            "payment_provider=? WHERE id = ?",
+            (time.time(), reference, provider, order_id),
+        )
+
+
+def update_item_fulfilment(item_id: str, status: str) -> None:
+    with connect() as conn:
+        conn.execute(
+            "UPDATE order_items SET fulfilment_status = ? WHERE id = ?", (status, item_id)
+        )
+
+
+# ----------------------------------------------------------------------
+# subscriptions
+# ----------------------------------------------------------------------
+
+
+def create_subscription(
+    account_id: str,
+    order_id: str,
+    product_slug: str,
+    price_cents: int,
+    period: str = "month",
+    site_id: str | None = None,
+) -> dict:
+    now = time.time()
+    span = 365 * 86400.0 if period == "year" else 30 * 86400.0
+    sub = {
+        "id": new_id("sub"),
+        "account_id": account_id,
+        "site_id": site_id,
+        "order_id": order_id,
+        "product_slug": product_slug,
+        "status": "active",
+        "period": period,
+        "price_cents": int(price_cents),
+        "started_at": now,
+        "current_period_end": now + span,
+        "cancelled_at": None,
+    }
+    cols = list(sub)
+    with connect() as conn:
+        conn.execute(
+            f"INSERT INTO subscriptions ({','.join(cols)}) "
+            f"VALUES ({','.join('?' * len(cols))})",
+            tuple(sub[c] for c in cols),
+        )
+    return sub
+
+
+def list_subscriptions(account_id: str) -> list[dict]:
+    with connect() as conn:
+        rows = conn.execute(
+            "SELECT * FROM subscriptions WHERE account_id = ? ORDER BY started_at DESC",
+            (account_id,),
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def cancel_subscription(sub_id: str, account_id: str) -> bool:
+    with connect() as conn:
+        cur = conn.execute(
+            "UPDATE subscriptions SET status='cancelled', cancelled_at=? "
+            "WHERE id = ? AND account_id = ? AND status = 'active'",
+            (time.time(), sub_id, account_id),
+        )
+    return cur.rowcount > 0

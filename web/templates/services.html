@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}Services — Downside{% endblock %}
+
+{% block content %}
+<section style="padding-bottom:var(--sp-6)">
+  <div class="container">
+    <p class="eyebrow fade-up">Services</p>
+    <h1 class="h-section fade-up measure" style="--d:70ms">
+      Four ways to put a number on weather.
+    </h1>
+    <p class="lede measure fade-up" style="--d:140ms;margin-top:var(--sp-4)">
+      Every one of them runs on the same engine: a century of daily observations at your
+      coordinates, a seasonal and warming model fitted to them, extreme value theory in
+      the tails, and a hundred-year projection under four emissions pathways. What
+      differs is what comes out and how it is billed.
+    </p>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="container">
+    <div class="scroll-x">
+      <table class="rows" style="min-width:640px">
+        <thead>
+          <tr>
+            <th>Service</th>
+            <th>Billed</th>
+            <th class="num">Price</th>
+            <th>Needs a fit before pricing</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in PRODUCTS %}
+          <tr>
+            <td><a href="/services/{{ p.slug }}"><strong>{{ p.name }}</strong></a><br>
+                <span class="tiny">{{ p.tagline }}</span></td>
+            <td class="small">
+              {%- if p.is_quoted %}per contract
+              {%- elif p.billing == 'month' %}monthly, per {{ p.unit }}
+              {%- else %}once, per {{ p.unit }}{% endif -%}
+            </td>
+            <td class="num">{{ p.price_label }}</td>
+            <td class="small">{{ 'Yes — about two minutes at a new venue' if p.requires_fit else 'No — fitted after purchase' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section style="padding-top:var(--sp-6)">
+  <div class="container">
+    <div class="bento">
+      {% for p in PRODUCTS %}
+      <article class="card card-{{ p.accent }} reveal" style="--d:{{ loop.index0 * 70 }}ms">
+        <p class="eyebrow" style="color:var(--card-accent)">
+          {{ 'Indicative quote' if p.is_quoted else ('Subscription' if p.is_subscription else 'One-off') }}
+        </p>
+        <h2 class="h-card">{{ p.name }}</h2>
+        <p class="small measure" style="margin-top:var(--sp-2)">{{ p.tagline }}</p>
+
+        <p style="margin-top:var(--sp-4)">
+          <span class="price {{ 'price-quoted' if p.is_quoted else '' }}">{{ p.price_label }}</span>
+          <span class="price-suffix">{{ p.price_suffix }}</span>
+        </p>
+        <p class="tiny">{{ p.turnaround }}</p>
+
+        <hr class="rule">
+
+        <p class="eyebrow">What you get</p>
+        <ul class="speclist small">
+          {% for d in p.deliverables %}<li>{{ d }}</li>{% endfor %}
+        </ul>
+
+        <div class="btn-row" style="margin-top:var(--sp-5)">
+          <a class="btn" href="/configure/{{ p.slug }}" data-magnetic>
+            {{ 'Request indicative term sheet' if p.is_quoted else 'Order risk analysis' }}
+          </a>
+          <a class="btn-quiet" href="/services/{{ p.slug }}">Full detail →</a>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="container">
+    {% include "components/disclaimer.html" %}
+  </div>
+</section>
+{% endblock %}

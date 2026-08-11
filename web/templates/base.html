@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{% block title %}Downside — weather risk analytics{% endblock %}</title>
+<meta name="description" content="{% block description %}A hundred years of daily weather at your coordinates, fitted, projected to 2125, and priced. Exposure reports, season monitoring, indicative parametric terms and portfolio analytics for outdoor operators.{% endblock %}">
+<link rel="stylesheet" href="/static/fonts.css">
+<link rel="stylesheet" href="/static/site.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>🌦️</text></svg>">
+<script>
+  /* Scroll-reveal hides content until an IntersectionObserver fires. If the
+     module never runs --- blocked script, parse error, an agent fetching the
+     page --- everything below the fold would stay at opacity 0 forever. So the
+     CSS only hides `.reveal` under [data-js], and this stamps it inline, before
+     first paint, so there is no flash of visible-then-hidden content either. */
+  document.documentElement.dataset.js = '1';
+</script>
+</head>
+<body data-weather="{{ weather|default('clear') }}">
+<canvas id="sky" aria-hidden="true"></canvas>
+
+<div id="page">
+  {% include "components/nav.html" %}
+
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="foot">
+    <div class="container foot-grid">
+      <div>
+        <a class="brand" href="/"><b>Downside</b> <span>Weather Risk</span></a>
+        <p class="small measure" style="margin-top:var(--sp-3)">
+          Sensible Weather protects the guest. This protects the business.
+        </p>
+        <p class="tiny" style="margin-top:var(--sp-3)">
+          Downside is an analytics provider, not an insurer, a broker or an MGA.
+          Nothing on this site is an offer of insurance.
+        </p>
+      </div>
+      <div>
+        <h4>Services</h4>
+        <ul>
+          {% for p in PRODUCTS %}
+          <li><a href="/services/{{ p.slug }}">{{ p.name }}</a></li>
+          {% endfor %}
+        </ul>
+      </div>
+      <div>
+        <h4>Product</h4>
+        <ul>
+          <li><a href="/services">All services</a></li>
+          <li><a href="/account">Your account</a></li>
+          <li><a href="/dashboard">Analytics terminal</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Developers</h4>
+        <ul>
+          <li><a href="/docs">API reference</a></li>
+          <li><a href="/v1/perils">Peril definitions</a></li>
+          <li><a href="/v1/health">Service status</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="container" style="margin-top:var(--sp-6)">
+      <hr class="rule">
+      <p class="tiny">
+        © {{ year }} Downside. Station observations © NOAA NCEI GHCN-Daily; reanalysis
+        via Copernicus ERA5 through Open-Meteo. Statistical methods referenced from the
+        MIT Sloan Business Club <em>Quant Bible</em> (§4.3 regression, §4.6 econometrics,
+        §6.2 market making).
+      </p>
+    </div>
+  </footer>
+</div>
+
+<script type="module" src="/static/site.js"></script>
+</body>
+</html>

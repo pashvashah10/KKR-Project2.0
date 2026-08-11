@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% block title %}Order {{ order.invoice_number }} — Downside{% endblock %}
+
+{% block content %}
+<section>
+  <div class="container">
+    <p class="crumbs"><a href="/">Home</a> / <a href="/account">Account</a> / {{ order.invoice_number }}</p>
+
+    {% if just_placed %}
+    <p class="eyebrow fade-up" style="color:var(--good)">Order placed</p>
+    {% endif %}
+    <h1 class="h-section fade-up" style="--d:60ms">
+      {{ 'Thank you.' if just_placed else 'Order ' ~ order.invoice_number }}
+    </h1>
+
+    <div class="notice notice-accent fade-up" style="--d:120ms;margin-top:var(--sp-4);max-width:74ch">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+        <circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/>
+      </svg>
+      <span>
+        <strong>No payment was taken.</strong> This order was recorded against your
+        account so the workflow is real end to end, but no card was collected and no money
+        moved. Payment reference <span class="num">{{ order.payment_reference }}</span>
+        is a mock identifier, prefixed so it can never be mistaken for a settlement.
+      </span>
+    </div>
+
+    <div class="split" style="margin-top:var(--sp-6)">
+      <div class="panel">
+        {# The invoice header is a compliance requirement, not decoration. #}
+        <p class="eyebrow" style="color:var(--warn)">{{ INVOICE_HEADER }}</p>
+
+        <div style="display:flex;justify-content:space-between;gap:var(--sp-4);flex-wrap:wrap;margin-top:var(--sp-3)">
+          <div>
+            <p class="h-card">Invoice {{ order.invoice_number }}</p>
+            <p class="tiny">{{ order.created_iso }}</p>
+          </div>
+          <div style="text-align:right">
+            <span class="tag {{ 'tag-good' if order.status == 'paid' else '' }}">{{ order.status }}</span>
+            <p class="tiny" style="margin-top:.3rem">via {{ order.payment_provider }}</p>
+          </div>
+        </div>
+
+        <hr class="rule">
+
+        <div class="grid-2">
+          <div>
+            <p class="eyebrow">Billed to</p>
+            <p class="small">
+              {{ order.billing_name }}<br>
+              {% if order.billing_company %}{{ order.billing_company }}<br>{% endif %}
+              {{ order.billing_email }}
+              {% if order.billing_address %}<br>{{ order.billing_address }}{% endif %}
+            </p>
+          </div>
+          <div>
+            <p class="eyebrow">Issued by</p>
+            <p class="small">
+              Downside<br>
+              Weather risk analytics<br>
+              <span class="tiny">Analytics provider — not an insurer, broker or MGA</span>
+            </p>
+          </div>
+        </div>
+
+        <hr class="rule">
+
+        <div class="scroll-x">
+          <table class="rows" style="min-width:460px">
+            <thead>
+              <tr>
+                <th>Item</th><th class="num">Qty</th>
+                <th class="num">Unit</th><th class="num">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in order['items'] %}
+              <tr>
+                <td>
+                  <strong>{{ item.product_name }}</strong>
+                  {% if item.site_name %}<br><span class="tiny">{{ item.site_name }}</span>{% endif %}
+                  {% if item.config.peril %}
+                  <br><span class="tiny">
+                    {{ item.config.peril }} · {{ item.config.year }} ·
+                    attaches at {{ item.config.attachment_days }} days
+                  </span>
+                  {% endif %}
+                  <br><span class="tag">{{ item.fulfilment_status }}</span>
+                </td>
+                <td class="num">{{ item.quantity }}</td>
+                <td class="num">{{ item.unit_price }}</td>
+                <td class="num">{{ item.line_total }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+            <tfoot>
+              <tr><td colspan="3">Subtotal</td><td class="num">{{ order.subtotal }}</td></tr>
+              <tr><td colspan="3">Tax</td><td class="num">{{ order.tax }}</td></tr>
+              <tr><td colspan="3"><strong>Total</strong></td>
+                  <td class="num" style="color:var(--ember)"><strong>{{ order.total }}</strong></td></tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+
+      <aside class="stack sticky">
+        <div class="panel">
+          <p class="eyebrow">What happens next</p>
+          <ul class="speclist small">
+            <li>Any venue on this order that is not already fitted is being fitted now.
+                A century takes one to three minutes per venue.</li>
+            <li>Reports and dashboards appear under your account as each fit completes.</li>
+            <li>Subscriptions are active from today and renew monthly until cancelled.</li>
+            <li>Indicative term sheets are marked <em>awaiting underwriting</em> — placing
+                the risk needs a licensed carrier or broker.</li>
+          </ul>
+          <a class="btn" href="/account" style="width:100%;margin-top:var(--sp-4)">Go to your account</a>
+          <a class="btn-ghost" href="/dashboard" style="width:100%;margin-top:var(--sp-2)">Open the terminal</a>
+        </div>
+
+        {% include "components/disclaimer.html" %}
+      </aside>
+    </div>
+  </div>
+</section>
+{% endblock %}

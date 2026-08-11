@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+{% block title %}Your account — Downside{% endblock %}
+
+{% block content %}
+<section>
+  <div class="container">
+    <p class="crumbs"><a href="/">Home</a> / Account</p>
+    <h1 class="h-section fade-up">
+      {% if account %}{{ account.name }}{% else %}Your account{% endif %}
+    </h1>
+    {% if account %}
+    <p class="lede fade-up" style="--d:70ms;margin-top:var(--sp-2)">{{ account.email }}</p>
+    {% endif %}
+
+    {% if not account %}
+    <div class="panel fade-up" style="--d:80ms;margin-top:var(--sp-5)">
+      <p class="lede">Nothing here yet.</p>
+      <p class="small" style="margin-top:var(--sp-2)">
+        An account is created for you the first time you add a venue or place an order —
+        there is no sign-up form to fill in before you can see a price.
+      </p>
+      <div class="btn-row" style="margin-top:var(--sp-4)">
+        <a class="btn" href="/services">Browse services</a>
+        <a class="btn-ghost" href="/configure/exposure-report">Price a venue</a>
+      </div>
+    </div>
+
+    {% else %}
+
+    <div class="stack-lg" style="margin-top:var(--sp-6)">
+
+      {# ------------------------------------------------------------- venues #}
+      <div>
+        <p class="eyebrow">Your venues</p>
+        {% if not sites %}
+        <div class="panel"><p class="small">No venues yet.
+          <a href="/configure/exposure-report">Add one</a>.</p></div>
+        {% else %}
+        <div class="grid-2">
+          {% for s in sites %}
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;gap:var(--sp-3);align-items:start">
+              <h3 class="h-card">{{ s.name }}</h3>
+              <span class="tag {{ 'tag-good' if s.status == 'ready' else ('tag-warn' if s.status == 'failed' else 'tag-accent') }}">
+                {{ s.status }}
+              </span>
+            </div>
+            <p class="tiny">{{ s.vertical }} · {{ '%.3f'|format(s.lat) }}, {{ '%.3f'|format(s.lon) }}</p>
+
+            {% if s.station and s.station.matched %}
+            <dl class="readout" style="margin-top:var(--sp-3)">
+              <dt>Settles on</dt><dd>{{ s.station.id }}</dd>
+              <dt>Distance</dt><dd>{{ '%.1f'|format(s.station.distance_km) }} km</dd>
+              <dt>Record</dt><dd>{{ s.station.first_year }}–{{ s.station.last_year }}</dd>
+            </dl>
+            {% if s.station.elevation_warning %}
+            <p class="tiny" style="color:var(--crit);margin-top:var(--sp-2)">
+              Microclimate warning — gauge is {{ s.station.elevation_delta_m|abs|round|int }} m
+              {{ 'below' if s.station.elevation_delta_m < 0 else 'above' }} this venue.
+            </p>
+            {% endif %}
+            {% endif %}
+
+            {% if s.status == 'ready' %}
+            <div class="btn-row" style="margin-top:var(--sp-4)">
+              <a class="btn-ghost" href="/configure/parametric-cover?site={{ s.id }}">Price a contract</a>
+              <a class="btn-quiet" href="/dashboard">Open terminal →</a>
+            </div>
+            {% elif s.status == 'failed' and s.job %}
+            <p class="tiny" style="color:var(--crit);margin-top:var(--sp-3)">{{ s.job.error }}</p>
+            {% elif s.job %}
+            <div class="progress" style="margin-top:var(--sp-4)">
+              <i style="--p:{{ s.job.progress }}"></i>
+            </div>
+            <p class="tiny" style="margin-top:var(--sp-2)">{{ s.job.step }}</p>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+
+      {# ------------------------------------------------------ subscriptions #}
+      <div>
+        <p class="eyebrow">Subscriptions</p>
+        {% if not subs %}
+        <div class="panel"><p class="small">No active subscriptions.</p></div>
+        {% else %}
+        <div class="panel scroll-x">
+          <table class="rows" style="min-width:520px">
+            <thead>
+              <tr><th>Service</th><th>Status</th><th class="num">Price</th>
+                  <th>Renews</th><th></th></tr>
+            </thead>
+            <tbody>
+              {% for sub in subs %}
+              <tr>
+                <td>{{ sub.product_slug.replace('-', ' ')|title }}</td>
+                <td><span class="tag {{ 'tag-good' if sub.status == 'active' else '' }}">{{ sub.status }}</span></td>
+                <td class="num">{{ money(sub.price_cents) }} / {{ sub.period }}</td>
+                <td class="num small">{{ sub.current_period_end | datefmt }}</td>
+                <td>
+                  {% if sub.status == 'active' %}
+                  <form method="post" action="/account/subscriptions/{{ sub.id }}/cancel">
+                    <button class="btn-quiet" type="submit">Cancel</button>
+                  </form>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% endif %}
+      </div>
+
+      {# ------------------------------------------------------------- orders #}
+      <div>
+        <p class="eyebrow">Orders</p>
+        {% if not orders %}
+        <div class="panel"><p class="small">No orders yet.</p></div>
+        {% else %}
+        <div class="stack">
+          {% for o in orders %}
+          <a class="panel" href="/orders/{{ o.id }}"
+             style="display:block;text-decoration:none;color:inherit">
+            <div style="display:flex;justify-content:space-between;gap:var(--sp-4);flex-wrap:wrap">
+              <div>
+                <p class="h-card">{{ o.invoice_number }}</p>
+                <p class="tiny">{{ o.created_iso }} ·
+                  {{ o['items']|length }} item{{ '' if o['items']|length == 1 else 's' }}</p>
+              </div>
+              <div style="text-align:right">
+                <span class="num" style="font-size:1.15rem;font-weight:600;color:var(--ember)">{{ o.total }}</span>
+                <span class="tag {{ 'tag-good' if o.status == 'paid' else '' }}" style="display:block;margin-top:.3rem">{{ o.status }}</span>
+              </div>
+            </div>
+          </a>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+
+      {# ---------------------------------------------------------- API key #}
+      <div>
+        <p class="eyebrow">API access</p>
+        <div class="panel">
+          <p class="small">
+            Everything the storefront does is a public endpoint. Your key authenticates
+            the JSON API at <a href="/docs">/docs</a>.
+          </p>
+          <p class="num small" style="margin-top:var(--sp-3);word-break:break-all;
+                    background:var(--panel-2);padding:var(--sp-3);border-radius:3px">
+            {{ account.api_key }}
+          </p>
+          <p class="tiny" style="margin-top:var(--sp-2)">
+            Treat this like a password. It is the only credential.
+          </p>
+        </div>
+      </div>
+
+      <div style="max-width:70ch">
+        {% include "components/disclaimer.html" %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% block title %}{{ product.name }} — Downside{% endblock %}
+{% block description %}{{ product.tagline }}{% endblock %}
+
+{% block content %}
+<section style="padding-bottom:var(--sp-6)">
+  <div class="container">
+    <p class="crumbs"><a href="/">Home</a> / <a href="/services">Services</a> / {{ product.name }}</p>
+
+    <div class="split" style="align-items:end">
+      <div>
+        <p class="eyebrow fade-up" style="color:var(--{{ product.accent }})">
+          {{ 'Indicative quote · priced by the engine' if product.is_quoted
+             else ('Subscription' if product.is_subscription else 'One-off purchase') }}
+        </p>
+        <h1 class="h-section fade-up" style="--d:70ms">{{ product.name }}</h1>
+        <p class="lede measure fade-up" style="--d:140ms;margin-top:var(--sp-3)">{{ product.tagline }}</p>
+      </div>
+
+      <div class="panel fade-up" style="--d:220ms">
+        <span class="price {{ 'price-quoted' if product.is_quoted else '' }}">{{ product.price_label }}</span>
+        <span class="price-suffix">{{ product.price_suffix }}</span>
+        {% if product.tiers %}
+        <table class="rows" style="margin-top:var(--sp-3)">
+          {% for t in product.tiers %}
+          <tr><td class="small">{{ t.label }}</td><td class="num small">{{ money(t.price_cents) }}</td></tr>
+          {% endfor %}
+        </table>
+        {% endif %}
+        <p class="tiny" style="margin-top:var(--sp-3)">{{ product.turnaround }}</p>
+        <a class="btn" href="/configure/{{ product.slug }}" style="width:100%;margin-top:var(--sp-4)" data-magnetic>
+          {{ 'Request indicative term sheet' if product.is_quoted else 'Order risk analysis' }}
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="container split">
+    <div class="stack-lg">
+      <div>
+        <p class="eyebrow reveal">What this is</p>
+        <p class="lede measure reveal" style="--d:60ms">{{ product.summary }}</p>
+      </div>
+
+      <div>
+        <p class="eyebrow reveal">How it works</p>
+        <ol class="stack reveal" style="--d:60ms;list-style:none;padding:0;margin:0;counter-reset:step">
+          {% for title, body in product.how_it_works %}
+          <li class="panel" style="counter-increment:step">
+            <p class="eyebrow" style="color:var(--accent)">Step {{ loop.index }}</p>
+            <h3 class="h-card">{{ title }}</h3>
+            <p class="small measure" style="margin-top:var(--sp-2)">{{ body }}</p>
+          </li>
+          {% endfor %}
+        </ol>
+      </div>
+
+      <div>
+        <p class="eyebrow reveal">Frequently asked</p>
+        <div class="stack reveal" style="--d:60ms">
+          {% for question, answer in product.faq %}
+          <details class="panel">
+            <summary style="cursor:pointer;font-weight:560;list-style:none">{{ question }}</summary>
+            <p class="small measure" style="margin-top:var(--sp-3)">{{ answer }}</p>
+          </details>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <aside class="stack sticky">
+      <div class="panel reveal">
+        <p class="eyebrow">Deliverables</p>
+        <ul class="speclist small">
+          {% for d in product.deliverables %}<li>{{ d }}</li>{% endfor %}
+        </ul>
+      </div>
+
+      <div class="panel reveal" style="--d:60ms">
+        <p class="eyebrow">Included</p>
+        <ul class="speclist small">
+          {% for i in product.included %}<li>{{ i }}</li>{% endfor %}
+        </ul>
+        <hr class="rule">
+        <p class="eyebrow">Not included</p>
+        <ul class="speclist neg small">
+          {% for i in product.not_included %}<li>{{ i }}</li>{% endfor %}
+        </ul>
+      </div>
+
+      {% if product.is_quoted %}
+      {% include "components/disclaimer.html" %}
+      {% endif %}
+    </aside>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="container">
+    <hr class="rule">
+    <p class="eyebrow reveal">Also available</p>
+    <div class="grid-3" style="margin-top:var(--sp-4)">
+      {% for p in others %}
+      <a class="card card-{{ p.accent }} reveal" href="/services/{{ p.slug }}"
+         style="--d:{{ loop.index0 * 60 }}ms;text-decoration:none;color:inherit">
+        <h3 class="h-card">{{ p.name }}</h3>
+        <p class="small" style="margin-top:var(--sp-2)">{{ p.tagline }}</p>
+        <p style="margin-top:var(--sp-3)">
+          <span class="num" style="color:var(--ember);font-weight:600">{{ p.price_label }}</span>
+          <span class="tiny">{{ p.price_suffix }}</span>
+        </p>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}

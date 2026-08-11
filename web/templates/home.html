@@ -1,0 +1,209 @@
+{% extends "base.html" %}
+{% block title %}Downside — weather risk analytics for outdoor operators{% endblock %}
+
+{% block content %}
+
+<section class="hero">
+  <div class="container hero-grid">
+    <div>
+      <p class="eyebrow fade-up" style="--d:80ms">Weather risk analytics · est. on 100 years of observations</p>
+
+      <h1 class="h-hero">
+        <span class="rise"><span style="--d:60ms">A hundred years</span></span>
+        <span class="rise"><span style="--d:150ms">of weather, fitted.</span></span>
+        <span class="rise"><span style="--d:240ms" class="grad">A hundred more, priced.</span></span>
+      </h1>
+
+      <p class="lede measure fade-up" style="--d:520ms;margin-top:var(--sp-5)">
+        Sensible Weather protects the guest. This protects the business. Give us your
+        coordinates and we will fit the daily record at the nearest long-serving gauge,
+        project it to 2125 under four emissions pathways, and put a number on what your
+        season is actually carrying — with every assumption and every load shown.
+      </p>
+
+      <div class="btn-row fade-up" style="--d:640ms;margin-top:var(--sp-5)">
+        <a class="btn" href="/services" data-magnetic>Browse services</a>
+        <a class="btn-ghost" href="/configure/exposure-report" data-magnetic>Price your venue</a>
+      </div>
+    </div>
+
+    {% if hero_site and hero_site.station_id %}
+    {# Not an illustration of the product --- an actual station match from the
+       database, rendered live. Hover flips it to the elevation delta. #}
+    <div class="readout fade-up" style="--d:760ms" tabindex="0"
+         aria-label="Live station match for {{ hero_site.name }}">
+      <div class="flip">
+        <p class="eyebrow" style="margin-bottom:var(--sp-3)">
+          <span class="beacon"></span>Settles here
+        </p>
+        <dl>
+          <dt>Venue</dt><dd>{{ hero_site.name }}</dd>
+          <dt>Station</dt><dd>{{ hero_site.station_id }}</dd>
+          <dt>Distance</dt><dd>{{ '%.1f'|format(hero_site.station_km or 0) }} km</dd>
+          <dt>Record</dt><dd>{{ hero_site.station_first_year }}–{{ hero_site.station_last_year }}</dd>
+        </dl>
+      </div>
+      <div class="flip-alt">
+        <p class="eyebrow" style="margin-bottom:var(--sp-3)">Vertical separation</p>
+        <dl>
+          <dt>Venue elev.</dt><dd>{{ (hero_site.elevation_m or 0)|round|int }} m</dd>
+          <dt>Gauge elev.</dt><dd>{{ (hero_site.station_elevation_m or 0)|round|int }} m</dd>
+          <dt>Delta</dt><dd>{{ (hero_site.station_elevation_delta_m or 0)|round|int }} m</dd>
+          <dt>Basis</dt><dd>{{ 'flagged' if hero_site.station_elevation_warning else 'within tolerance' }}</dd>
+        </dl>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="container">
+    <div class="stats reveal">
+      <div class="stat">
+        <span class="stat-v" data-count="38,412">38,412</span>
+        <span class="stat-k">GHCN stations indexed</span>
+      </div>
+      <div class="stat">
+        <span class="stat-v" data-count="100">100</span>
+        <span class="stat-k">Years fitted per venue</span>
+      </div>
+      <div class="stat">
+        <span class="stat-v" data-count="4">4</span>
+        <span class="stat-k">SSP pathways projected</span>
+      </div>
+      <div class="stat">
+        <span class="stat-v" data-count="2125">2125</span>
+        <span class="stat-k">Horizon</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="container">
+    <p class="eyebrow reveal">What you can order</p>
+    <h2 class="h-section reveal measure" style="--d:60ms">
+      Four things, priced honestly, with the method shown.
+    </h2>
+    <p class="lede measure reveal" style="--d:120ms;margin-top:var(--sp-4)">
+      Three are sold at a list price and delivered after purchase. One is priced by the
+      engine against your own venue, and is indicative only — binding cover needs a
+      licensed carrier, which we are not.
+    </p>
+
+    <div class="bento" style="margin-top:var(--sp-6)">
+      {% for p in PRODUCTS %}
+      <article class="card card-{{ p.accent }} reveal" style="--d:{{ loop.index0 * 70 }}ms">
+        <p class="eyebrow" style="color:var(--card-accent)">
+          {{ 'Indicative quote' if p.is_quoted else ('Subscription' if p.is_subscription else 'One-off') }}
+        </p>
+        <h3 class="h-card">{{ p.name }}</h3>
+        <p class="small measure" style="margin-top:var(--sp-2)">{{ p.tagline }}</p>
+
+        <p style="margin-top:var(--sp-4)">
+          <span class="price {{ 'price-quoted' if p.is_quoted else '' }}">{{ p.price_label }}</span>
+          <span class="price-suffix">{{ p.price_suffix }}</span>
+        </p>
+
+        <ul class="speclist" style="margin-top:var(--sp-3)">
+          {% for d in p.deliverables[:3] %}<li>{{ d }}</li>{% endfor %}
+        </ul>
+
+        <div class="btn-row" style="margin-top:var(--sp-4)">
+          <a class="btn-ghost" href="/services/{{ p.slug }}">What you get</a>
+          <a class="btn-quiet" href="/configure/{{ p.slug }}">
+            {{ 'Request indicative term sheet' if p.is_quoted else 'Order risk analysis' }} →
+          </a>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="container split">
+    <div>
+      <p class="eyebrow reveal">The decision that makes this different</p>
+      <h2 class="h-section reveal measure" style="--d:60ms">
+        Local temperature is regressed on global temperature, not on the year.
+      </h2>
+      <div class="stack measure reveal" style="--d:120ms;margin-top:var(--sp-4)">
+        <p>
+          Fitting a trend against calendar time forces a shape onto the past that the
+          record does not have — the 1940–75 aerosol plateau, the volcanic notches after
+          Agung, El Chichón and Pinatubo, the post-1980 steepening. A straight line
+          averages all of it, then extrapolates the average for another century.
+        </p>
+        <p>
+          Regressing on modelled global temperature reproduces those features without
+          being told they exist, and the coefficient <em>is</em> the regional
+          amplification factor: degrees local per degree global. Extrapolating then needs
+          no assumption about the shape of the future, only a choice of scenario.
+        </p>
+        <p>
+          Three more choices in the same spirit: standard errors from a year-block
+          bootstrap, because daily weather is not 36,525 independent observations;
+          extreme value theory in the tails, because that is where a weather product
+          pays; and hedge sizing against ruin probability rather than expected value,
+          because every hedge loses money in expected dollars.
+        </p>
+      </div>
+      <p style="margin-top:var(--sp-5)">
+        <a class="btn-ghost" href="/dashboard">Open the analytics terminal</a>
+      </p>
+    </div>
+
+    <aside class="stack">
+      <div class="panel reveal">
+        <p class="eyebrow">Where we are honest</p>
+        <ul class="speclist neg small">
+          <li>Out-of-sample skill against climatology is in the low single digits. For
+              daily temperature at 30-year lead, climatology is a very strong baseline.
+              The value is in the trend, the tails and the distribution.</li>
+          <li>Amplification is weakly identified at some sites, because forcing and
+              calendar time are near-collinear over a century. Where the estimate is
+              specification-sensitive, the diagnostics say so.</li>
+          <li>Raw station records carry undocumented moves and instrument changes. We
+              detect and flag them. We do not correct them.</li>
+          <li>We are not an insurer, a broker or an MGA. Parametric pricing here is
+              indicative and subject to underwriting.</li>
+        </ul>
+      </div>
+
+      <div class="panel reveal" style="--d:80ms">
+        <p class="eyebrow">Basis risk, priced explicitly</p>
+        <p class="small">
+          A contract settles on a gauge, not on your car park. That distance costs money,
+          and so does the vertical gap — a gauge 9 km away but 800 m lower is separated by
+          roughly 5 °C of lapse rate and sits on the wrong side of the rain/snow line for
+          much of the season.
+        </p>
+        <p class="small" style="margin-top:var(--sp-3)">
+          Both go into the match and both appear as their own line in the quote. Most of
+          the industry buries this inside a margin.
+        </p>
+      </div>
+    </aside>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="container">
+    <div class="panel reveal" style="text-align:center;padding-block:var(--sp-7)">
+      <h2 class="h-section" style="margin-inline:auto;max-width:20ch">Start with one venue.</h2>
+      <p class="lede" style="margin:var(--sp-4) auto 0;max-width:56ch">
+        Pick one of our already-fitted example venues and see a real engine-computed
+        number in about two seconds, or enter your own coordinates and watch the century
+        get fitted.
+      </p>
+      <div class="btn-row" style="justify-content:center;margin-top:var(--sp-5)">
+        <a class="btn" href="/configure/exposure-report" data-magnetic>Order risk analysis</a>
+        <a class="btn-ghost" href="/configure/parametric-cover" data-magnetic>Request indicative term sheet</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

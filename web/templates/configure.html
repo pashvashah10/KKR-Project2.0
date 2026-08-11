@@ -1,0 +1,309 @@
+{% extends "base.html" %}
+{% block title %}Configure {{ product.name }} — Downside{% endblock %}
+
+{% block content %}
+<section style="padding-bottom:var(--sp-5)" data-configure data-slug="{{ product.slug }}"
+         {% if resume_job %}data-resume-job="{{ resume_job }}"{% endif %}>
+  <div class="container">
+    <p class="crumbs">
+      <a href="/">Home</a> / <a href="/services">Services</a> /
+      <a href="/services/{{ product.slug }}">{{ product.name }}</a> / Configure
+    </p>
+
+    <p class="eyebrow fade-up" style="color:var(--{{ product.accent }})">Step 1 — pick a venue</p>
+    <h1 class="h-section fade-up" style="--d:70ms">{{ product.name }}</h1>
+    <p class="lede measure fade-up" style="--d:140ms;margin-top:var(--sp-3)">
+      {% if product.requires_fit %}
+        This service is priced by the engine against your own venue, so the century has to
+        be fitted before there is a number. Pick an example venue for an instant price, or
+        enter your own coordinates and watch it run.
+      {% else %}
+        {{ product.name }} is sold at a published list price. Choose the venue it applies
+        to — the century gets fitted after you order, as fulfilment.
+      {% endif %}
+    </p>
+
+    <div class="split" style="margin-top:var(--sp-6)">
+      <div class="stack-lg">
+
+        {# ---------------------------------------------------- example venues #}
+        {% if examples %}
+        <div>
+          <p class="eyebrow">Already fitted — priced instantly</p>
+          <div class="choice-grid">
+            {% for s in examples %}
+            <a class="choice" href="/configure/{{ product.slug }}?site={{ s.id }}"
+               {% if selected and selected.id == s.id %}data-active{% endif %}>
+              <strong>{{ s.name }}</strong>
+              <span class="tiny" style="display:block">
+                {{ s.vertical }} · {{ '%.3f'|format(s.lat) }}, {{ '%.3f'|format(s.lon) }}
+                {%- if s.station_id %} · settles {{ s.station_id }}{% endif %}
+              </span>
+            </a>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
+        {% if own_sites %}
+        <div>
+          <p class="eyebrow">Your venues</p>
+          <div class="choice-grid">
+            {% for s in own_sites %}
+            <a class="choice" href="/configure/{{ product.slug }}?site={{ s.id }}"
+               {% if selected and selected.id == s.id %}data-active{% endif %}>
+              <strong>{{ s.name }}</strong>
+              <span class="tiny" style="display:block">
+                {{ s.vertical }} ·
+                {% if s.status == 'ready' %}fitted{% elif s.status == 'failed' %}fit failed{% else %}fitting…{% endif %}
+              </span>
+            </a>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
+        {# --------------------------------------------------------- own venue #}
+        <div>
+          <p class="eyebrow">Or add your own venue</p>
+
+          <form class="panel stack" data-venue-form method="post"
+                action="/configure/{{ product.slug }}/venue">
+            <label class="field">
+              <span>Venue name</span>
+              <input name="name" required maxlength="200" placeholder="Sonoma Ridge Vineyard">
+            </label>
+
+            <div class="field-row">
+              <label class="field">
+                <span>Latitude</span>
+                <input name="lat" type="number" step="any" min="-90" max="90" required
+                       placeholder="38.4405">
+                <span class="field-hint">Decimal degrees. Use the venue, not the town.</span>
+              </label>
+              <label class="field">
+                <span>Longitude</span>
+                <input name="lon" type="number" step="any" min="-180" max="180" required
+                       placeholder="-122.7141">
+              </label>
+            </div>
+
+            <label class="field">
+              <span>Elevation (metres)</span>
+              <input name="elevation_m" type="number" step="1" min="-500" max="6000"
+                     placeholder="120">
+              <span class="field-hint">
+                Worth getting right. Without it we match on horizontal distance alone,
+                which is how a mountain venue ends up settling on the valley airport a
+                kilometre below it.
+              </span>
+            </label>
+
+            <label class="field">
+              <span>Vertical</span>
+              <select name="vertical">
+                {% for v in verticals %}<option value="{{ v }}">{{ v }}</option>{% endfor %}
+              </select>
+            </label>
+
+            <div class="field-row">
+              <label class="field">
+                <span>Season starts</span>
+                <select name="season_start_month">
+                  {% for m in range(1, 13) %}
+                  <option value="{{ m }}" {% if m == 4 %}selected{% endif %}>
+                    {{ ['January','February','March','April','May','June','July','August','September','October','November','December'][m-1] }}
+                  </option>
+                  {% endfor %}
+                </select>
+              </label>
+              <label class="field">
+                <span>Season ends</span>
+                <select name="season_end_month">
+                  {% for m in range(1, 13) %}
+                  <option value="{{ m }}" {% if m == 10 %}selected{% endif %}>
+                    {{ ['January','February','March','April','May','June','July','August','September','October','November','December'][m-1] }}
+                  </option>
+                  {% endfor %}
+                </select>
+              </label>
+            </div>
+
+            <label class="field">
+              <span>Email me when it is ready (optional)</span>
+              <input name="notify_email" type="email" placeholder="you@company.com">
+              <span class="field-hint">
+                Fitting takes one to three minutes. Leave an address and you can close
+                this tab — we will send a link straight back to the finished quote.
+              </span>
+            </label>
+
+            <button class="btn" type="submit" data-magnetic>Match station and fit</button>
+          </form>
+
+          <div class="notice notice-crit" data-fit-error hidden style="margin-top:var(--sp-3)"></div>
+
+          {# Progress, driven by the poller in site.js against /api/v1/jobs/{id} #}
+          <div class="panel" data-fit hidden style="margin-top:var(--sp-3)">
+            <p class="eyebrow" style="display:flex;align-items:center;gap:.5rem">
+              <span class="spinner"></span> Fitting a century
+            </p>
+            <div class="progress" style="margin-block:var(--sp-3)">
+              <i data-progress style="--p:0"></i>
+            </div>
+            <p class="small" data-step>Queued</p>
+            <p class="tiny" style="margin-top:var(--sp-3)">
+              A hundred years of daily observations, a mean and variance model, a
+              200-replicate block bootstrap, tail fits and a Monte Carlo grid. It happens
+              once per venue and everything afterwards is milliseconds.
+            </p>
+          </div>
+
+          <div data-station-result hidden style="margin-top:var(--sp-3)"></div>
+        </div>
+      </div>
+
+      {# ------------------------------------------------------------- sidebar #}
+      <aside class="stack sticky">
+
+        {% if station %}
+        <div class="panel">
+          <p class="eyebrow">Settlement basis</p>
+          {% if station.matched %}
+          <p class="h-card">{{ station.name }}</p>
+          <dl class="readout" style="margin-top:var(--sp-3)">
+            <dt>Station</dt><dd>{{ station.id }}</dd>
+            <dt>Distance</dt><dd>{{ '%.1f'|format(station.distance_km) }} km</dd>
+            <dt>Record</dt><dd>{{ station.first_year }}–{{ station.last_year }}</dd>
+            <dt>Gauge elev.</dt><dd>{{ station.elevation_m|round|int }} m</dd>
+            {% if station.elevation_delta_m is not none %}
+            <dt>Vertical gap</dt><dd>{{ station.elevation_delta_m|round|int }} m</dd>
+            {% endif %}
+            {% if station.provenance %}
+            <dt>Source</dt><dd>{{ station.provenance }}</dd>
+            {% endif %}
+          </dl>
+          {% if station.note %}
+          <div class="notice notice-crit" style="margin-top:var(--sp-3)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+              <path d="M12 4 2.5 20h19L12 4Z"/><path d="M12 10v4M12 17h.01"/>
+            </svg>
+            <span><strong>Microclimate warning.</strong> {{ station.note }}</span>
+          </div>
+          {% endif %}
+          {% else %}
+          <div class="notice"><span>{{ station.note }}</span></div>
+          {% endif %}
+        </div>
+        {% endif %}
+
+        {# ------------------------------------------------- indicative pricing #}
+        {% if quote and quote.available %}
+        <div class="panel">
+          <p class="eyebrow">Indicative terms — suggested from this venue's own exposure</p>
+          <table class="rows">
+            <tr><td>Peril</td><td class="num">{{ quote.terms.peril }}</td></tr>
+            <tr><td>Contract year</td><td class="num">{{ quote.terms.year }}</td></tr>
+            <tr><td>Attaches at</td><td class="num">{{ quote.terms.attachment_days }} days</td></tr>
+            <tr><td>Payout per day</td><td class="num">{{ money((quote.terms.payout_per_day * 100)|int) }}</td></tr>
+            <tr><td>Aggregate limit</td><td class="num">{{ money((quote.terms.limit * 100)|int) }}</td></tr>
+          </table>
+          <p class="tiny" style="margin-top:var(--sp-3)">{{ quote.terms.rationale }}</p>
+
+          <hr class="rule">
+
+          <p class="eyebrow">What the price is made of</p>
+          <table class="rows">
+            {% for load in quote.loads %}
+            <tr>
+              <td>{{ load.label }}<br><span class="tiny">{{ load.why }}</span></td>
+              <td class="num">{{ load.display }}</td>
+            </tr>
+            {% endfor %}
+            <tfoot>
+              <tr>
+                <td>Indicative mid</td>
+                <td class="num" style="color:var(--ember)">{{ money(quote.premium_cents) }}</td>
+              </tr>
+            </tfoot>
+          </table>
+
+          <form method="post" action="/cart/add" style="margin-top:var(--sp-4)">
+            <input type="hidden" name="slug" value="{{ product.slug }}">
+            <input type="hidden" name="site_id" value="{{ selected.id }}">
+            <button class="btn" type="submit" style="width:100%" data-magnetic>
+              Add indicative term sheet to cart
+            </button>
+          </form>
+        </div>
+        {% elif quote and not quote.available %}
+        <div class="panel">
+          <p class="eyebrow">No indicative quote for this venue</p>
+          <div class="notice">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+              <circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/>
+            </svg>
+            <span>{{ quote.reason }}</span>
+          </div>
+          <p class="small" style="margin-top:var(--sp-4)">
+            The fit itself succeeded — the century, the tails and the projection are all
+            there. It is the contract structure that does not reach this venue.
+          </p>
+          <div class="btn-row" style="margin-top:var(--sp-4)">
+            <a class="btn-ghost" href="/configure/exposure-report?site={{ selected.id }}">
+              Order the Exposure Report instead
+            </a>
+            <a class="btn-quiet" href="/configure/season-monitor?site={{ selected.id }}">
+              Or monitor the season →
+            </a>
+          </div>
+        </div>
+        {% endif %}
+
+        {# ------------------------------------------------------ fixed-price add #}
+        {% if not product.is_quoted %}
+        <div class="panel">
+          <p class="eyebrow">Order</p>
+          <p><span class="price">{{ product.price_label }}</span>
+             <span class="price-suffix">{{ product.price_suffix }}</span></p>
+
+          <form method="post" action="/cart/add" class="stack" style="margin-top:var(--sp-4)">
+            <input type="hidden" name="slug" value="{{ product.slug }}">
+            {% if selected %}
+            <input type="hidden" name="site_id" value="{{ selected.id }}">
+            <input type="hidden" name="site_name" value="{{ selected.name }}">
+            {% endif %}
+
+            {% if product.pricing_model in ('per_unit', 'tiered') %}
+            <label class="field">
+              <span>Number of {{ product.unit }}s</span>
+              <input name="quantity" type="number" value="{{ product.min_quantity }}"
+                     min="{{ product.min_quantity }}" max="{{ product.max_quantity }}">
+              {% if product.tiers %}
+              <span class="field-hint">
+                Banded: the price applies to every venue, so crossing a threshold lowers
+                the price on all of them.
+              </span>
+              {% endif %}
+            </label>
+            {% endif %}
+
+            <button class="btn" type="submit" style="width:100%" data-magnetic>
+              Order risk analysis
+            </button>
+            {% if not selected %}
+            <p class="tiny">
+              No venue selected — you can pick one above now, or add it from your account
+              after ordering.
+            </p>
+            {% endif %}
+          </form>
+        </div>
+        {% endif %}
+
+        {% include "components/disclaimer.html" %}
+      </aside>
+    </div>
+  </div>
+</section>
+{% endblock %}

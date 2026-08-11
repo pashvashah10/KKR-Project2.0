@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% block title %}Cart — Downside{% endblock %}
+
+{% block content %}
+<section>
+  <div class="container">
+    <p class="crumbs"><a href="/">Home</a> / <a href="/services">Services</a> / Cart</p>
+    <h1 class="h-section fade-up">Your order</h1>
+
+    {% if not cart.lines %}
+    <div class="panel fade-up" style="--d:80ms;margin-top:var(--sp-5)">
+      <p class="lede">Nothing in the cart yet.</p>
+      <p class="small" style="margin-top:var(--sp-2)">
+        Start with an Exposure Report on one venue, or take an indicative term sheet
+        against one of our already-fitted example venues.
+      </p>
+      <div class="btn-row" style="margin-top:var(--sp-4)">
+        <a class="btn" href="/services">Browse services</a>
+        <a class="btn-ghost" href="/configure/exposure-report">Price a venue</a>
+      </div>
+    </div>
+    {# The disclaimer belongs on this page whether or not there is anything in
+       the cart --- it is a property of the route, not of the contents. #}
+    <div style="margin-top:var(--sp-5);max-width:70ch">
+      {% include "components/disclaimer.html" %}
+    </div>
+
+    {% else %}
+    <div class="split" style="margin-top:var(--sp-5)">
+      <div class="stack">
+        {% for line in cart.lines %}
+        <div class="panel">
+          <div style="display:flex;gap:var(--sp-4);flex-wrap:wrap;align-items:start">
+            <div style="flex:1 1 260px">
+              <p class="eyebrow" style="color:var(--{{ line.product.accent }})">
+                {{ 'Indicative · subject to underwriting' if line.product.is_quoted
+                   else ('Billed monthly' if line.product.is_subscription else 'One-off') }}
+              </p>
+              <h2 class="h-card">{{ line.product.name }}</h2>
+              {% if line.site_name %}
+              <p class="small">Venue: <strong>{{ line.site_name }}</strong></p>
+              {% endif %}
+
+              {% if line.config.peril %}
+              <table class="rows" style="margin-top:var(--sp-3);max-width:380px">
+                <tr><td>Peril</td><td class="num">{{ line.config.peril }}</td></tr>
+                <tr><td>Year</td><td class="num">{{ line.config.year }}</td></tr>
+                <tr><td>Attaches at</td><td class="num">{{ line.config.attachment_days }} days</td></tr>
+                <tr><td>Limit</td><td class="num">{{ money((line.config.limit * 100)|int) }}</td></tr>
+              </table>
+              {% endif %}
+
+              <div style="display:flex;gap:var(--sp-4);align-items:center;margin-top:var(--sp-4);flex-wrap:wrap">
+                {% if line.product.pricing_model in ('per_unit', 'tiered') %}
+                <form method="post" action="/cart/update" class="qty">
+                  <input type="hidden" name="index" value="{{ loop.index0 }}">
+                  <label class="tiny" for="q{{ loop.index0 }}">Qty</label>
+                  <input id="q{{ loop.index0 }}" name="quantity" type="number"
+                         value="{{ line.quantity }}"
+                         min="{{ line.product.min_quantity }}"
+                         max="{{ line.product.max_quantity }}">
+                  <button class="btn-ghost" type="submit" style="padding:.4rem .7rem;min-height:38px">Update</button>
+                </form>
+                {% endif %}
+
+                <form method="post" action="/cart/remove">
+                  <input type="hidden" name="index" value="{{ loop.index0 }}">
+                  <button class="btn-quiet" type="submit">Remove</button>
+                </form>
+              </div>
+            </div>
+
+            <div style="text-align:right;min-width:130px">
+              <span class="num" style="font-size:1.35rem;font-weight:600;color:var(--ember)">
+                {{ line.line_total }}
+              </span>
+              {% if line.quantity > 1 %}
+              <span class="tiny" style="display:block">
+                {{ line.quantity }} × {{ line.unit_price }}
+              </span>
+              {% endif %}
+              {% if line.product.is_subscription %}
+              <span class="tiny" style="display:block">per month</span>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <aside class="stack sticky">
+        <div class="panel">
+          <p class="eyebrow">Summary</p>
+          <table class="rows">
+            <tr><td>Subtotal</td><td class="num">{{ cart.subtotal }}</td></tr>
+            <tr>
+              <td>Tax<br><span class="tiny">Not calculated — jurisdiction rules are out of scope</span></td>
+              <td class="num">{{ cart.tax }}</td>
+            </tr>
+            <tfoot>
+              <tr><td>Total due today</td><td class="num" style="color:var(--ember)">{{ cart.total }}</td></tr>
+            </tfoot>
+          </table>
+
+          {% if cart.has_subscription %}
+          <p class="tiny" style="margin-top:var(--sp-3)">
+            Includes {{ cart.recurring }} per month of recurring charges. Cancel any time
+            from your account; billing stops at the end of the period.
+          </p>
+          {% endif %}
+
+          <a class="btn" href="/checkout" style="width:100%;margin-top:var(--sp-4)" data-magnetic>
+            Continue to checkout
+          </a>
+          <p class="tiny" style="margin-top:var(--sp-3);text-align:center">
+            No card details are collected anywhere on this site.
+          </p>
+        </div>
+
+        {% include "components/disclaimer.html" %}
+      </aside>
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}
