@@ -2,12 +2,19 @@
   "name": "Downside — weather risk",
   "image": "mcr.microsoft.com/devcontainers/python:3.11",
 
-  // Dependencies install once when the container is built, so attaching is fast.
-  "postCreateCommand": "pip install --user -r api/requirements.txt -r engine/requirements.txt -r api/requirements-dev.txt && chmod +x run.sh",
+  // Every lifecycle command here MUST exit. An earlier version ran `./run.sh`
+  // from postAttachCommand; run.sh ends in `exec uvicorn`, which never returns,
+  // so the codespace sat on "Setting up" indefinitely. Nothing long-running may
+  // block a lifecycle hook --- the server is started detached below.
+  "postCreateCommand": "bash .devcontainer/setup.sh",
 
-  // Starts the server and kicks off venue fitting in the background. The site is
-  // reachable within seconds; the eight example venues appear as each fit lands.
-  "postAttachCommand": "./run.sh",
+  // Backgrounded and disowned so the shell returns immediately. Runs on every
+  // start, including when a stopped codespace is resumed.
+  "postStartCommand": "bash .devcontainer/serve.sh",
+
+  // Report the codespace ready as soon as dependencies are installed, rather
+  // than waiting on anything later in the chain.
+  "waitFor": "postCreateCommand",
 
   "forwardPorts": [8000],
   "portsAttributes": {
