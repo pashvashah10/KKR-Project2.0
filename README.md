@@ -18,13 +18,21 @@ DESIGN.md   The storefront's design specification
 
 ## How a business uses this
 
-### The one-click way
+### In a browser, nothing installed (GitHub Codespaces)
 
 Open the repository on GitHub → **Code ▾** → **Codespaces** → **Create codespace**.
+When the editor loads, type one command in the terminal:
 
-The container installs everything, starts the server, and forwards port 8000, so
-the site opens in a browser tab on its own. Example venues fit in the background
-and appear over the following few minutes — the storefront is usable immediately.
+```bash
+./run.sh
+```
+
+Then open the **PORTS** tab and click the globe icon on port 8000.
+
+The container deliberately runs **no setup commands of its own** — `run.sh`
+installs what it needs. Two earlier versions tried to automate this and hung the
+codespace on "Setting up" instead, because a devcontainer waits for its lifecycle
+hooks to exit and a web server never does. One visible command beats a spinner.
 
 ### The local way
 

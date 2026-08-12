@@ -2,19 +2,22 @@
   "name": "Downside — weather risk",
   "image": "mcr.microsoft.com/devcontainers/python:3.11",
 
-  // Every lifecycle command here MUST exit. An earlier version ran `./run.sh`
-  // from postAttachCommand; run.sh ends in `exec uvicorn`, which never returns,
-  // so the codespace sat on "Setting up" indefinitely. Nothing long-running may
-  // block a lifecycle hook --- the server is started detached below.
-  "postCreateCommand": "bash .devcontainer/setup.sh",
-
-  // Backgrounded and disowned so the shell returns immediately. Runs on every
-  // start, including when a stopped codespace is resumed.
-  "postStartCommand": "bash .devcontainer/serve.sh",
-
-  // Report the codespace ready as soon as dependencies are installed, rather
-  // than waiting on anything later in the chain.
-  "waitFor": "postCreateCommand",
+  // Deliberately NO lifecycle commands.
+  //
+  // Two earlier versions of this file hung the codespace on "Setting up".
+  // The first ran `./run.sh` from postAttachCommand, and run.sh ends in
+  // `exec uvicorn`, which never exits --- Codespaces waits for its hooks to
+  // return before reporting ready, so it never did. The second moved the work
+  // into detached scripts, which returns correctly when tested locally but
+  // still leaves a build step I cannot exercise from here.
+  //
+  // So the container now does nothing but exist. It cannot hang, because there
+  // is nothing for it to wait on. `./run.sh` installs its own dependencies and
+  // is run by hand in the terminal, where its progress is visible and a failure
+  // is something you can read rather than a spinner.
+  //
+  // If you want the automation back, add it here only once you can test a real
+  // codespace build --- convenience is not worth a container that never opens.
 
   "forwardPorts": [8000],
   "portsAttributes": {
