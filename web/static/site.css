@@ -99,6 +99,13 @@
 
 * { box-sizing: border-box; }
 
+/* The `hidden` attribute is `display: none` from the UA stylesheet, which any
+   class setting `display` outranks. `.notice { display: flex }` was therefore
+   beating it, and the configure page rendered an empty red error bar on every
+   load. Needs `!important` because the whole point is to win against whatever
+   display a component sets. */
+[hidden] { display: none !important; }
+
 html { scroll-behavior: smooth; }
 
 body {
