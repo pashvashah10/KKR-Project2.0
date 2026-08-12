@@ -1,0 +1,29 @@
+{
+  "name": "Downside — weather risk",
+  "image": "mcr.microsoft.com/devcontainers/python:3.11",
+
+  // Dependencies install once when the container is built, so attaching is fast.
+  "postCreateCommand": "pip install --user -r api/requirements.txt -r engine/requirements.txt -r api/requirements-dev.txt && chmod +x run.sh",
+
+  // Starts the server and kicks off venue fitting in the background. The site is
+  // reachable within seconds; the eight example venues appear as each fit lands.
+  "postAttachCommand": "./run.sh",
+
+  "forwardPorts": [8000],
+  "portsAttributes": {
+    "8000": {
+      "label": "Downside storefront",
+      "onAutoForward": "openPreview"
+    }
+  },
+
+  "customizations": {
+    "vscode": {
+      "extensions": ["ms-python.python"],
+      "settings": {
+        "python.testing.pytestEnabled": true,
+        "python.testing.pytestArgs": ["engine/tests", "api/tests"]
+      }
+    }
+  }
+}

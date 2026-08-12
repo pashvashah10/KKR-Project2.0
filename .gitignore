@@ -24,3 +24,8 @@ api/data/ghcn/*.part
 # committed so the install is reproducible.
 .agents/
 .claude/
+
+# The signing key `run.sh` generates and reuses so sessions and resume links
+# survive a restart. Machine-local by definition, and a secret --- never commit.
+.env.local
+seed.log

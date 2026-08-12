@@ -18,14 +18,38 @@ DESIGN.md   The storefront's design specification
 
 ## How a business uses this
 
+### The one-click way
+
+Open the repository on GitHub → **Code ▾** → **Codespaces** → **Create codespace**.
+
+The container installs everything, starts the server, and forwards port 8000, so
+the site opens in a browser tab on its own. Example venues fit in the background
+and appear over the following few minutes — the storefront is usable immediately.
+
+### The local way
+
+```bash
+./run.sh
+```
+
+That is the whole thing. It installs dependencies if they are missing, generates
+and persists a signing key, fits the eight example venues in the background, and
+serves on `localhost:8000`. Safe to re-run; `./run.sh --no-seed` skips the fitting.
+
+Seeding needs internet and takes 5–20 minutes depending on how fast NCEI
+responds. Station matching does not — that bundle is committed.
+
+<details>
+<summary>Or step by step</summary>
+
 ```bash
 pip install -r api/requirements.txt -r engine/requirements.txt
 export DOWNSIDE_SECRET=$(python3 -c 'import secrets;print(secrets.token_urlsafe(32))')
-python3 -m api.scripts.build_station_cache   # once, needs network
-python3 -m api.seed                          # eight example venues, ~15 min
-python3 web/build.py all
-python3 -m uvicorn api.main:app --port 8000  # then open localhost:8000
+python3 -m api.scripts.build_station_cache   # only to refresh the station bundle
+python3 -m api.seed                          # eight example venues
+python3 -m uvicorn api.main:app --port 8000
 ```
+</details>
 
 ### The storefront
 
