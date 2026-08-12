@@ -479,6 +479,33 @@ h1, h2, h3, h4 { margin: 0; }
 }
 .speclist.neg li::before { background: var(--muted); }
 
+/* --------------------------------------------------------------- charts */
+
+.chartbox {
+  margin: 0;
+  background: color-mix(in srgb, var(--panel) 92%, transparent);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: var(--sp-4);
+}
+.chart { display: block; width: 100%; height: auto; overflow: visible; }
+/* Axis text scales with the SVG viewBox, so sizes here are user units. */
+.chart .tick { font-family: var(--mono); font-size: 10px; fill: var(--muted); }
+.chart .axis-label { font-size: 9px; letter-spacing: .08em; text-transform: uppercase; }
+
+.chartbox figcaption {
+  display: flex; flex-wrap: wrap; gap: var(--sp-4);
+  margin-top: var(--sp-3); padding-top: var(--sp-3);
+  border-top: 1px solid var(--rule-soft);
+}
+.key {
+  display: inline-flex; align-items: center; gap: .42rem;
+  font-size: .74rem; color: var(--ink-2);
+}
+.key i { width: 14px; height: 3px; border-radius: 2px; flex: 0 0 auto; }
+
+.spark { display: block; width: 92px; height: 26px; }
+
 /* ---------------------------------------------------------------- stats */
 
 .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--sp-4); }

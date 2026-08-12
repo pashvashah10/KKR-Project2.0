@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}{{ site.name }} — fitting — Downside{% endblock %}
+
+{% block content %}
+<section>
+  <div class="container">
+    <p class="crumbs"><a href="/">Home</a> / <a href="/account">Account</a> / {{ site.name }}</p>
+    <p class="eyebrow fade-up">Exposure report</p>
+    <h1 class="h-section fade-up" style="--d:60ms">{{ site.name }}</h1>
+
+    <div class="split" style="margin-top:var(--sp-6)">
+      <div class="panel">
+        {% if site.status == 'failed' %}
+        <p class="eyebrow" style="color:var(--crit)">Fit failed</p>
+        <p class="lede">This venue could not be fitted.</p>
+        {% if job and job.error %}
+        <p class="small num" style="margin-top:var(--sp-3);background:var(--panel-2);
+                  padding:var(--sp-3);border-radius:3px;word-break:break-word">{{ job.error }}</p>
+        {% endif %}
+        <p class="small" style="margin-top:var(--sp-4)">
+          Most failures are a coordinate with no usable long record nearby. Adding the venue again
+          with a corrected position or elevation usually resolves it.
+        </p>
+        <div class="btn-row" style="margin-top:var(--sp-4)">
+          <a class="btn" href="/configure/exposure-report">Try different coordinates</a>
+        </div>
+
+        {% else %}
+        <p class="eyebrow" style="display:flex;align-items:center;gap:.5rem">
+          <span class="spinner"></span> Fitting a century
+        </p>
+        <div class="progress" style="margin-block:var(--sp-4)">
+          <i style="--p:{{ job.progress if job else 0 }}"></i>
+        </div>
+        <p class="lede">{{ job.step if job else 'Queued' }}</p>
+        <p class="small" style="margin-top:var(--sp-4)">
+          A hundred years of daily observations, a mean and variance model, a 200-replicate block
+          bootstrap, tail fits and a Monte Carlo grid. One to three minutes, once per venue —
+          everything afterwards is milliseconds.
+        </p>
+        <p class="tiny" style="margin-top:var(--sp-3)">
+          This page does not refresh itself. Reload when you are ready.
+        </p>
+        <div class="btn-row" style="margin-top:var(--sp-4)">
+          <a class="btn-ghost" href="/venues/{{ site.id }}">Reload</a>
+          <a class="btn-quiet" href="/account">Back to your account →</a>
+        </div>
+        {% endif %}
+      </div>
+
+      <aside class="stack">
+        {% if station %}
+        <div class="panel">
+          <p class="eyebrow">Settlement basis</p>
+          {% if station.matched %}
+          <p class="h-card">{{ station.name }}</p>
+          <dl class="readout" style="margin-top:var(--sp-3)">
+            <dt>Station</dt><dd>{{ station.id }}</dd>
+            <dt>Distance</dt><dd>{{ '%.1f'|format(station.distance_km) }} km</dd>
+            <dt>Record</dt><dd>{{ station.first_year }}–{{ station.last_year }}</dd>
+          </dl>
+          <p class="tiny" style="margin-top:var(--sp-3)">
+            The station match is already done — only the century fit is still running.
+          </p>
+          {% else %}
+          <div class="notice"><span>{{ station.note }}</span></div>
+          {% endif %}
+        </div>
+        {% endif %}
+      </aside>
+    </div>
+  </div>
+</section>
+{% endblock %}

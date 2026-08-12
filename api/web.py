@@ -42,7 +42,7 @@ from fastapi import APIRouter, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
-from . import catalog, checkout, security, service, stations, store
+from . import catalog, charts, checkout, security, service, stations, store
 
 log = logging.getLogger(__name__)
 
@@ -777,10 +777,143 @@ def order_page(request: Request, order_id: str) -> HTMLResponse:
     order = store.get_order(order_id, account_id=account["id"])
     if order is None:
         raise HTTPException(404, "No such order.")
+    # Venues this account could attach to a line still waiting for one.
+    unattached = any(i["fulfilment_status"] == "awaiting-venue" for i in order["items"])
+    attachable = (
+        [s for s in store.list_sites(account["id"]) if not s.get("is_example")]
+        if unattached else []
+    )
+
     return render(
         request, "order.html",
         order=checkout.order_view(order),
         just_placed=request.session.pop("last_order", None) == order_id,
+        attachable=attachable,
+        weather="clear",
+    )
+
+
+@router.post("/orders/{order_id}/items/{item_id}/venue")
+async def attach_venue(
+    request: Request, order_id: str, item_id: str, site_id: str = Form(...)
+) -> RedirectResponse:
+    """Resolve a paid line that was ordered before its venue existed.
+
+    Re-runs fulfilment for that line only: if the venue is already fitted the
+    report is there immediately, otherwise a fit starts and the line reports
+    itself as fitting.
+    """
+    account = current_account(request)
+    if account is None:
+        raise HTTPException(404, "No such order.")
+
+    order = store.get_order(order_id, account_id=account["id"])
+    item = store.get_order_item(item_id)
+    if order is None or item is None or item["order_id"] != order_id:
+        raise HTTPException(404, "No such order line.")
+
+    site = store.get_site(site_id, account_id=account["id"])
+    if site is None:
+        raise HTTPException(404, "No such venue on this account.")
+
+    store.attach_item_site(item_id, site_id)
+
+    if site["status"] == "ready":
+        store.update_item_fulfilment(item_id, "delivered")
+    else:
+        job = store.latest_job(site_id)
+        if site["status"] == "failed" or job is None:
+            job = store.create_job(site_id, "fit")
+            submit_fit(site_id, job["id"])
+        store.update_item_fulfilment(item_id, "fitting")
+
+    return RedirectResponse(f"/orders/{order_id}", status_code=303)
+
+
+@router.get("/venues/{site_id}", response_class=HTMLResponse)
+def venue_report(request: Request, site_id: str, t: str | None = None) -> HTMLResponse:
+    """The report itself --- what an Exposure Report actually buys.
+
+    Everything here was computed once during the fit and cached, so this is a
+    read and a render rather than a recomputation. Until this page existed a
+    customer could buy a report and have nothing to open, which made the
+    fulfilment status on their invoice a promise the product could not keep.
+
+    Readable by the owner, or by anyone holding a valid resume link, or by
+    anyone at all for the seeded example venues --- those exist to be looked at.
+    """
+    site = store.get_site(site_id)
+    if site is None:
+        raise HTTPException(404, "No such venue.")
+
+    adopt_resume_token(request, t, site_id)
+    account = current_account(request)
+    if not site.get("is_example") and (not account or site["account_id"] != account["id"]):
+        raise HTTPException(404, "No such venue.")
+
+    if site["status"] != "ready":
+        return render(
+            request, "venue_pending.html",
+            site=site, job=store.latest_job(site_id),
+            station=_station_view(site), weather="cloud",
+        )
+
+    outlook = store.get_analysis(site_id, "outlook") or {}
+    history = store.get_analysis(site_id, "history") or {}
+    perils = store.get_analysis(site_id, "perils") or {}
+    diagnostics = store.get_analysis(site_id, "diagnostics") or {}
+    tail = store.get_analysis(site_id, "tail") or {}
+
+    try:
+        exposure = service.exposure(site_id)
+    except LookupError:
+        exposure = None
+
+    # Each peril carries one series per SSP pathway. The table shows the middle
+    # pathway as the headline with the 2.6-to-8.5 spread beside it, because the
+    # spread is the number that decides whether a long-dated contract is
+    # priceable from history at all.
+    peril_rows = []
+    peak = 1.0
+    for p in perils.get("perils") or []:
+        series = p.get("series") or {}
+        base = series.get("ssp245") or next(iter(series.values()), [])
+        if not base:
+            continue
+        lo = series.get("ssp126") or base
+        hi = series.get("ssp585") or base
+        peak = max(peak, max(base), max(hi))
+        peril_rows.append({
+            **p,
+            "base": base,
+            "now": base[0],
+            "later": base[-1],
+            "spread_lo": lo[-1],
+            "spread_hi": hi[-1],
+        })
+
+    return render(
+        request, "venue.html",
+        site=site,
+        station=_station_view(site),
+        quality=json.loads(site["quality"]) if site.get("quality") else None,
+        outlook=outlook,
+        history=history,
+        perils=perils,
+        peril_rows=peril_rows,
+        peril_peak=peak,
+        diagnostics=diagnostics,
+        tail=tail,
+        exposure=exposure,
+        century_svg=charts.century_chart(history),
+        projection_svg=charts.projection_chart(outlook),
+        uncertainty_svg=charts.uncertainty_chart(outlook),
+        loss_svg=charts.loss_curve_chart(exposure) if exposure else "",
+        sparkbar=charts.sparkbar,
+        resume_link=(
+            absolute(request, magic_link(site, "exposure-report"))
+            if site.get("resume_token") and not site.get("is_example") else None
+        ),
         weather="clear",
     )
 

@@ -568,6 +568,25 @@ def update_item_fulfilment(item_id: str, status: str) -> None:
         )
 
 
+def get_order_item(item_id: str) -> dict | None:
+    with connect() as conn:
+        row = conn.execute("SELECT * FROM order_items WHERE id = ?", (item_id,)).fetchone()
+    return {**dict(row), "config": json.loads(row["config"])} if row else None
+
+
+def attach_item_site(item_id: str, site_id: str) -> None:
+    """Point a paid line at a venue.
+
+    A report can be bought before its venue exists --- someone orders three and
+    adds the sites afterwards. Without this the line sits at `awaiting-venue`
+    for ever and the customer has paid for something the product cannot deliver.
+    """
+    with connect() as conn:
+        conn.execute(
+            "UPDATE order_items SET site_id = ? WHERE id = ?", (site_id, item_id)
+        )
+
+
 # ----------------------------------------------------------------------
 # subscriptions
 # ----------------------------------------------------------------------

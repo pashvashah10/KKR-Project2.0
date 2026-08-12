@@ -1,0 +1,448 @@
+{% extends "base.html" %}
+{% block title %}{{ site.name }} — venue report — Downside{% endblock %}
+
+{% block content %}
+<section style="padding-bottom:var(--sp-5)">
+  <div class="container">
+    <p class="crumbs"><a href="/">Home</a> / <a href="/account">Account</a> / {{ site.name }}</p>
+
+    <div style="display:flex;justify-content:space-between;gap:var(--sp-5);flex-wrap:wrap;align-items:end">
+      <div>
+        <p class="eyebrow fade-up">Exposure report{% if site.is_example %} · example venue{% endif %}</p>
+        <h1 class="h-section fade-up" style="--d:60ms">{{ site.name }}</h1>
+        <p class="lede fade-up" style="--d:120ms;margin-top:var(--sp-2)">
+          {{ site.vertical }} · {{ '%.4f'|format(site.lat) }}, {{ '%.4f'|format(site.lon) }}
+          {%- if site.elevation_m %} · {{ site.elevation_m|round|int }} m{% endif %}
+        </p>
+      </div>
+      <div class="btn-row">
+        <a class="btn-ghost" href="/configure/parametric-cover?site={{ site.id }}">Price a contract</a>
+        <a class="btn-quiet" href="/dashboard">Analytics terminal →</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+{# ------------------------------------------------------------ headline #}
+<section style="padding-block:0">
+  <div class="container">
+    <div class="stats">
+      <div class="stat">
+        <span class="stat-v">{{ history.observed|length }}</span>
+        <span class="stat-k">Years of daily record</span>
+      </div>
+      <div class="stat">
+        <span class="stat-v">{{ '%.2f'|format(diagnostics.amplification or 0) }}</span>
+        <span class="stat-k">°C local per °C global</span>
+      </div>
+      <div class="stat">
+        <span class="stat-v">{{ '%.2f'|format(tail.shape or 0) }}</span>
+        <span class="stat-k">GPD tail shape</span>
+      </div>
+      <div class="stat">
+        <span class="stat-v">{{ '%.0f'|format((diagnostics.r2 or 0) * 100) }}%</span>
+        <span class="stat-k">Variance explained</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+{# ------------------------------------------------------------- station #}
+<section>
+  <div class="container split">
+    <div>
+      <p class="eyebrow reveal">What this settles on</p>
+      <h2 class="h-section reveal measure" style="--d:60ms">
+        {% if station and station.matched %}{{ station.name }}{% else %}Reanalysis grid cell{% endif %}
+      </h2>
+      <div class="stack measure reveal" style="--d:120ms;margin-top:var(--sp-4)">
+        {% if station and station.matched %}
+        <p>
+          Every number on this page derives from station <span class="num">{{ station.id }}</span>,
+          {{ '%.1f'|format(station.distance_km) }} km from the venue, with a continuous record
+          from {{ station.first_year }} to {{ station.last_year }}. A contract written here would
+          settle on that gauge, not on the venue — which is what the basis load in any quote is
+          paying for.
+        </p>
+        {% if station.note %}
+        <div class="notice notice-crit">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+            <path d="M12 4 2.5 20h19L12 4Z"/><path d="M12 10v4M12 17h.01"/>
+          </svg>
+          <span><strong>Microclimate warning.</strong> {{ station.note }}</span>
+        </div>
+        {% endif %}
+        {% else %}
+        <p>{{ station.note if station else 'No qualifying station.' }}</p>
+        {% endif %}
+
+        {% if history.substituted %}
+        <div class="notice">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/>
+          </svg>
+          <span>
+            <strong>Not measured here:</strong>
+            {{ history.substituted|join(', ')|replace('_', ' ') }}. This station never recorded
+            {{ 'them' if history.substituted|length > 1 else 'it' }}, so
+            {{ 'those variables are' if history.substituted|length > 1 else 'that variable is' }}
+            substituted from a calibrated surrogate and flagged rather than filled with zeros.
+            Perils settling on {{ 'them' if history.substituted|length > 1 else 'it' }} are omitted
+            below.
+          </span>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <aside class="panel reveal">
+      <p class="eyebrow">Record</p>
+      <dl class="readout">
+        {% if station and station.matched %}
+        <dt>Station</dt><dd>{{ station.id }}</dd>
+        <dt>Distance</dt><dd>{{ '%.1f'|format(station.distance_km) }} km</dd>
+        <dt>Gauge elev.</dt><dd>{{ station.elevation_m|round|int }} m</dd>
+        {% if station.elevation_delta_m is not none %}
+        <dt>Vertical gap</dt><dd>{{ station.elevation_delta_m|round|int }} m</dd>
+        {% endif %}
+        {% endif %}
+        <dt>Source</dt><dd>{{ site.provenance or 'n/a' }}</dd>
+        <dt>Observations</dt><dd>{{ '{:,}'.format(diagnostics.n_obs or 0) }}</dd>
+        <dt>Season</dt><dd>{{ site.season_start_month }}–{{ site.season_end_month }}</dd>
+      </dl>
+
+      {% if quality %}
+      <hr class="rule">
+      <p class="eyebrow">Quality</p>
+      <p class="small">
+        <span class="tag {{ 'tag-good' if quality.verdict == 'OK' else 'tag-warn' }}">
+          {{ quality.verdict|default('—') }}
+        </span>
+      </p>
+      {% if quality.notes %}
+      <ul class="speclist small" style="margin-top:var(--sp-2)">
+        {% for n in quality.notes %}<li>{{ n }}</li>{% endfor %}
+      </ul>
+      {% endif %}
+      {% endif %}
+    </aside>
+  </div>
+</section>
+
+{# ------------------------------------------------------------- century #}
+{% if century_svg %}
+<section style="padding-top:0">
+  <div class="container">
+    <p class="eyebrow reveal">The record, fitted</p>
+    <h2 class="h-section reveal measure" style="--d:60ms">A century of seasons.</h2>
+    <p class="lede measure reveal" style="--d:120ms;margin-top:var(--sp-3)">
+      Grey is what the gauge recorded. Ember is the model. Local temperature is regressed on
+      modelled global temperature rather than on the calendar, so the mid-century plateau and the
+      volcanic notches appear because the forcing did, not because anyone told the model they
+      were there.
+    </p>
+    <figure class="chartbox reveal" style="--d:180ms">
+      {{ century_svg|safe }}
+      <figcaption>
+        <span class="key"><i style="background:var(--muted)"></i>Observed</span>
+        <span class="key"><i style="background:var(--ember)"></i>Fitted mean</span>
+      </figcaption>
+    </figure>
+
+    <div class="grid-3" style="margin-top:var(--sp-5)">
+      <div class="panel reveal">
+        <p class="eyebrow">Amplification</p>
+        <p class="num" style="font-size:1.6rem;font-weight:600">
+          {{ '%.2f'|format(diagnostics.amplification or 0) }}
+          <span class="tiny dim">± {{ '%.2f'|format(diagnostics.amp_se or 0) }}</span>
+        </p>
+        <p class="tiny">Degrees local per degree global, with block-bootstrap error.</p>
+      </div>
+      <div class="panel reveal" style="--d:60ms">
+        <p class="eyebrow">Standard error inflation</p>
+        <p class="num" style="font-size:1.6rem;font-weight:600">
+          {{ '%.1f'|format(diagnostics.se_inflation or 0) }}×
+        </p>
+        <p class="tiny">
+          Classical OLS would report ± {{ '%.2f'|format(diagnostics.amp_se_classical or 0) }}.
+          Daily weather is not {{ '{:,}'.format(diagnostics.n_obs or 0) }} independent observations.
+        </p>
+      </div>
+      <div class="panel reveal" style="--d:120ms">
+        <p class="eyebrow">Lag-1 autocorrelation</p>
+        <p class="num" style="font-size:1.6rem;font-weight:600">
+          {{ '%.2f'|format(diagnostics.ar1 or 0) }}
+        </p>
+        <p class="tiny">Today's residual against yesterday's — the reason for the inflation.</p>
+      </div>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{# ---------------------------------------------------------- projection #}
+{% if projection_svg %}
+<section style="padding-top:0">
+  <div class="container">
+    <p class="eyebrow reveal">Forward</p>
+    <h2 class="h-section reveal measure" style="--d:60ms">Four pathways, one venue.</h2>
+    <p class="lede measure reveal" style="--d:120ms;margin-top:var(--sp-3)">
+      The station's own amplification factor applied to each SSP forcing pathway through a two-box
+      energy balance model. The shaded band is the spread on the highest pathway; drawing all four
+      bands would hide the point, which is that they are indistinguishable for two decades and then
+      separate.
+    </p>
+    <figure class="chartbox reveal" style="--d:180ms">
+      {{ projection_svg|safe }}
+      <figcaption>
+        <span class="key"><i style="background:var(--s3)"></i>SSP1-2.6</span>
+        <span class="key"><i style="background:var(--s1)"></i>SSP2-4.5</span>
+        <span class="key"><i style="background:var(--s4)"></i>SSP3-7.0</span>
+        <span class="key"><i style="background:var(--s2)"></i>SSP5-8.5</span>
+      </figcaption>
+    </figure>
+  </div>
+</section>
+{% endif %}
+
+{# --------------------------------------------------------- uncertainty #}
+{% if uncertainty_svg %}
+<section style="padding-top:0">
+  <div class="container split">
+    <div>
+      <p class="eyebrow reveal">Where the uncertainty lives</p>
+      <h2 class="h-section reveal measure" style="--d:60ms">Three sources, not one.</h2>
+      <div class="stack measure reveal" style="--d:120ms;margin-top:var(--sp-3)">
+        <p>
+          Internal variability is the weather being weather. It dominates the near term and is
+          roughly constant in absolute terms, so as the other sources grow its share falls.
+        </p>
+        <p>
+          Parameter uncertainty is the model's doubt about its own coefficients. Scenario
+          uncertainty is which future humanity picks — nil at short horizons, dominant by the end.
+        </p>
+        <p>
+          <strong>The practical consequence:</strong> a contract two years out is priced almost
+          entirely off weather noise, so history is nearly sufficient. A contract in 2075 is priced
+          off scenario spread, and quoting it from historical frequencies is simply wrong.
+        </p>
+      </div>
+    </div>
+    <figure class="chartbox reveal" style="--d:180ms">
+      {{ uncertainty_svg|safe }}
+      <figcaption>
+        <span class="key"><i style="background:var(--s1)"></i>Internal</span>
+        <span class="key"><i style="background:var(--s4)"></i>Parameter</span>
+        <span class="key"><i style="background:var(--s2)"></i>Scenario</span>
+      </figcaption>
+    </figure>
+  </div>
+</section>
+{% endif %}
+
+{# -------------------------------------------------------------- perils #}
+{% if peril_rows %}
+<section style="padding-top:0">
+  <div class="container">
+    <p class="eyebrow reveal">Triggers</p>
+    <h2 class="h-section reveal measure" style="--d:60ms">What fires, and how often it will.</h2>
+    <p class="lede measure reveal" style="--d:120ms;margin-top:var(--sp-3)">
+      Simulated trigger frequency for every peril that applies to a {{ site.vertical|lower }} and
+      whose settlement variable this station actually measured. Bars run
+      {{ perils.target_years[0] }} to {{ perils.target_years[-1] }}, all on one scale.
+    </p>
+    <div class="panel scroll-x reveal" style="--d:180ms;margin-top:var(--sp-4)">
+      <table class="rows" style="min-width:700px">
+        <thead>
+          <tr>
+            <th>Peril</th><th>Trigger</th>
+            <th class="num">{{ perils.target_years[0] }}</th>
+            <th class="num">{{ perils.target_years[-1] }}</th>
+            <th class="num">Pathway spread</th>
+            <th>Trend</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in peril_rows %}
+          <tr>
+            <td>
+              <strong>{{ p.label }}</strong>
+              <br><span class="tiny">{{ p.description }}</span>
+            </td>
+            <td class="small num">{{ '%.1f'|format(p.threshold) }} {{ p.unit }}</td>
+            <td class="num">{{ '%.1f'|format(p.now) }}</td>
+            <td class="num">{{ '%.1f'|format(p.later) }}</td>
+            <td class="num tiny">
+              {{ '%.1f'|format(p.spread_lo) }}–{{ '%.1f'|format(p.spread_hi) }}
+            </td>
+            <td>{{ sparkbar(p.base, peril_peak)|safe }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <p class="tiny" style="margin-top:var(--sp-3)">
+        Triggering days per season, on SSP2-4.5. The spread column is SSP1-2.6 to SSP5-8.5 in
+        {{ perils.target_years[-1] }} — where it is wide, history alone cannot price that year.
+      </p>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{# --------------------------------------------------------------- tails #}
+{% if tail.levels %}
+<section style="padding-top:0">
+  <div class="container split">
+    <div>
+      <p class="eyebrow reveal">Extremes</p>
+      <h2 class="h-section reveal measure" style="--d:60ms">The tail, fitted properly.</h2>
+      <div class="stack measure reveal" style="--d:120ms;margin-top:var(--sp-3)">
+        <p>
+          Everything a weather product pays on lives in the tail, and a Gaussian fitted to the body
+          understates how often the tail is reached. This is a generalised Pareto fit to
+          peaks over a {{ '%.1f'|format(tail.threshold) }} threshold.
+        </p>
+        <p>
+          Shape <span class="num">{{ '%.3f'|format(tail.shape) }}</span> — positive means heavy and
+          unbounded, which is what rainfall should give; negative means bounded, which is what
+          temperature should give, because physics requires it. Scale
+          <span class="num">{{ '%.2f'|format(tail.scale) }}</span>.
+        </p>
+      </div>
+    </div>
+    <div class="panel reveal">
+      <p class="eyebrow">Return levels</p>
+      <table class="rows">
+        <thead><tr><th>Return period</th><th class="num">Level</th></tr></thead>
+        <tbody>
+          {% for lv in tail.levels %}
+          <tr>
+            <td>{{ lv.period }}-year</td>
+            <td class="num">{{ '%.1f'|format(lv.level) }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <p class="tiny" style="margin-top:var(--sp-3)">
+        Largest value in the observed record: <span class="num">{{ '%.1f'|format(tail.observed_max) }}</span>.
+      </p>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{# ------------------------------------------------------------ exposure #}
+{% if exposure %}
+<section style="padding-top:0">
+  <div class="container">
+    <p class="eyebrow reveal">Your side of it</p>
+    <h2 class="h-section reveal measure" style="--d:60ms">What a bad season costs you.</h2>
+    <p class="lede measure reveal" style="--d:120ms;margin-top:var(--sp-3)">
+      {% if exposure.revenue_is_real %}
+        Fitted against the daily revenue you uploaded.
+      {% else %}
+        <strong>Fitted against placeholder revenue.</strong> These numbers describe a plausible
+        business of this type, not yours. Upload daily revenue and every figure below is refitted
+        against it — it is the single most valuable input this platform takes.
+      {% endif %}
+    </p>
+
+    <div class="split" style="margin-top:var(--sp-5)">
+      {% if loss_svg %}
+      <figure class="chartbox reveal">
+        {{ loss_svg|safe }}
+        <figcaption>
+          <span class="key"><i style="background:var(--accent)"></i>Fitted loss curve</span>
+          <span class="key"><i style="background:var(--ember)"></i>Breakpoint</span>
+        </figcaption>
+      </figure>
+      {% endif %}
+
+      <div class="panel reveal">
+        <p class="eyebrow">Seasonal loss</p>
+        <table class="rows">
+          <tr><td>Expected</td><td class="num">{{ money((exposure.expected_seasonal_loss * 100)|int) }}</td></tr>
+          <tr><td>Median</td><td class="num">{{ money((exposure.median_seasonal_loss * 100)|int) }}</td></tr>
+          <tr><td>95th percentile</td><td class="num">{{ money((exposure.p95_seasonal_loss * 100)|int) }}</td></tr>
+          <tr><td>99th percentile</td><td class="num" style="color:var(--ember)">{{ money((exposure.p99_seasonal_loss * 100)|int) }}</td></tr>
+        </table>
+        <hr class="rule">
+        <dl class="readout">
+          <dt>Settles on</dt><dd>{{ exposure.variable|replace('_', ' ') }}</dd>
+          <dt>Breakpoint</dt><dd>{{ '%.2f'|format(exposure.breakpoint or 0) }}</dd>
+          <dt>Curve fit R²</dt><dd>{{ '%.2f'|format(exposure.r2 or 0) }}</dd>
+        </dl>
+        <p class="tiny" style="margin-top:var(--sp-3)">
+          The breakpoint is regressed with a hinge basis, never asked. Ask an operator and you get
+          "rain hurts us"; the curve is flat until a point and then falls off a cliff.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{# ------------------------------------------------------------ backtest #}
+{% if diagnostics.backtest %}
+<section style="padding-top:0">
+  <div class="container">
+    <p class="eyebrow reveal">Held out</p>
+    <h2 class="h-section reveal measure" style="--d:60ms">How it scored on years it never saw.</h2>
+    <p class="lede measure reveal" style="--d:120ms;margin-top:var(--sp-3)">
+      Fitted to {{ diagnostics.backtest.train[0] }}–{{ diagnostics.backtest.train[1] }} and scored on
+      {{ diagnostics.backtest.test[0] }}–{{ diagnostics.backtest.test[1] }}. Shown rather than hidden,
+      including where it is unflattering.
+    </p>
+
+    <div class="stats reveal" style="--d:180ms;margin-top:var(--sp-5)">
+      <div class="stat">
+        <span class="stat-v">{{ '%+.1f'|format((diagnostics.backtest.crps_skill or 0) * 100) }}%</span>
+        <span class="stat-k">CRPS skill vs climatology</span>
+      </div>
+      <div class="stat">
+        <span class="stat-v">{{ '%.0f'|format((diagnostics.backtest.coverage_90 or 0) * 100) }}%</span>
+        <span class="stat-k">90% interval coverage</span>
+      </div>
+      <div class="stat">
+        <span class="stat-v">{{ '%.0f'|format((diagnostics.backtest.coverage_50 or 0) * 100) }}%</span>
+        <span class="stat-k">50% interval coverage</span>
+      </div>
+      <div class="stat">
+        <span class="stat-v">{{ '%+.2f'|format(diagnostics.backtest.bias or 0) }}</span>
+        <span class="stat-k">°C out-of-sample bias</span>
+      </div>
+    </div>
+
+    <div class="notice" style="margin-top:var(--sp-5);max-width:72ch">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+        <circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/>
+      </svg>
+      <span>
+        <strong>Read this honestly.</strong> For daily temperature at thirty-year lead, climatology
+        is a very strong baseline and the skill above it is small. The value of this model is in
+        the trend, the tails and the shape of the distribution — not in forecasting a Tuesday.
+        The coverage figures are the ones that matter for pricing, because a contract is priced off
+        an interval, not a point.
+      </span>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{% if resume_link %}
+<section style="padding-top:0">
+  <div class="container">
+    <div class="panel" style="max-width:72ch">
+      <p class="eyebrow">Come back to this report</p>
+      <p class="num small" style="word-break:break-all;background:var(--panel-2);
+                padding:var(--sp-3);border-radius:3px">
+        <a href="{{ resume_link }}">{{ resume_link }}</a>
+      </p>
+      <p class="tiny" style="margin-top:var(--sp-2)">
+        Opens from any device with no sign-in. Treat it like a password.
+      </p>
+    </div>
+  </div>
+</section>
+{% endif %}
+{% endblock %}

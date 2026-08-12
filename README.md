@@ -37,8 +37,9 @@ A multi-page shop with real URLs, a cart and a checkout.
 | `/services`, `/services/{slug}` | Catalogue and detail |
 | `/configure/{slug}` | Pick a venue, see the station match, get a price |
 | `/cart`, `/checkout`, `/orders/{id}` | Order and invoice |
+| **`/venues/{id}`** | **The report — what an Exposure Report actually buys** |
 | `/account` | Venues, orders, subscriptions, API key |
-| `/dashboard` | The analytics terminal |
+| `/dashboard` | The analytics terminal (the eight example venues) |
 
 Four things are for sale. Three are fixed-price and fit the venue *after*
 purchase, as fulfilment. The fourth --- Parametric Cover --- needs the fit before
@@ -55,6 +56,19 @@ integration points and refuses rather than silently falling back to the mock.
 and subject to underwriting; every page that shows a price says so, and the
 invoice is headed *"Indicative Parametric Risk Estimate — Not a Binding Policy
 Contract"*.
+
+### The report
+
+`/venues/{id}` is what an Exposure Report buys, and it is the page the rest of
+the platform exists to produce: the century fitted against the record, the
+projection under four pathways, the uncertainty split three ways, the peril
+frequencies with their pathway spread, the GPD tail with return levels, the loss
+curve with its regressed breakpoint, and the walk-forward backtest — shown
+whether or not it flatters the model.
+
+Charts are server-rendered SVG (`api/charts.py`). No charting library and no
+JavaScript: the report should render in a print dialogue and with scripting off,
+because it is the deliverable rather than a dashboard.
 
 ### The API
 
@@ -309,6 +323,7 @@ rather than promising a week it cannot keep.
 |---|---|
 | `stations.py` | GHCN index, terrain-aware nearest-station matching |
 | `security.py` | The app signing key, and the signed resume links minted from it |
+| `charts.py` | Server-rendered SVG for the report — no charting library, no JS |
 | `catalog.py` | The four products, as code |
 | `checkout.py` | Cart, orders, mock payment, Stripe seam |
 | `web.py` | Storefront routes, async fit jobs, session cart |

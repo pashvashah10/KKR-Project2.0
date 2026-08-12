@@ -63,8 +63,8 @@
 
             {% if s.status == 'ready' %}
             <div class="btn-row" style="margin-top:var(--sp-4)">
-              <a class="btn-ghost" href="/configure/parametric-cover?site={{ s.id }}">Price a contract</a>
-              <a class="btn-quiet" href="/dashboard">Open terminal →</a>
+              <a class="btn" href="/venues/{{ s.id }}">Open the report</a>
+              <a class="btn-quiet" href="/configure/parametric-cover?site={{ s.id }}">Price a contract →</a>
             </div>
             {% elif s.status == 'failed' and s.job %}
             <p class="tiny" style="color:var(--crit);margin-top:var(--sp-3)">{{ s.job.error }}</p>
@@ -73,6 +73,9 @@
               <i style="--p:{{ s.job.progress }}"></i>
             </div>
             <p class="tiny" style="margin-top:var(--sp-2)">{{ s.job.step }}</p>
+            <p style="margin-top:var(--sp-3)">
+              <a class="btn-quiet" href="/venues/{{ s.id }}">Watch progress →</a>
+            </p>
             {% endif %}
           </div>
           {% endfor %}
