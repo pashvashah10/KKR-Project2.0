@@ -18,6 +18,26 @@ DESIGN.md   The storefront's design specification
 
 ## How a business uses this
 
+### A public URL (Render)
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/pashvashah10/KKR-Project2.0)
+
+Click, sign in with GitHub, **Apply**. Five to ten minutes later you have a live
+`.onrender.com` address running the real application — not a static export.
+
+It comes up **already populated**: `api/demo.py` restores
+`demo/snapshot.tar.gz` on first boot, so the eight example venues and their
+fitted models are ready in a second or two with no NOAA fetch during startup.
+Peak memory pricing a contract is around 230 MB, inside the free tier's 512 MB.
+
+Two honest limits of the free plan:
+
+- **The disk is ephemeral.** Orders and venues a visitor creates are lost on
+  restart; the example venues come back from the snapshot every time. Real
+  persistence means a paid disk, or Postgres in place of SQLite.
+- **It sleeps after ~15 minutes idle** and takes about a minute to wake. The
+  first visit after a quiet spell is slow; the rest are not.
+
 ### In a browser, nothing installed (GitHub Codespaces)
 
 Open the repository on GitHub → **Code ▾** → **Codespaces** → **Create codespace**.

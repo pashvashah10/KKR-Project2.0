@@ -1,0 +1,45 @@
+# One-click deploy to Render — a real, public URL running the real application.
+#
+#   https://render.com/deploy?repo=https://github.com/pashvashah10/KKR-Project2.0
+#
+# Deliberately a plain Python service rather than a container: the build and
+# start commands below are the same two commands used locally, so there is no
+# Dockerfile in the middle that could behave differently from what was tested.
+#
+# The instance comes up populated. `api/demo.py` restores `demo/snapshot.tar.gz`
+# on first boot, so the eight example venues and their fitted models are there in
+# a second or two, with no NOAA fetch and no fitting during startup — which is
+# what makes this deployable at all on a small instance with a startup timeout.
+#
+# Two honest limits of the free plan, both fine for a demo and neither fixable
+# from this file:
+#
+#   * The disk is ephemeral. Orders and venues a visitor creates are lost on
+#     restart or redeploy; the example venues come back from the snapshot every
+#     time. Real persistence means a paid disk, or Postgres in place of SQLite.
+#   * The service sleeps after ~15 minutes idle and takes roughly a minute to
+#     wake. The first visit after a quiet spell is slow; everything after it is
+#     not.
+
+services:
+  - type: web
+    name: downside
+    runtime: python
+    plan: free
+    branch: claude/weather-prediction-dashboard-8kogqy
+    region: oregon
+
+    buildCommand: pip install -r api/requirements.txt -r engine/requirements.txt
+    startCommand: python -m uvicorn api.main:app --host 0.0.0.0 --port $PORT
+
+    # Cheap, dependency-free, and does not touch the model cache.
+    healthCheckPath: /v1/health
+
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.9"
+      # Signs the session cookie and the resume links. Generated once by Render
+      # and held in the service's environment, so carts and links survive a
+      # restart. Never commit a value for this.
+      - key: DOWNSIDE_SECRET
+        generateValue: true

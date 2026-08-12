@@ -38,7 +38,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, EmailStr, Field, field_validator
 from starlette.middleware.sessions import SessionMiddleware
 
-from . import security, service, stations, store
+from . import demo, security, service, stations, store
 from . import web as storefront
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
@@ -84,6 +84,10 @@ def _startup() -> None:
     store.init()
     log.info("database ready at %s", store.DB_PATH)
     security.warn_if_ephemeral()
+    # A hosted instance starts with a blank disk. Restoring the committed
+    # snapshot means it serves real fitted venues in seconds instead of needing
+    # a 15-minute NOAA fit before anything is worth looking at.
+    demo.restore_if_empty()
     # Load the GHCN bundle off the request path. Failure is logged, not fatal:
     # without it, venues fall back to reanalysis and say so, but the storefront
     # still boots.
