@@ -10,9 +10,10 @@
     <p class="lede measure fade-up" style="--d:120ms;margin-top:var(--sp-3)">
       Give us a coordinate and we will match it to the weather station a contract would
       settle on, fit that station's full record, and tell you what your season is carrying.
-      The station match is instant. The fit usually takes about ten seconds — unless nobody
-      has checked near you before, in which case we have to pull a century of daily
-      observations from NOAA first, and that takes two to four minutes.
+      The station match is instant. The fit takes about ten seconds if someone has checked
+      near you before — if not, we pull a century of daily observations from NOAA first,
+      which takes anywhere from twenty seconds to a few minutes depending on how fast they
+      are feeling.
     </p>
 
     <div class="split" style="margin-top:var(--sp-6)">
@@ -90,9 +91,9 @@
           </div>
           <p class="small" data-step>Queued</p>
           <p class="tiny" style="margin-top:var(--sp-3)">
-            Around ten seconds if this gauge has been fetched before. Two to four minutes if
-            not — NOAA is slow to hand over a century, and we would rather wait for the real
-            record than substitute something quicker.
+            Around ten seconds if this gauge has been fetched before. Longer if not — NOAA
+            can take anywhere from twenty seconds to a few minutes to hand over a century,
+            and we would rather wait for the real record than substitute something quicker.
           </p>
         </div>
 

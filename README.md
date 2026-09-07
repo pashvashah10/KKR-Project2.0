@@ -135,9 +135,11 @@ the whole cost. So a free check runs the same full fit a paying customer gets,
 and the free/paid line is drawn at what is *shown*.
 
 What makes it viable is that the record cache is keyed by **station**, not by
-venue. End to end through the HTTP API: **132–243 s at a cold gauge, 8 s at a
-warm one.** Venues cluster — ski areas, wine regions, festival sites — so it gets
-cheaper exactly where volume arrives.
+venue. End to end through the HTTP API, a **warm gauge is 8 s**. A cold one is
+whatever NCEI feels like: observed runs of 21 s, 132 s and 243 s for the same
+amount of data, so the cold path is quoted as "a few minutes" rather than a
+number we cannot keep. Venues cluster — ski areas, wine regions, festival sites —
+so the warm path is the common one exactly where volume arrives.
 
 ### The report
 
