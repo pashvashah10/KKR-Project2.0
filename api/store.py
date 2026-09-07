@@ -172,6 +172,37 @@ CREATE TABLE IF NOT EXISTS subscriptions (
 );
 CREATE INDEX IF NOT EXISTS idx_subs_account ON subscriptions(account_id);
 
+-- Forward bookings: what is already on the books for a future day.
+--
+-- Separate from `revenue`, which is the *historical* series the loss curve is
+-- fitted against. Conflating them would be a category error --- one is evidence,
+-- the other is exposure --- and the join key is the only thing they share.
+CREATE TABLE IF NOT EXISTS bookings (
+    site_id  TEXT NOT NULL REFERENCES sites(id),
+    day      TEXT NOT NULL,
+    revenue  REAL NOT NULL,
+    covers   INTEGER,
+    source   TEXT NOT NULL DEFAULT 'upload',
+    PRIMARY KEY (site_id, day)
+);
+
+-- Anonymous exposure checks. Two jobs: rate limiting, and the lead list.
+--
+-- The IP is stored as a salted hash, never in the clear. It is needed to count
+-- requests per hour and for nothing else, so keeping the address itself would be
+-- collecting a piece of personal data with no use for it.
+CREATE TABLE IF NOT EXISTS checks (
+    id         TEXT PRIMARY KEY,
+    ip_hash    TEXT NOT NULL,
+    site_id    TEXT REFERENCES sites(id),
+    job_id     TEXT,
+    email      TEXT,
+    lat        REAL,
+    lon        REAL,
+    created_at REAL NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_checks_ip ON checks(ip_hash, created_at);
+
 CREATE TABLE IF NOT EXISTS counters (
     name  TEXT PRIMARY KEY,
     value INTEGER NOT NULL
@@ -642,3 +673,91 @@ def cancel_subscription(sub_id: str, account_id: str) -> bool:
             (time.time(), sub_id, account_id),
         )
     return cur.rowcount > 0
+
+
+# ----------------------------------------------------------------------
+# bookings
+# ----------------------------------------------------------------------
+
+
+def put_bookings(site_id: str, rows: list[tuple[str, float, int | None]]) -> int:
+    """Upsert forward bookings. `rows` is `(day, revenue, covers)`."""
+    with connect() as conn:
+        conn.executemany(
+            "INSERT INTO bookings (site_id,day,revenue,covers) VALUES (?,?,?,?) "
+            "ON CONFLICT(site_id,day) DO UPDATE SET "
+            "revenue=excluded.revenue, covers=excluded.covers",
+            [(site_id, d, r, c) for d, r, c in rows],
+        )
+    return len(rows)
+
+
+def bookings_window(site_id: str, first_day: str, last_day: str) -> dict[str, float]:
+    """`{day: revenue}` over an inclusive ISO date range.
+
+    A dict rather than a list because the caller walks a contiguous calendar and
+    needs to distinguish "nothing booked" from "no row for that day" --- both are
+    zero exposure, but only one of them is worth telling the customer about.
+    """
+    with connect() as conn:
+        rows = conn.execute(
+            "SELECT day, revenue FROM bookings "
+            "WHERE site_id = ? AND day >= ? AND day <= ? ORDER BY day",
+            (site_id, first_day, last_day),
+        ).fetchall()
+    return {r["day"]: float(r["revenue"]) for r in rows}
+
+
+def bookings_summary(site_id: str) -> dict:
+    with connect() as conn:
+        row = conn.execute(
+            "SELECT COUNT(*) n, MIN(day) lo, MAX(day) hi, SUM(revenue) total "
+            "FROM bookings WHERE site_id = ?",
+            (site_id,),
+        ).fetchone()
+    return {"days": row["n"], "from": row["lo"], "to": row["hi"], "total": row["total"] or 0.0}
+
+
+# ----------------------------------------------------------------------
+# anonymous checks
+# ----------------------------------------------------------------------
+
+
+def record_check(ip_hash: str, lat: float, lon: float, site_id: str, job_id: str) -> str:
+    check_id = new_id("chk")
+    with connect() as conn:
+        conn.execute(
+            "INSERT INTO checks (id,ip_hash,site_id,job_id,lat,lon,created_at) "
+            "VALUES (?,?,?,?,?,?,?)",
+            (check_id, ip_hash, site_id, job_id, lat, lon, time.time()),
+        )
+    return check_id
+
+
+def checks_since(ip_hash: str, since: float) -> int:
+    with connect() as conn:
+        row = conn.execute(
+            "SELECT COUNT(*) n FROM checks WHERE ip_hash = ? AND created_at >= ?",
+            (ip_hash, since),
+        ).fetchone()
+    return int(row["n"])
+
+
+def get_check(check_id: str) -> dict | None:
+    with connect() as conn:
+        row = conn.execute("SELECT * FROM checks WHERE id = ?", (check_id,)).fetchone()
+    return dict(row) if row else None
+
+
+def check_by_job(job_id: str) -> dict | None:
+    with connect() as conn:
+        row = conn.execute("SELECT * FROM checks WHERE job_id = ?", (job_id,)).fetchone()
+    return dict(row) if row else None
+
+
+def claim_check(check_id: str, email: str) -> None:
+    """Attach an email to a check --- the lead, captured when the result unlocks."""
+    with connect() as conn:
+        conn.execute(
+            "UPDATE checks SET email = ? WHERE id = ?", (email.lower().strip(), check_id)
+        )

@@ -403,6 +403,78 @@ function renderStation(station) {
     </div>${warn}`;
 }
 
+/* --------------------------------------------------- free exposure check */
+
+/* Same shape as the configure flow: POST returns immediately with a job, then
+ * poll. Kept separate because the free check has no cart, no venue picker and a
+ * different destination --- folding them together would mean a pile of
+ * conditionals in both. */
+
+function initCheck() {
+  const root = document.querySelector('[data-check]');
+  if (!root) return;
+
+  const form = root.querySelector('[data-check-form]');
+  const progress = root.querySelector('[data-check-progress]');
+  const errorBox = root.querySelector('[data-check-error]');
+  const stationBox = root.querySelector('[data-check-station]');
+  if (!form) return;
+
+  const show = (el) => el && el.removeAttribute('hidden');
+  const hide = (el) => el && el.setAttribute('hidden', '');
+
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    hide(errorBox);
+
+    const submit = form.querySelector('[type="submit"]');
+    if (submit) { submit.disabled = true; submit.textContent = 'Starting…'; }
+
+    let data;
+    try {
+      const res = await fetch('/check', { method: 'POST', body: new FormData(form) });
+      data = await res.json();
+      if (!res.ok) throw new Error(data.detail || 'could not start the check');
+    } catch (err) {
+      if (submit) { submit.disabled = false; submit.textContent = 'Check my venue'; }
+      if (errorBox) { errorBox.textContent = String(err.message || err); show(errorBox); }
+      return;
+    }
+
+    // The station match is synchronous and comes back in this response, well
+    // before the fit --- and it is the first thing worth seeing.
+    if (stationBox && data.station) {
+      stationBox.innerHTML = renderStation(data.station);
+      show(stationBox);
+    }
+
+    form.setAttribute('hidden', '');
+    show(progress);
+    setStep(root, 'Queued', 0.02);
+    pollJob(root, data.job_id,
+      () => { location.href = data.result_url; },
+      (d) => {
+        hide(progress);
+        if (errorBox) {
+          errorBox.textContent = d.error
+            ? `The fit failed: ${d.error}`
+            : 'The fit failed. Try another coordinate.';
+          show(errorBox);
+        }
+      });
+  });
+}
+
+/* The pending page polls too, so someone who reloads or follows a link still
+ * gets a live view rather than a frozen progress bar. */
+function initCheckPoll() {
+  const root = document.querySelector('[data-check-poll]');
+  if (!root) return;
+  const job = root.dataset.job;
+  if (!job) return;
+  pollJob(root, job, () => location.reload(), () => location.reload());
+}
+
 /* ------------------------------------------------------------------ boot */
 
 initTheme();
@@ -413,3 +485,5 @@ initMagnetic();
 initCounters();
 initCanvas();
 initConfigure();
+initCheck();
+initCheckPoll();

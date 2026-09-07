@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Fitting {{ site.name }} — Downside{% endblock %}
+
+{% block content %}
+<section data-check-poll data-job="{{ job.id if job else '' }}">
+  <div class="container">
+    <p class="eyebrow fade-up">Free exposure check</p>
+    <h1 class="h-section fade-up" style="--d:60ms">{{ site.name }}</h1>
+
+    <div class="split" style="margin-top:var(--sp-6)">
+      <div class="panel">
+        {% if site.status == 'failed' %}
+        <p class="eyebrow" style="color:var(--crit)">Fit failed</p>
+        <p class="lede">This coordinate could not be fitted.</p>
+        {% if job and job.error %}
+        <p class="small num" style="margin-top:var(--sp-3);background:var(--panel-2);
+                  padding:var(--sp-3);border-radius:3px;word-break:break-word">{{ job.error }}</p>
+        {% endif %}
+        <a class="btn" href="/check" style="margin-top:var(--sp-4)">Try another coordinate</a>
+        {% else %}
+        <p class="eyebrow" style="display:flex;align-items:center;gap:.5rem">
+          <span class="spinner"></span> Fitting the record
+        </p>
+        <div class="progress" style="margin-block:var(--sp-4)">
+          <i data-progress style="--p:{{ job.progress if job else 0 }}"></i>
+        </div>
+        <p class="lede" data-step>{{ job.step if job else 'Queued' }}</p>
+        <p class="small" style="margin-top:var(--sp-4)">
+          Around ten seconds if this gauge has been fetched before, two to four minutes if
+          not. Almost all of that is NOAA handing over the century — the modelling itself is
+          under ten seconds. This page refreshes itself.
+        </p>
+        {% endif %}
+      </div>
+
+      <aside class="stack">
+        {% if station and station.matched %}
+        <div class="panel">
+          <p class="eyebrow">Already matched</p>
+          <p class="h-card">{{ station.name }}</p>
+          <dl class="readout" style="margin-top:var(--sp-3)">
+            <dt>Station</dt><dd>{{ station.id }}</dd>
+            <dt>Distance</dt><dd>{{ '%.1f'|format(station.distance_km) }} km</dd>
+            <dt>Record</dt><dd>{{ station.first_year }}–{{ station.last_year }}</dd>
+          </dl>
+        </div>
+        {% endif %}
+      </aside>
+    </div>
+  </div>
+</section>
+{% endblock %}

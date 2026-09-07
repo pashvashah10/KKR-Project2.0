@@ -3,6 +3,7 @@
     <a class="brand" href="/"><b>Downside</b> <span>Weather Risk</span></a>
 
     <div class="nav-links">
+      <a href="/check" {% if request.url.path.startswith('/check') %}aria-current="page"{% endif %}>Free check</a>
       <a href="/services" {% if request.url.path.startswith('/services') %}aria-current="page"{% endif %}>Services</a>
       <a href="/configure/exposure-report" {% if request.url.path.startswith('/configure') %}aria-current="page"{% endif %}>Price a venue</a>
       <a href="/dashboard">Terminal</a>

@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+{% block title %}Free exposure check — Downside{% endblock %}
+{% block description %}Enter your coordinates and get a real, fitted answer about your venue's weather exposure. No signup.{% endblock %}
+
+{% block content %}
+<section data-check>
+  <div class="container">
+    <p class="eyebrow fade-up">Free · no signup · a real fit</p>
+    <h1 class="h-section fade-up" style="--d:60ms">How exposed is your venue?</h1>
+    <p class="lede measure fade-up" style="--d:120ms;margin-top:var(--sp-3)">
+      Give us a coordinate and we will match it to the weather station a contract would
+      settle on, fit that station's full record, and tell you what your season is carrying.
+      The station match is instant. The fit usually takes about ten seconds — unless nobody
+      has checked near you before, in which case we have to pull a century of daily
+      observations from NOAA first, and that takes two to four minutes.
+    </p>
+
+    <div class="split" style="margin-top:var(--sp-6)">
+      <div>
+        <form class="panel stack" data-check-form method="post" action="/check">
+          <label class="field">
+            <span>Venue name</span>
+            <input name="name" maxlength="200" placeholder="Larkspur Orchard" required>
+          </label>
+
+          <div class="field-row">
+            <label class="field">
+              <span>Latitude</span>
+              <input name="lat" type="number" step="any" min="-90" max="90" required
+                     placeholder="44.2601">
+            </label>
+            <label class="field">
+              <span>Longitude</span>
+              <input name="lon" type="number" step="any" min="-180" max="180" required
+                     placeholder="-72.5754">
+            </label>
+          </div>
+
+          <label class="field">
+            <span>Elevation (metres)</span>
+            <input name="elevation_m" type="number" step="1" min="-500" max="6000"
+                   placeholder="340">
+            <span class="field-hint">
+              Worth getting right. Without it we match on horizontal distance alone, which is
+              how a mountain venue ends up settling on the valley airport a kilometre below it.
+            </span>
+          </label>
+
+          <label class="field">
+            <span>What kind of venue</span>
+            <select name="vertical">
+              {% for v in verticals %}<option value="{{ v }}">{{ v }}</option>{% endfor %}
+            </select>
+          </label>
+
+          <div class="field-row">
+            <label class="field">
+              <span>Season starts</span>
+              <select name="season_start_month">
+                {% for m in range(1, 13) %}
+                <option value="{{ m }}" {% if m == 5 %}selected{% endif %}>
+                  {{ ['January','February','March','April','May','June','July','August','September','October','November','December'][m-1] }}
+                </option>
+                {% endfor %}
+              </select>
+            </label>
+            <label class="field">
+              <span>Season ends</span>
+              <select name="season_end_month">
+                {% for m in range(1, 13) %}
+                <option value="{{ m }}" {% if m == 9 %}selected{% endif %}>
+                  {{ ['January','February','March','April','May','June','July','August','September','October','November','December'][m-1] }}
+                </option>
+                {% endfor %}
+              </select>
+            </label>
+          </div>
+
+          <button class="btn" type="submit" data-magnetic>Check my venue</button>
+        </form>
+
+        <div class="notice notice-crit" data-check-error hidden style="margin-top:var(--sp-3)"></div>
+
+        <div class="panel" data-check-progress hidden style="margin-top:var(--sp-3)">
+          <p class="eyebrow" style="display:flex;align-items:center;gap:.5rem">
+            <span class="spinner"></span> Fitting the record
+          </p>
+          <div class="progress" style="margin-block:var(--sp-3)">
+            <i data-progress style="--p:0"></i>
+          </div>
+          <p class="small" data-step>Queued</p>
+          <p class="tiny" style="margin-top:var(--sp-3)">
+            Around ten seconds if this gauge has been fetched before. Two to four minutes if
+            not — NOAA is slow to hand over a century, and we would rather wait for the real
+            record than substitute something quicker.
+          </p>
+        </div>
+
+        <div data-check-station hidden style="margin-top:var(--sp-3)"></div>
+      </div>
+
+      <aside class="stack sticky">
+        <div class="panel">
+          <p class="eyebrow">What you get free</p>
+          <ul class="speclist small">
+            <li>The exact station a contract would settle on — distance, elevation gap, record span</li>
+            <li>Your venue's warming amplification, the same figure the paid report gives</li>
+            <li>The three perils that apply, with how often they fire now and in 2125</li>
+            <li>A century of the station's record with the fitted trend over it</li>
+          </ul>
+          <hr class="rule">
+          <p class="eyebrow">What needs the full report</p>
+          <ul class="speclist neg small">
+            <li>The walk-forward backtest against thirty held-out years</li>
+            <li>Confidence bounds on the amplification factor</li>
+            <li>Projection under four emissions pathways</li>
+            <li>Your loss curve, and any contract priced against it</li>
+          </ul>
+        </div>
+
+        <div class="notice notice-accent">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/>
+          </svg>
+          <span>
+            <strong>Nothing here is a sample.</strong> Every figure is computed from the real
+            station record at your coordinates — the same fit a paying customer gets. We hold
+            some of it back to have something to sell, not because the free part is a
+            lesser calculation.
+          </span>
+        </div>
+      </aside>
+    </div>
+  </div>
+</section>
+{% endblock %}

@@ -75,7 +75,17 @@ app.mount("/static", StaticFiles(directory=str(WEB / "static")), name="static")
 # internally vectorised and the container has four cores.
 FITTERS = ThreadPoolExecutor(max_workers=2, thread_name_prefix="fit")
 
-storefront.configure_executor(lambda site_id, job_id: FITTERS.submit(service.fit_site, site_id, job_id))
+# Anonymous exposure checks get their own single worker rather than sharing the
+# pool above. Without the split, a handful of visitors clicking the free check
+# occupies both fitting threads and a paying customer's venue sits in a queue
+# behind strangers --- the cheapest possible way to make the funnel damage the
+# product it feeds.
+PREVIEWERS = ThreadPoolExecutor(max_workers=1, thread_name_prefix="preview")
+
+storefront.configure_executor(
+    lambda site_id, job_id: FITTERS.submit(service.fit_site, site_id, job_id),
+    lambda site_id, job_id: PREVIEWERS.submit(service.fit_site, site_id, job_id, True),
+)
 app.include_router(storefront.router)
 
 

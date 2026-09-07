@@ -31,6 +31,7 @@ finished quote.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 import secrets
@@ -171,6 +172,183 @@ def home(request: Request) -> HTMLResponse:
         hero_site=hero_site,
         weather="clear",
     )
+
+
+# ----------------------------------------------------------------------
+# The free exposure check
+#
+# Everything else on this site sits behind a purchase, which for a product whose
+# entire claim is "our numbers are real" is close to fatal --- a visitor cannot
+# experience the thing being asserted. This runs a genuine fit at a genuine
+# coordinate and shows a genuine result, then asks for an email to unlock the
+# rest.
+#
+# What is withheld is chosen so that nothing shown is degraded: the station
+# match, the amplification coefficient and the peril frequencies are *identical*
+# to the paid report's. Only the confidence bounds, the backtest, the projection
+# and the loss curve are held back, because those are the expensive parts.
+# ----------------------------------------------------------------------
+
+#: Per IP, per hour. A fit is a minute of CPU, so this is a cost control as much
+#: as an abuse control.
+CHECK_LIMIT_PER_HOUR = 3
+
+
+def _ip_hash(request: Request) -> str:
+    """Salted hash of the caller's address.
+
+    Hashed because it is only ever needed to count requests per hour, and
+    storing an address in the clear for that would be collecting personal data
+    with no purpose. Salted with the app secret so the hashes are not a rainbow
+    table of every visitor's IP.
+    """
+    client = request.headers.get("x-forwarded-for", "") or (
+        request.client.host if request.client else ""
+    )
+    ip = client.split(",")[0].strip() or "unknown"
+    return hashlib.sha256(f"{security.app_secret()}|{ip}".encode()).hexdigest()[:32]
+
+
+@router.get("/check", response_class=HTMLResponse)
+def check_form(request: Request) -> HTMLResponse:
+    return render(request, "check.html", verticals=VERTICALS, weather="clear")
+
+
+@router.post("/check")
+async def start_check(
+    request: Request,
+    name: str = Form("My venue"),
+    lat: float = Form(...),
+    lon: float = Form(...),
+    elevation_m: float | None = Form(None),
+    vertical: str = Form("Outdoor attraction"),
+    season_start_month: int = Form(1),
+    season_end_month: int = Form(12),
+) -> JSONResponse:
+    """Start an anonymous preview fit. Returns at once, like the paid path."""
+    if not -90 <= lat <= 90 or not -180 <= lon <= 180:
+        raise HTTPException(400, "Those coordinates are not on Earth.")
+    if vertical not in VERTICALS:
+        vertical = "Outdoor attraction"
+
+    ip = _ip_hash(request)
+    if store.checks_since(ip, time.time() - 3600) >= CHECK_LIMIT_PER_HOUR:
+        raise HTTPException(
+            429,
+            f"That is {CHECK_LIMIT_PER_HOUR} checks in an hour from this address. "
+            "Each one fits a century of daily weather, so they are rate limited. "
+            "Try again shortly, or add the venue to an account to fit it properly.",
+        )
+
+    # Match before queueing. A coordinate with no usable gauge cannot produce a
+    # meaningful free result, and refusing here costs nothing where starting the
+    # fit would cost a minute of CPU to arrive at the same answer.
+    match = stations.nearest_station(lat, lon, elevation_m)
+    if match is None:
+        raise HTTPException(
+            422,
+            "No long-record weather station qualifies near those coordinates. "
+            "A paid venue falls back to ERA5 reanalysis, but the free check needs "
+            "a real gauge to be worth anything.",
+        )
+
+    account = guest_account(request)
+    site = store.create_site(
+        account["id"],
+        name=(name or "My venue").strip()[:200],
+        lat=lat, lon=lon, elevation_m=elevation_m, vertical=vertical,
+        season_start_month=max(1, min(12, season_start_month)),
+        season_end_month=max(1, min(12, season_end_month)),
+        variable_cost_ratio=0.30, reserves=None, monthly_burn=None, is_example=0,
+    )
+    store.update_site(site["id"], **service.station_columns(match))
+    store.update_site(
+        site["id"],
+        resume_token=security.issue_resume_token(site["id"], account["id"], "exposure-report"),
+    )
+
+    job = store.create_job(site["id"], "preview")
+    submit_preview(site["id"], job["id"])
+    check_id = store.record_check(ip, lat, lon, site["id"], job["id"])
+
+    return JSONResponse(
+        {
+            "check_id": check_id,
+            "job_id": job["id"],
+            "site_id": site["id"],
+            "status_url": f"/api/v1/jobs/{job['id']}",
+            "result_url": f"/check/{check_id}",
+            "station": _station_view(store.get_site(site["id"]) or site),
+        },
+        status_code=202,
+    )
+
+
+@router.get("/check/{check_id}", response_class=HTMLResponse)
+def check_result(request: Request, check_id: str) -> HTMLResponse:
+    check = store.get_check(check_id)
+    if check is None:
+        raise HTTPException(404, "No such check.")
+    site = store.get_site(check["site_id"])
+    if site is None:
+        raise HTTPException(404, "No such check.")
+
+    job = store.latest_job(site["id"])
+    if site["status"] != "ready":
+        return render(
+            request, "check_pending.html",
+            check=check, site=site, job=job,
+            station=_station_view(site), weather="cloud",
+        )
+
+    diagnostics = store.get_analysis(site["id"], "diagnostics") or {}
+    history = store.get_analysis(site["id"], "history") or {}
+    perils = store.get_analysis(site["id"], "perils") or {}
+
+    rows = []
+    for p in (perils.get("perils") or [])[:3]:
+        series = p.get("series") or {}
+        base = series.get("ssp245") or next(iter(series.values()), [])
+        if base:
+            rows.append({**p, "now": base[0], "later": base[-1]})
+
+    return render(
+        request, "check_result.html",
+        check=check, site=site,
+        station=_station_view(site),
+        diagnostics=diagnostics,
+        peril_rows=rows,
+        target_years=perils.get("target_years") or [],
+        century_svg=charts.century_chart(history),
+        claimed=bool(check.get("email")),
+        resume_link=absolute(request, magic_link(site, "exposure-report")),
+        weather="clear",
+    )
+
+
+@router.post("/check/{check_id}/claim")
+async def claim_check(
+    request: Request, check_id: str, email: str = Form(...)
+) -> RedirectResponse:
+    """Capture the email and unlock the rest of the result.
+
+    Nothing is refitted. The free check already ran the full fit --- there is no
+    cheaper one to run --- so unlocking is purely a matter of what the page is
+    willing to show. Charging a second fit to the customer's patience in order
+    to dramatise a paywall would be theatre.
+    """
+    check = store.get_check(check_id)
+    if check is None:
+        raise HTTPException(404, "No such check.")
+    site = store.get_site(check["site_id"])
+    if site is None:
+        raise HTTPException(404, "No such check.")
+
+    store.claim_check(check_id, email)
+    account = guest_account(request, email=email.strip())
+    store.update_site(site["id"], contact_email=email.strip()[:200])
+
+    return RedirectResponse(f"/check/{check_id}", status_code=303)
 
 
 @router.get("/services", response_class=HTMLResponse)
@@ -442,6 +620,8 @@ async def start_fit(
 
 #: Injected by `main.py` so this module does not import the thread pool.
 _submit_fit = None
+#: The preview pool, kept separate so free checks cannot starve paying fits.
+_submit_preview = None
 
 
 def submit_fit(site_id: str, job_id: str) -> None:
@@ -463,9 +643,22 @@ def submit_fit(site_id: str, job_id: str) -> None:
         future.add_done_callback(lambda _f: notify_if_requested(site_id))
 
 
-def configure_executor(fn) -> None:
-    global _submit_fit
+def submit_preview(site_id: str, job_id: str) -> None:
+    """Queue a free exposure check on the preview pool.
+
+    Falls back to the full pool only if no preview pool was configured, so a
+    partially wired deployment degrades to slow rather than broken.
+    """
+    fn = _submit_preview or _submit_fit
+    if fn is None:  # pragma: no cover - wiring error
+        raise RuntimeError("fit executor not configured; call web.configure_executor()")
+    fn(site_id, job_id)
+
+
+def configure_executor(fn, preview_fn=None) -> None:
+    global _submit_fit, _submit_preview
     _submit_fit = fn
+    _submit_preview = preview_fn
 
 
 @router.get("/api/v1/jobs/{job_id}")

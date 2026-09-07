@@ -24,6 +24,7 @@ import logging
 import pickle
 import time
 from dataclasses import dataclass
+from datetime import date, timedelta
 
 import numpy as np
 
@@ -252,8 +253,39 @@ class Progress:
         store.update_job(self.job_id, progress=round(fraction, 3), step=step, status="running")
 
 
-def fit_site(site_id: str, job_id: str) -> None:
-    """Fetch, fit, analyse and cache. Runs on a worker thread."""
+FULL_N_BOOT = 160
+
+
+def fit_site(site_id: str, job_id: str, preview: bool = False) -> None:
+    """Fetch, fit, analyse and cache. Runs on a worker thread.
+
+    ### There is no cheap fit, and `preview` no longer pretends otherwise
+
+    A reduced-precision path was built here on the assumption that the
+    statistics dominated. Profiling says otherwise, decisively:
+
+        record fetch, cold      116.0s      (114s of it SSL reads from NCEI)
+        record fetch, cached      0.7s
+        SiteModel.fit n_boot=160  1.3s
+        SiteModel.fit n_boot=20   0.4s
+        walk-forward backtest     0.8s
+        peril grid                6.7s
+
+    Every statistic together is under ten seconds. **Fetching a century of
+    daily observations from NOAA is the entire cost**, and skipping bootstrap
+    replicates saves under a second of it. So `preview` no longer changes what
+    is computed --- a free check gets the same full fit a paying customer does,
+    and the free/paid line is drawn at what is *shown*, which is where it
+    belongs.
+
+    The flag survives only to route work onto a separate executor, so anonymous
+    traffic cannot occupy the threads paying customers are waiting on.
+
+    The cache is keyed by station rather than by venue, which is what makes the
+    funnel viable: the first check near a given gauge pays the two-to-four
+    minute fetch, and every later venue matching that same gauge is fitted in
+    about ten seconds.
+    """
     tick = Progress(job_id)
     started = time.time()
     try:
@@ -278,15 +310,17 @@ def fit_site(site_id: str, job_id: str) -> None:
         store.update_site(site_id, provenance=record.provenance)
 
         tick(0.25, f"Fitting {record.n_years} years of daily observations")
-        model = SiteModel.fit(location, record, BASE_SCENARIO, n_boot=160)
+        model = SiteModel.fit(location, record, BASE_SCENARIO, n_boot=FULL_N_BOOT)
         save_model(site_id, model)
 
-        tick(0.55, "Validating against thirty held-out years")
         window = season_window(*location.season)
         in_season = record.tmax_c[np.isin(record.doy, window.astype(int))]
         rel_threshold = float(np.percentile(in_season, 90))
+
+        tick(0.55, "Validating against thirty held-out years")
         bt = walk_forward(
-            record, model.response, "tmax_c", split_year=1995, trigger_threshold=rel_threshold
+            record, model.response, "tmax_c",
+            split_year=1995, trigger_threshold=rel_threshold,
         )
         inhom = detect_inhomogeneity(record, model.tmax)
         quality = assess_quality(model.tmax.amplification, bt, inhom)
@@ -423,15 +457,15 @@ def _tail(record) -> dict:
 
 
 def _diagnostics(model, bt, record, rel_threshold) -> dict:
-    return {
-        "r2": r3(model.tmax.r_squared),
-        "n_obs": int(model.tmax.mean_fit.n_obs),
-        "amplification": r3(model.tmax.amplification),
-        "amp_se": r3(model.tmax.amplification_se),
-        "amp_se_classical": r3(model.tmax.amplification_se_classical),
-        "se_inflation": r3(model.tmax.se_inflation),
-        "ar1": r3(model.tmax.ar1),
-        "backtest": {
+    """Model diagnostics.
+
+    `bt` may be `None` for a fit that was not scored. The backtest key is then
+    `None` rather than a dict of zeros: a page rendering "0.0% CRPS skill" for a
+    fit nobody scored is reporting a result that does not exist.
+    """
+    backtest = None
+    if bt is not None:
+        backtest = {
             "train": list(bt.train_years),
             "test": list(bt.test_years),
             "rmse": r3(bt.rmse),
@@ -443,7 +477,17 @@ def _diagnostics(model, bt, record, rel_threshold) -> dict:
             "pit": bt.pit_histogram,
             "reliability": bt.reliability,
             "reliability_threshold": r3(rel_threshold),
-        },
+        }
+
+    return {
+        "r2": r3(model.tmax.r_squared),
+        "n_obs": int(model.tmax.mean_fit.n_obs),
+        "amplification": r3(model.tmax.amplification),
+        "amp_se": r3(model.tmax.amplification_se),
+        "amp_se_classical": r3(model.tmax.amplification_se_classical),
+        "se_inflation": r3(model.tmax.se_inflation),
+        "ar1": r3(model.tmax.ar1),
+        "backtest": backtest,
         "regression": [
             {k: (r3(v) if isinstance(v, float) else v) for k, v in row.items()}
             for row in model.tmax.mean_fit.summary_rows()
@@ -785,3 +829,218 @@ def suggest_contract(site_id: str, year: int = TARGET_YEARS[0]) -> dict:
         "median_days": r3(float(np.median(days))),
         "p95_days": r3(float(np.percentile(days, 95))),
     }
+
+
+# ----------------------------------------------------------------------
+# Revenue at risk
+# ----------------------------------------------------------------------
+
+#: How far ahead the calendar looks. Ninety days is chosen from the buyer, not
+#: the maths: it is the horizon at which marketing spend, staffing and pricing
+#: are actually committed, and comfortably past the ~10 days where a forecast
+#: has any skill. Inside that gap climatology is not a weaker substitute for a
+#: forecast --- it is the only instrument that exists.
+RISK_HORIZON_DAYS = 90
+
+#: A day that loses more than this share of its contribution margin. The
+#: threshold for calling a day 'bad' is a judgement, so it is named once here
+#: rather than buried as a literal in a comprehension.
+BAD_DAY_SHARE = 0.25
+
+
+def _forward_window(days: int, start: date | None = None) -> tuple[np.ndarray, list[date]]:
+    """Day-of-year window for the next `days` days, and the calendar dates.
+
+    Returned together because the two are needed side by side and deriving one
+    from the other twice is how an off-by-one gets in. The day-of-year wraps at
+    the year end; the dates do not.
+    """
+    start = start or date.today()
+    dates = [start + timedelta(days=i) for i in range(days)]
+    doy = np.array([d.timetuple().tm_yday for d in dates], dtype=float)
+    return doy, dates
+
+
+def revenue_at_risk(
+    site_id: str, days: int = RISK_HORIZON_DAYS, start: date | None = None
+) -> dict:
+    """Per-day exposed revenue over the forward booking window.
+
+    ### Why this is cheap
+
+    `exposure()` already ends with
+
+        seasonal_loss = lc.loss_at(sim.get(lc.variable)).sum(axis=1)
+
+    where `sim.get(...)` is `(paths x days)` and `LossCurve.loss_at` is
+    elementwise. The seasonal number on the report is that array collapsed along
+    the day axis. **Revenue at risk is the same array collapsed along the path
+    axis instead** --- no new statistics, no second model, and the two views are
+    guaranteed consistent because they are the same simulation.
+
+    ### Why the loss is applied as a fraction
+
+    `loss_at` returns margin lost in currency, relative to the *fitted* baseline
+    day. Multiplying that straight into a customer's booking would double-count
+    their revenue level. So it is converted to a fraction of a normal day's
+    margin and applied to what is actually on the books for that date --- which
+    is also what makes a quiet Tuesday and a sold-out Saturday differ by more
+    than the weather.
+
+    ### What this is not
+
+    Not a forecast. Every day in the window is drawn from the fitted
+    climatological distribution for that day of year under the base pathway.
+    Ninety days out that is the honest instrument, and the UI says so.
+    """
+    site = store.get_site(site_id)
+    model = load_model(site_id)
+    if site is None or model is None:
+        raise LookupError("site not fitted")
+
+    record = model.record
+    revenue, revenue_is_real = revenue_series(site_id, record)
+    mask = np.isfinite(revenue)
+    if mask.sum() < 180:
+        mask = np.ones(len(record), dtype=bool)
+        revenue = np.nan_to_num(revenue)
+
+    season = season_window(int(site["season_start_month"]), int(site["season_end_month"]))
+    primary = _primary_peril(model, record, season, build_location(site))
+    lc = fit_loss_curve(
+        record,
+        np.nan_to_num(revenue),
+        primary.variable if primary else "precip_mm",
+        variable_cost_ratio=float(site["variable_cost_ratio"]),
+        mask=mask,
+    )
+
+    doy, dates = _forward_window(days, start)
+    sim = model.simulate(
+        dates[0].year, doy, BASE_SCENARIO, n_paths=2000, rng=np.random.default_rng(11)
+    )
+    values = sim.get(lc.variable)                      # (paths, days)
+    loss = lc.loss_at(values)                          # (paths, days), currency
+
+    baseline = lc.baseline_margin or 1.0
+    frac = np.clip(loss / baseline, 0.0, 1.0)          # share of a normal day lost
+
+    booked = store.bookings_window(
+        site_id, dates[0].isoformat(), dates[-1].isoformat()
+    )
+    have_bookings = bool(booked)
+    cost_ratio = float(site["variable_cost_ratio"])
+
+    # With no bookings, fall back to the venue's own typical revenue for that
+    # day of year. The calendar still means something, and the UI labels it as a
+    # typical season rather than passing it off as their book.
+    typical = _typical_margin_by_doy(record, revenue, cost_ratio)
+    dow_factor = _dow_factors(record, revenue)
+
+    rows, total_booked, total_expected = [], 0.0, 0.0
+    for i, d in enumerate(dates):
+        iso = d.isoformat()
+        if have_bookings:
+            margin = booked.get(iso, 0.0) * (1.0 - cost_ratio)
+        else:
+            margin = float(typical[int(doy[i]) % 366]) * float(dow_factor[d.weekday()])
+        exposed = frac[:, i] * margin
+        expected = float(exposed.mean())
+        total_booked += margin
+        total_expected += expected
+        rows.append({
+            "day": iso,
+            "dow": d.weekday(),
+            "booked_margin": r3(margin),
+            "expected_loss": r3(expected),
+            "p90_loss": r3(float(np.percentile(exposed, 90))),
+            "share": r3(expected / margin) if margin > 0 else 0.0,
+            # P(a bad day), not P(any loss at all). At a venue whose peril fires
+            # most days the latter is 1.00 everywhere and tells nobody anything;
+            # what a revenue lead can act on is how often a quarter of the day
+            # goes.
+            "p_bad": r3(float((frac[:, i] > BAD_DAY_SHARE).mean())),
+        })
+
+    return {
+        "from": dates[0].isoformat(),
+        "to": dates[-1].isoformat(),
+        "days": days,
+        "variable": lc.variable,
+        "peril": primary.label if primary else None,
+        "have_bookings": have_bookings,
+        "revenue_is_real": revenue_is_real,
+        "booked_margin": r3(total_booked),
+        "expected_loss": r3(total_expected),
+        "exposed_share": r3(total_expected / total_booked) if total_booked > 0 else 0.0,
+        "p90_loss": r3(float(np.percentile((frac * _margins(rows)).sum(axis=1), 90))),
+        "rows": rows,
+        "windows": _worst_windows(rows, total_expected),
+    }
+
+
+def _margins(rows: list[dict]) -> np.ndarray:
+    return np.array([r["booked_margin"] for r in rows], dtype=float).reshape(1, -1)
+
+
+def _typical_margin_by_doy(record, revenue, cost_ratio: float) -> np.ndarray:
+    """Mean contribution margin by day of year, for venues with no bookings yet.
+
+    Averaging by day-of-year alone silently destroys the weekly cycle --- across
+    a century every calendar day falls on every weekday, so the average is
+    flat and the resulting calendar shows a near-identical figure every day.
+    For a revenue lead that is worse than useless: their book is dominated by
+    the weekend, and a calendar that cannot see Saturday is not describing their
+    business. So the day-of-year shape is scaled by a day-of-week factor
+    estimated from the same series.
+    """
+    rev = np.nan_to_num(np.asarray(revenue, dtype=float))
+    doy = record.doy.astype(int)
+
+    out = np.zeros(367, dtype=float)
+    for d in range(1, 367):
+        sel = rev[doy == d]
+        if sel.size:
+            out[d] = float(sel.mean()) * (1.0 - cost_ratio)
+    return out
+
+
+def _dow_factors(record, revenue) -> np.ndarray:
+    """Relative revenue by weekday (Mon=0), normalised to mean 1."""
+    rev = np.nan_to_num(np.asarray(revenue, dtype=float))
+    dow = (record.dates.astype("datetime64[D]").astype(int) + 4) % 7   # Mon = 0
+    means = np.array([rev[dow == d].mean() if (dow == d).any() else 0.0 for d in range(7)])
+    overall = means.mean()
+    if overall <= 0:
+        return np.ones(7, dtype=float)
+    return means / overall
+
+
+def _worst_windows(rows: list[dict], total: float, top: int = 3, span: int = 7) -> list[dict]:
+    """The contiguous runs carrying the most exposure --- the actionable output.
+
+    A revenue lead cannot act on a per-day table of ninety numbers. They can act
+    on "these seven days carry a fifth of your exposure", which is a decision
+    about one promotion or one staffing rota.
+    """
+    if not rows or total <= 0:
+        return []
+    losses = np.array([r["expected_loss"] for r in rows], dtype=float)
+    if len(losses) < span:
+        return []
+    sums = np.convolve(losses, np.ones(span), mode="valid")
+
+    picked, used = [], np.zeros(len(rows), dtype=bool)
+    for _ in range(top):
+        order = np.argsort(sums)[::-1]
+        start = next((int(i) for i in order if not used[i:i + span].any()), None)
+        if start is None:
+            break
+        used[start:start + span] = True
+        picked.append({
+            "from": rows[start]["day"],
+            "to": rows[start + span - 1]["day"],
+            "expected_loss": r3(float(sums[start])),
+            "share_of_total": r3(float(sums[start] / total)),
+        })
+    return picked

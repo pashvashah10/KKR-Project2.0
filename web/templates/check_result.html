@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+{% block title %}{{ site.name }} — exposure check — Downside{% endblock %}
+
+{% block content %}
+<section style="padding-bottom:var(--sp-5)">
+  <div class="container">
+    <p class="eyebrow fade-up">Free exposure check · complete</p>
+    <h1 class="h-section fade-up" style="--d:60ms">{{ site.name }}</h1>
+    <p class="lede measure fade-up" style="--d:120ms;margin-top:var(--sp-3)">
+      {{ '%.4f'|format(site.lat) }}, {{ '%.4f'|format(site.lon) }}
+      {%- if site.elevation_m %} · {{ site.elevation_m|round|int }} m{% endif %}
+      · {{ site.vertical }}
+    </p>
+  </div>
+</section>
+
+{# ---------------------------------------------------------------- station #}
+{% if station and station.matched %}
+<section style="padding-top:0">
+  <div class="container split">
+    <div>
+      <p class="eyebrow reveal">What a contract would settle on</p>
+      <h2 class="h-section reveal measure" style="--d:60ms">{{ station.name }}</h2>
+      <div class="stack measure reveal" style="--d:120ms;margin-top:var(--sp-4)">
+        <p>
+          Of 38,412 stations carrying temperature and rainfall, this one scores highest for
+          your coordinate — on record length and completeness, discounted by distance
+          <em>and</em> by the vertical gap. The closest gauge is usually not the right one.
+        </p>
+        {% if station.note %}
+        <div class="notice notice-crit">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+            <path d="M12 4 2.5 20h19L12 4Z"/><path d="M12 10v4M12 17h.01"/>
+          </svg>
+          <span><strong>Microclimate warning.</strong> {{ station.note }}</span>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    <aside class="panel reveal">
+      <p class="eyebrow">Settlement basis</p>
+      <dl class="readout">
+        <dt>Station</dt><dd>{{ station.id }}</dd>
+        <dt>Distance</dt><dd>{{ '%.1f'|format(station.distance_km) }} km</dd>
+        <dt>Record</dt><dd>{{ station.first_year }}–{{ station.last_year }}</dd>
+        <dt>Gauge elev.</dt><dd>{{ station.elevation_m|round|int }} m</dd>
+        {% if station.elevation_delta_m is not none %}
+        <dt>Vertical gap</dt><dd>{{ station.elevation_delta_m|round|int }} m</dd>
+        {% endif %}
+        <dt>Source</dt><dd>{{ site.provenance or 'n/a' }}</dd>
+      </dl>
+    </aside>
+  </div>
+</section>
+{% endif %}
+
+{# ------------------------------------------------------------- headline #}
+<section style="padding-top:0">
+  <div class="container">
+    <div class="stats reveal">
+      <div class="stat">
+        <span class="stat-v">{{ station.years if station and station.matched else '—' }}</span>
+        <span class="stat-k">Years of daily record</span>
+      </div>
+      <div class="stat">
+        <span class="stat-v">{{ '%.2f'|format(diagnostics.amplification or 0) }}</span>
+        <span class="stat-k">°C local per °C global</span>
+      </div>
+      <div class="stat">
+        <span class="stat-v">{{ '%.0f'|format((diagnostics.r2 or 0) * 100) }}%</span>
+        <span class="stat-k">Variance explained</span>
+      </div>
+      <div class="stat">
+        <span class="stat-v">{{ '{:,}'.format(diagnostics.n_obs or 0) }}</span>
+        <span class="stat-k">Daily observations</span>
+      </div>
+    </div>
+    <p class="tiny" style="margin-top:var(--sp-4);max-width:70ch">
+      These are final figures, not estimates of figures. A preview fit changes only the number
+      of bootstrap replicates, and that moves the <em>error bar</em> — never the coefficient.
+      The full report puts a bound on the amplification above; it will not move it.
+    </p>
+  </div>
+</section>
+
+{# --------------------------------------------------------------- century #}
+{% if century_svg %}
+<section style="padding-top:0">
+  <div class="container">
+    <p class="eyebrow reveal">The record</p>
+    <h2 class="h-section reveal measure" style="--d:60ms">A century at your gauge.</h2>
+    <figure class="chartbox reveal" style="--d:120ms;margin-top:var(--sp-4)">
+      {{ century_svg|safe }}
+      <figcaption>
+        <span class="key"><i style="background:var(--muted)"></i>Observed</span>
+        <span class="key"><i style="background:var(--ember)"></i>Fitted mean</span>
+      </figcaption>
+    </figure>
+  </div>
+</section>
+{% endif %}
+
+{# ---------------------------------------------------------------- perils #}
+{% if peril_rows %}
+<section style="padding-top:0">
+  <div class="container">
+    <p class="eyebrow reveal">What fires here</p>
+    <h2 class="h-section reveal measure" style="--d:60ms">Your triggers, now and in {{ target_years[-1] if target_years else 2125 }}.</h2>
+    <div class="panel scroll-x reveal" style="--d:120ms;margin-top:var(--sp-4)">
+      <table class="rows" style="min-width:560px">
+        <thead>
+          <tr><th>Peril</th><th class="num">Threshold</th>
+              <th class="num">{{ target_years[0] if target_years else 'Now' }}</th>
+              <th class="num">{{ target_years[-1] if target_years else 'Later' }}</th></tr>
+        </thead>
+        <tbody>
+          {% for p in peril_rows %}
+          <tr>
+            <td><strong>{{ p.label }}</strong><br><span class="tiny">{{ p.description }}</span></td>
+            <td class="num small">{{ '%.1f'|format(p.threshold) }} {{ p.unit }}</td>
+            <td class="num">{{ '%.1f'|format(p.now) }}</td>
+            <td class="num">{{ '%.1f'|format(p.later) }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <p class="tiny" style="margin-top:var(--sp-3)">Triggering days per season, on SSP2-4.5.</p>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{# ----------------------------------------------------------------- gate #}
+<section style="padding-top:0">
+  <div class="container">
+    {% if claimed %}
+    <div class="panel" style="max-width:74ch">
+      <p class="eyebrow" style="color:var(--good)">Unlocked</p>
+      <h2 class="h-section">Your full report is being fitted.</h2>
+      <p class="lede" style="margin-top:var(--sp-3)">
+        The bootstrap and the backtest are running now — one to three minutes. This link
+        opens it from any device, with no sign-in:
+      </p>
+      <p class="num small" style="margin-top:var(--sp-3);word-break:break-all;
+                background:var(--panel-2);padding:var(--sp-3);border-radius:3px">
+        <a href="{{ resume_link }}">{{ resume_link }}</a>
+      </p>
+      <div class="btn-row" style="margin-top:var(--sp-4)">
+        <a class="btn" href="/venues/{{ site.id }}">Open the report</a>
+        <a class="btn-ghost" href="/configure/parametric-cover?site={{ site.id }}">Price a contract</a>
+      </div>
+    </div>
+
+    {% else %}
+    <div class="panel" style="max-width:74ch">
+      <p class="eyebrow">The rest of it</p>
+      <h2 class="h-section">Confidence bounds, the backtest, and 2125.</h2>
+      <p class="lede" style="margin-top:var(--sp-3)">
+        Leave an address and we will run the full fit — the 160-replicate bootstrap, the
+        walk-forward backtest against thirty held-out years, the projection under four
+        pathways, and your loss curve. Free, and you get a link back to it.
+      </p>
+      <form method="post" action="/check/{{ check.id }}/claim" class="stack"
+            style="margin-top:var(--sp-4);max-width:420px">
+        <label class="field">
+          <span>Email</span>
+          <input name="email" type="email" required placeholder="you@company.com">
+          <span class="field-hint">
+            Used to send you the link and nothing else. Mail delivery is not configured on
+            this deployment, so the link appears on screen instead.
+          </span>
+        </label>
+        <button class="btn" type="submit" data-magnetic>Run the full fit</button>
+      </form>
+    </div>
+    {% endif %}
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="container">{% include "components/disclaimer.html" %}</div>
+</section>
+{% endblock %}
