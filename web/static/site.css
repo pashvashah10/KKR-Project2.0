@@ -511,7 +511,16 @@ h1, h2, h3, h4 { margin: 0; }
 .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--sp-4); }
 @media (max-width: 760px) { .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .stat { border-left: 1px solid var(--rule); padding-left: var(--sp-4); }
-.stat-v { font-size: 1.85rem; font-weight: 500; line-height: 1.1; display: block; }
+.stat-v {
+  /* Fluid, because these tiles hold currency now as well as counts. A figure
+     like $2,643,626.33 is a single unbreakable mono token: at a fixed 1.85rem
+     it paints past a 390px viewport without any element's *box* overflowing,
+     which is why it shows up as document scroll width and not as a wide
+     element. `overflow-wrap` is the backstop for the genuinely long ones. */
+  font-size: clamp(1.2rem, 4.4vw, 1.85rem);
+  font-weight: 500; line-height: 1.15; display: block;
+  overflow-wrap: anywhere;
+}
 .stat-k { font-size: .72rem; letter-spacing: .11em; text-transform: uppercase; color: var(--muted); font-weight: 620; }
 
 /* --------------------------------------------------------------- fields */

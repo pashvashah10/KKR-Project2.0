@@ -89,7 +89,9 @@ A multi-page shop with real URLs, a cart and a checkout.
 | `/services`, `/services/{slug}` | Catalogue and detail |
 | `/configure/{slug}` | Pick a venue, see the station match, get a price |
 | `/cart`, `/checkout`, `/orders/{id}` | Order and invoice |
+| **`/check`** | **Free exposure check — a real fit at any coordinate, no signup** |
 | **`/venues/{id}`** | **The report — what an Exposure Report actually buys** |
+| **`/venues/{id}/risk`** | **Revenue at risk — the forward booking calendar** |
 | `/account` | Venues, orders, subscriptions, API key |
 | `/dashboard` | The analytics terminal (the eight example venues) |
 
@@ -108,6 +110,34 @@ integration points and refuses rather than silently falling back to the mock.
 and subject to underwriting; every page that shows a price says so, and the
 invoice is headed *"Indicative Parametric Risk Estimate — Not a Binding Policy
 Contract"*.
+
+### The free exposure check
+
+`/check` takes a coordinate and gives back a real fit — the gauge a contract
+would settle on, the venue's warming amplification, the perils that apply and how
+often they fire. No signup; an email unlocks the backtest, the projection and the
+loss curve.
+
+**There is no cheap fit, and the code no longer pretends there is.** A
+reduced-precision path was built on the assumption that the statistics dominated.
+Measured:
+
+| | |
+|---|---|
+| Record fetch, cold | **116 s** (114 s of it SSL reads from NCEI) |
+| Record fetch, cached | 0.7 s |
+| `SiteModel.fit`, 160 bootstrap replicates | 1.3 s |
+| Walk-forward backtest | 0.8 s |
+| Peril grid | 6.7 s |
+
+Every statistic together is under ten seconds; fetching a century from NOAA is
+the whole cost. So a free check runs the same full fit a paying customer gets,
+and the free/paid line is drawn at what is *shown*.
+
+What makes it viable is that the record cache is keyed by **station**, not by
+venue. End to end through the HTTP API: **132–243 s at a cold gauge, 8 s at a
+warm one.** Venues cluster — ski areas, wine regions, festival sites — so it gets
+cheaper exactly where volume arrives.
 
 ### The report
 
@@ -301,6 +331,26 @@ showing a fabricated frequency.
 
 ## Honest limitations
 
+### Revenue at risk
+
+`/venues/{id}/risk` is the same simulation the report already runs, collapsed
+along the other axis. `exposure()` sums the loss array over days and averages the
+paths; this averages the paths and keeps the days. No second model, and the two
+views cannot disagree.
+
+The loss curve is applied as a *fraction* of a normal day's margin and multiplied
+by what is actually booked for that date, so a quiet Tuesday and a sold-out
+Saturday differ by more than the weather. With no bookings uploaded it falls back
+to the venue's own typical revenue for that day of year, scaled by the weekday
+pattern in its record, and says on screen that it is a typical season rather than
+your book.
+
+**It is not a forecast.** Every day is drawn from the fitted climatological
+distribution for that day of year. Past about ten days a forecast has no skill,
+and the window runs to ninety — which is the horizon at which marketing and
+staffing spend is actually committed. Climatology is not a weaker substitute
+there; it is the only instrument that exists.
+
 **Daily revenue is placeholder.** `hedging.synthetic_revenue` exists to exercise
 the loss-curve regression against a known answer. Every loss curve, hedge ratio
 and ruin probability is only as real as the revenue behind it, and real daily
@@ -375,7 +425,8 @@ rather than promising a week it cannot keep.
 |---|---|
 | `stations.py` | GHCN index, terrain-aware nearest-station matching |
 | `security.py` | The app signing key, and the signed resume links minted from it |
-| `charts.py` | Server-rendered SVG for the report — no charting library, no JS |
+| `charts.py` | Server-rendered SVG for the report and the risk calendar |
+| `demo.py` | Restores the committed snapshot when a deployment starts empty |
 | `catalog.py` | The four products, as code |
 | `checkout.py` | Cart, orders, mock payment, Stripe seam |
 | `web.py` | Storefront routes, async fit jobs, session cart |

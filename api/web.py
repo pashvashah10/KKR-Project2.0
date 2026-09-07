@@ -39,7 +39,10 @@ import time
 from pathlib import Path
 from typing import Any, Protocol
 
-from fastapi import APIRouter, Form, HTTPException, Request
+import csv
+import io
+
+from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
@@ -1109,6 +1112,107 @@ def venue_report(request: Request, site_id: str, t: str | None = None) -> HTMLRe
         ),
         weather="clear",
     )
+
+
+# ----------------------------------------------------------------------
+# Revenue at risk
+# ----------------------------------------------------------------------
+
+
+@router.get("/venues/{site_id}/risk", response_class=HTMLResponse)
+def venue_risk(request: Request, site_id: str, t: str | None = None) -> HTMLResponse:
+    """The forward booking calendar, coloured by exposure.
+
+    Deliberately its own page rather than a section on the report. The report is
+    read once; this is the thing a revenue lead comes back to on a Monday, and
+    burying it under six sections of methodology would be designing for the
+    wrong visit.
+    """
+    site = store.get_site(site_id)
+    if site is None:
+        raise HTTPException(404, "No such venue.")
+    adopt_resume_token(request, t, site_id)
+    account = current_account(request)
+    if not site.get("is_example") and (not account or site["account_id"] != account["id"]):
+        raise HTTPException(404, "No such venue.")
+    if site["status"] != "ready":
+        return RedirectResponse(f"/venues/{site_id}", status_code=303)  # type: ignore[return-value]
+
+    try:
+        risk = service.revenue_at_risk(site_id)
+    except LookupError:
+        raise HTTPException(409, "No model cached for this venue.") from None
+
+    return render(
+        request, "risk.html",
+        site=site,
+        risk=risk,
+        bookings=store.bookings_summary(site_id),
+        calendar_svg=charts.calendar_strip(risk["rows"]),
+        weather="cloud",
+    )
+
+
+@router.post("/venues/{site_id}/bookings")
+async def upload_bookings(request: Request, site_id: str, file: UploadFile = File(...)):
+    """Forward bookings as CSV. Mirrors the revenue upload's tolerant parsing.
+
+    Same column sniffing and the same permissive number handling, because the
+    file a customer exports from their booking system is never the file a schema
+    would ask for.
+    """
+    account = current_account(request)
+    site = store.get_site(site_id, account_id=account["id"]) if account else None
+    if site is None:
+        raise HTTPException(404, "No such venue.")
+
+    raw = (await file.read()).decode("utf-8-sig", errors="replace")
+    reader = csv.DictReader(io.StringIO(raw))
+    if not reader.fieldnames:
+        raise HTTPException(400, "That file has no header row. Expected: date,revenue")
+
+    lowered = {c.lower().strip(): c for c in reader.fieldnames}
+    date_col = next((lowered[c] for c in ("date", "day", "dt") if c in lowered), None)
+    rev_col = next(
+        (lowered[c] for c in ("revenue", "amount", "sales", "gross", "booked")
+         if c in lowered), None
+    )
+    cov_col = next(
+        (lowered[c] for c in ("covers", "guests", "pax", "tickets") if c in lowered), None
+    )
+    if not date_col or not rev_col:
+        raise HTTPException(
+            400,
+            f"Could not find date and revenue columns. Saw: {', '.join(reader.fieldnames)}. "
+            "Expected something like: date,revenue",
+        )
+
+    rows, bad = [], 0
+    for row in reader:
+        day = (row.get(date_col) or "").strip()[:10]
+        try:
+            amount = float(
+                str(row.get(rev_col, "")).replace(",", "").replace("$", "").replace("£", "").strip()
+            )
+        except ValueError:
+            bad += 1
+            continue
+        covers = None
+        if cov_col:
+            try:
+                covers = int(float(str(row.get(cov_col, "")).replace(",", "").strip()))
+            except (TypeError, ValueError):
+                covers = None
+        if len(day) == 10 and day[4] == "-" and amount >= 0:
+            rows.append((day, amount, covers))
+        else:
+            bad += 1
+
+    if not rows:
+        raise HTTPException(400, "No usable rows. Expected a date column and a revenue column.")
+
+    store.put_bookings(site_id, rows)
+    return RedirectResponse(f"/venues/{site_id}/risk", status_code=303)
 
 
 @router.get("/account", response_class=HTMLResponse)

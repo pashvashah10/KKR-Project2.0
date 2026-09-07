@@ -281,3 +281,85 @@ def sparkbar(values: list[float], vmax: float | None = None) -> str:
         f'<svg viewBox="0 0 {total:.0f} {h:.0f}" class="spark" role="img" '
         f'aria-label="trigger frequency by target year">{"".join(bars)}</svg>'
     )
+
+
+def calendar_strip(rows: list[dict], weeks_per_row: int = 13) -> str:
+    """A cell per day, shaded by the share of that day's margin at risk.
+
+    Laid out as a GitHub-style calendar --- weekdays down, weeks across --- rather
+    than a line chart, because the question a revenue lead asks of it is "which
+    days" and not "what is the trend". A line would answer the wrong question
+    beautifully.
+
+    Colour encodes *share* rather than absolute pounds. Absolute exposure tracks
+    booking volume, so an absolute scale would just redraw the weekend pattern
+    and hide the days that are unusually exposed for what they are worth.
+    """
+    if not rows:
+        return ""
+
+    cell, gap, pad_top, pad_left = 15.0, 3.0, 16.0, 26.0
+    shares = [r.get("share", 0.0) for r in rows]
+    hi = max(shares) or 1.0
+
+    # Monday-aligned columns: the first cell is offset by its own weekday so the
+    # rows read as real weeks rather than an arbitrary wrap.
+    first_dow = rows[0].get("dow", 0)
+    n_cols = -(-(len(rows) + first_dow) // 7)
+    w = pad_left + n_cols * (cell + gap)
+    h = pad_top + 7 * (cell + gap)
+
+    parts = []
+    for i, label in enumerate(("M", "", "W", "", "F", "", "S")):
+        if label:
+            parts.append(
+                f'<text x="{pad_left - 6:.1f}" y="{pad_top + i * (cell + gap) + cell * 0.75:.1f}" '
+                f'text-anchor="end" class="tick">{label}</text>'
+            )
+
+    seen_months = set()
+    for i, row in enumerate(rows):
+        idx = i + first_dow
+        col, r = divmod(idx, 7)
+        x = pad_left + col * (cell + gap)
+        y = pad_top + r * (cell + gap)
+        share = row.get("share", 0.0)
+        # Floor the opacity so a booked day is never invisible; a day with no
+        # bookings is a different thing and gets the empty treatment.
+        booked = row.get("booked_margin", 0.0) > 0
+        op = 0.12 + 0.88 * (share / hi) if booked and hi > 0 else 0.0
+        fill = "var(--ember)" if booked else "var(--panel-3)"
+        title = (
+            f"{row['day']}: {share:.0%} of margin at risk" if booked
+            else f"{row['day']}: nothing booked"
+        )
+        parts.append(
+            f'<rect x="{x:.1f}" y="{y:.1f}" width="{cell:.1f}" height="{cell:.1f}" '
+            f'rx="2" fill="{fill}" fill-opacity="{max(op, 0.06):.3f}" '
+            f'stroke="var(--rule-soft)" stroke-width="0.5">'
+            f"<title>{escape(title)}</title></rect>"
+        )
+        month = row["day"][:7]
+        if month not in seen_months and r <= 1:
+            seen_months.add(month)
+            parts.append(
+                f'<text x="{x:.1f}" y="{pad_top - 5:.1f}" class="tick">'
+                f'{escape(_month_label(row["day"]))}</text>'
+            )
+
+    return (
+        f'<svg viewBox="0 0 {w:.0f} {h:.0f}" class="chart calendar" role="img" '
+        f'aria-label="Daily share of booked margin at risk over the forward window" '
+        f'preserveAspectRatio="xMinYMin meet">{"".join(parts)}</svg>'
+    )
+
+
+_MONTHS = ("Jan", "Feb", "Mar", "Apr", "May", "Jun",
+           "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+
+
+def _month_label(iso_day: str) -> str:
+    try:
+        return _MONTHS[int(iso_day[5:7]) - 1]
+    except (ValueError, IndexError):
+        return ""
